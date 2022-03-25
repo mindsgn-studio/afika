@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 export const container = StyleSheet.create({
     default: {
@@ -12,9 +12,27 @@ export const container = StyleSheet.create({
     onboarding: {
         width: '100%',
         height:'100%',
+        backgroundColor: 'black'
     },
     welcome: {
         width: '100%',
         height:'100%',
+        backgroundColor: 'black'
+    },
+    import: {
+        width: '100%',
+        height:'100%',
+        justifyContent: 'flex-start',
+        backgroundColor: 'black'
+    },
+    create: {
+        width: '100%',
+        height:'100%',
+        backgroundColor: 'black'
+    },
+    home: {
+        width: '100%',
+        height:'100%',
+        backgroundColor: 'black'
     }
   });

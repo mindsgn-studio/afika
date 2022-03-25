@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View, } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 export const text = StyleSheet.create({
     default: {

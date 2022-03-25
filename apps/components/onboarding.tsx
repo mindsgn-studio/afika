@@ -8,11 +8,11 @@ const Onboarding = ({ navigation } : { navigation: any }) => {
   
   const openImportScreen = () => {
     navigation.navigate('Import')
-  }
+  };
 
   const openNewWalletScreen = () => {
     navigation.navigate('Create')
-  }
+  };
 
   return (
     <View 
@@ -53,7 +53,7 @@ const Onboarding = ({ navigation } : { navigation: any }) => {
             flex: 1
           }}>
           <TouchableOpacity
-            onPress={() => openImportScreen()}
+            onPress={() => openNewWalletScreen()}
             style={button.buttonPrimary}>
               <Text
                 style={text.textSecondary}>
@@ -61,7 +61,7 @@ const Onboarding = ({ navigation } : { navigation: any }) => {
               </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={() => openNewWalletScreen()}
+            onPress={() => openImportScreen()}
             style={button.buttonSecondary}>
               <Text
                 style={text.textPrimary}>

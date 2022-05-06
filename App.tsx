@@ -35,10 +35,6 @@ const App = (): JSX.Element => {
               screenOptions={{
                   headerShown: false
                 }}>
-              <Stack.Screen name="Load" component={Load} />
-              <Stack.Screen name="Onboarding" component={Onboarding} />
-              <Stack.Screen name="Import" component={Import} />
-              <Stack.Screen name="Create" component={Create} />
               <Stack.Screen name="Home" component={Home} />
           </Stack.Navigator>
         </NavigationContainer>

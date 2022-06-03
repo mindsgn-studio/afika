@@ -1,15 +1,15 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-//import { wallet } from '../redux/actions/wallet.action';
+import { connect } from 'react-redux';
 
-const Card = () => {
-
+const Card = (props: any) => {
+    const {address} = props
     return (
         <View
             style={{
                 minHeight: 200,
                 display:'flex',
-                backgroundColor: 'white',
+                backgroundColor: 'black',
                 borderRadius: 10,
                 margin: 10,
                 padding: 20,
@@ -17,15 +17,16 @@ const Card = () => {
              <View>
                 <Text
                 style={{
-                    color: 'black',
+                    color: 'white',
                     fontSize: 20,
                     fontWeight:'bold'
                 }}
-                >{}</Text>
+                >{address}</Text>
             </View>
             <View>
                 <Text
                     style={{
+                        color: 'white',
                         fontSize: 40,
                         fontWeight:'bold'
                     }}>R {(0)?.toFixed(2)}</Text>
@@ -34,17 +35,21 @@ const Card = () => {
                 style={{
                     position: 'absolute',
                     right: "2%",
-                    bottom: "2%",
+                    bottom: "4%",
                     borderRadius: 100,
                     minWidth: 50,
                     minHeight: 50,
                     maxWidth: 50,
                     maxHeight: 50,
-                    backgroundColor: 'black',
+                    backgroundColor: 'white',
                 }}>
             </View>
         </View>
     )
 }
 
-export default Card;
+const mapStateToProps = (state: any, props: any) => {
+    return { address: state.address };
+}
+  
+export default connect(mapStateToProps)(Card);

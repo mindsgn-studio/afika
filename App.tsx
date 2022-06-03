@@ -18,7 +18,6 @@ import Load from './apps/screen/load';
 import Onboarding from './apps/screen/onboarding';
 import Home from './apps/screen/home';
 import Error from './apps/screen/error';
-import Count from './apps/screen/count';
 import { store, persistor } from './apps/redux/store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StatusBar } from 'react-native';
@@ -40,6 +39,7 @@ const App: React.FC = () => {
                 }}>
               <Stack.Screen name="Load" component={Load} />
               <Stack.Screen name="Home" component={Home} />
+              <Stack.Screen name="Error" component={Error} />
               <Stack.Screen name="Onboarding" component={Onboarding} />
           </Stack.Navigator>
         </NavigationContainer>

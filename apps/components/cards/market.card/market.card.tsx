@@ -1,56 +1,106 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, Image } from 'react-native';
 import { connect } from 'react-redux';
 
-const Card = (props: any) => {
-    const { address } = props;
+const Card = (
+    {
+        url, 
+        id, 
+        symbol, 
+        currentPrice, 
+        marketCapChange
+    }: {
+        url: string, 
+        id: any, 
+        symbol: string, 
+        currentPrice: any, 
+        marketCapChange: any
+    }) => {
+    const isPositive = (number: string) => {
+        if(number.indexOf('-') === 0){
+            return false
+        }
+        return true
+    }
+    
+    const roundOff = (number: number) => {
+        return number.toFixed(2) 
+    }
+
     return (
         <View
             style={{
-                minHeight: 200,
+                margin: 5,
+                padding: 10,
+                backgroundColor:'white',
                 display: 'flex',
-                backgroundColor: 'black',
-                borderRadius: 10,
-                margin: 10,
-                padding: 20
-            }}
-        >
-            <View>
-                <Text
-                    style={{
-                        fontFamily: 'SF-Pro-Rounded-Bold',
-                        color: 'white',
-                        fontSize: 20
-                    }}
-                >
-                    {address}
-                </Text>
-            </View>
-            <View>
-                <Text
-                    style={{
-                        fontFamily: 'SF-Pro-Rounded-Heavy',
-                        color: 'white',
-                        fontSize: 45
-                    }}
-                >
-                    R {0?.toFixed(2)}
-                </Text>
-            </View>
+                flexDirection:'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                elevation: 20,
+                shadowColor: '#000000',
+                borderRadius: 20
+            }}>
             <View
                 style={{
-                    position: 'absolute',
-                    right: '2%',
-                    bottom: '4%',
-                    borderRadius: 100,
-                    minWidth: 50,
-                    minHeight: 50,
-                    maxWidth: 50,
-                    maxHeight: 50,
-                    backgroundColor: 'white'
-                }}
-            ></View>
-        </View>
+                    display: 'flex',
+                    flexDirection:'row',
+                    alignItems: 'center',
+                }}>
+                <Image
+                    source={{uri: url}}
+                    style={{
+                    width:50,
+                    height:50,
+                    borderRadius: 50,
+                    marginRight: 10,
+                }}/>
+                                    <View>
+                                        <Text
+                                            style={{
+                                                fontFamily: 'SF-Pro-Rounded-Bold',
+                                                color:'black',
+                                                fontSize: 21,
+                                            }}>
+                                            {id}
+                                        </Text>
+                                        <Text
+                                            style={{
+                                                fontFamily: 'SF-Pro-Rounded-Bold',
+                                                fontSize: 18,
+                                                marginTop: -20,
+                                                color: 'grey'   
+                                            }}>
+                                            {symbol}
+                                        </Text>
+                                    </View>
+                                </View>
+                                <View
+                                    style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'flex-end'
+                                    }}
+                                    >
+                                        <Text
+                                                style={{
+                                                fontFamily: 'SF-Pro-Rounded-Bold',
+                                                color:'black',
+                                                fontSize: 21,
+                                            }}>
+                                            {`$ ${roundOff(currentPrice)}`}
+                                        </Text>
+                                        <Text
+                                                style={{
+                                                fontFamily: 'SF-Pro-Rounded-Bold',
+                                                color: `${isPositive(`${marketCapChange}`) ? "green" :  "red"}`,
+                                                fontSize: 21,
+                                                marginTop: -20
+                                            }}>
+                                            {`${roundOff(marketCapChange)} %`}
+                                        </Text>
+                                </View>
+                            </View>
     );
 };
 

@@ -22,7 +22,7 @@ export const PlaceHolder = (
     }
 
     React.useEffect(() => {
-        console.log(code)
+        // console.log(code)
     });
 
     return (

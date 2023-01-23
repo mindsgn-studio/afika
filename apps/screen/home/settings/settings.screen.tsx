@@ -18,7 +18,7 @@ const Settings = (props: any) => {
         <View
             style={{
                 flex: 1,
-                backgroundColor: 'white'
+                backgroundColor: 'gray'
             }}>
                 <View
                     style={{
@@ -26,37 +26,81 @@ const Settings = (props: any) => {
                         flexDirection: "row",
                         justifyContent: "center",
                         alignItems: 'flex-end',
+                        backgroundColor: 'white'
                     }}>
                     <View>
-                        <Image 
-                            style={{
-                                maxWidth: 100,
-                                maxHeight: 100,
-                                minWidth: 90,
-                                minHeight: 90,
-                                borderRadius: 50,
-                                margin: 10
-                            }}
-                            source={{ uri: user.profileImage}}/>
+                        {
+                            user?
+                            <Image 
+                                style={{
+                                    maxWidth: 100,
+                                    maxHeight: 100,
+                                    minWidth: 90,
+                                    minHeight: 90,
+                                    borderRadius: 50,
+                                    margin: 10
+                                }}
+                                source={{ uri: user.profileImage}}/>
+                                :
+                                null
+                            }
                     </View>
+                </View>
+                <View>
+                    {
+                        user?
+                        <View
+                            style={{
+                                padding: 10,
+                                backgroundColor: 'white'
+                            }}>
+                            <Text
+                                style={{
+                                    fontFamily: 'SF-Pro-Rounded-Bold',
+                                    fontSize: 21
+                                }}>Name: {user.name}</Text>
+                            <Text
+                                style={{
+                                    fontFamily: 'SF-Pro-Rounded-Bold',
+                                    fontSize: 21,
+                                    marginTop: -15
+                                }}>Email: {user.email}</Text>
+                            <Text
+                                style={{
+                                    fontFamily: 'SF-Pro-Rounded-Bold',
+                                    fontSize: 21,
+                                    marginTop: -15
+                                }}>Langauge: English</Text>
+                        </View>
+                        :
+                        null
+                    }
                 </View>
                 <View>
                     <View
                         style={{
-                            padding: 10
+                            padding: 10,
+                            backgroundColor: 'white'
                         }}>
-                        <Text
-                            style={{
-                                fontFamily: 'SF-Pro-Rounded-Bold',
-                                fontSize: 21
-                            }}>Name: {user.name}</Text>
-                        <Text
-                            style={{
-                                fontFamily: 'SF-Pro-Rounded-Bold',
-                                fontSize: 21
-                            }}>email: {user.email}</Text>
+                            <Button
+                                onPress={() => {}}
+                                text="Show Private Keys"
+                                color={colors.orange}
+                                fontColor={"white"} />
+                    </View>
+                    <View
+                        style={{
+                            padding: 10,
+                            backgroundColor: 'white'
+                        }}>
+                            <Button
+                                onPress={() => {}}
+                                text="Backup Wallet Keys"
+                                color={colors.green}
+                                fontColor={"white"} />
                     </View>
                 </View>
+
                 <View
                     style={{
                         flex: 1,
@@ -64,6 +108,7 @@ const Settings = (props: any) => {
                         flexDirection: "row",
                         justifyContent: "center",
                         alignItems: 'flex-end',
+                        backgroundColor: 'white'
                     }}>
                     <Button
                         onPress={() =>  disconnectWallet(auth)}

@@ -1,110 +1,118 @@
+import { NONAME } from 'dns';
 import React from 'react';
-import { View, Text, FlatList, Image, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  Image,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
 import { connect } from 'react-redux';
+
 import WalletAction from '../../../redux/actions/wallet.action';
 
 const NFTS = (props: any) => {
-    const { markets } = props;
-    
-    React.useEffect(() => {
-    //    getMarketData();
-    }, []);
+  const { nfts } = props;
 
-    return (
-        <View
-            style={{
-                flex: 1,
-            }}>
-            {markets ? (
-                <ScrollView
-                    style={{
-                        backgroundColor:'white',
-                        flex: 1,
-                        display: 'flex',
-                        flexDirection:'column',
-                    }}>
-                    {
-                     markets.map((data: any) => {
-                        return(
-                            <View
-                                key={data.id}
-                                style={{
-                                    margin: 5,
-                                    padding: 10,
-                                    backgroundColor:'white',
-                                    display: 'flex',
-                                    flexDirection:'row',
-                                    alignItems: 'center',
-                                    justifyContent: 'flex-start',
-                                    elevation: 20,
-                                    shadowColor: '#000000',
-                                }}>
-                                <View
-                                    style={{
-                                        display: 'flex',
-                                        flexDirection:'row',
-                                        borderRadius: 20
-                                    }}>
-                                    <Image
-                                        source={{uri: data.image}}
-                                        style={{
-                                            width:50,
-                                            height:50,
-                                            borderRadius: 50,
-                                            marginRight: 10,
-                                            backgroundColor:'black'
-                                        }}/>
-                                    <View>
-                                        <Text
-                                            style={{
-                                                fontFamily: 'SF-Pro-Rounded-Bold',
-                                                color:'black',
-                                                fontSize: 21,
-                                            }}>
-                                            {data.id}
-                                        </Text>
-                                        <Text
-                                            style={{
-                                                fontFamily: 'SF-Pro-Rounded-Bold',
-                                                color:'black',
-                                                fontSize: 21,
-                                            }}>
-                                            {`$ ${data.current_price}`}
-                                        </Text>
-                                    </View>
-                                </View>
-                                <View>
-                                </View>
-                            </View>
-                        )
-                     })   
-                    }
-                </ScrollView>
-            ) : (
-                <View
-                    style={{
-                        backgroundColor:'white',
-                        flex: 1,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}
-                >
-                    <Text
-                        style={{
-                            fontFamily: 'SF-Pro-Rounded-Bold',
-                        }}
-                    >
-                        LOADING
-                    </Text>
-                </View>
-            )}
-        </View>
-    );
+  //should open card to full view
+  const view = (id: number) => {
+    console.log('pressed');
+  };
+
+  const roundOf = (number: number) => {
+    return number.toFixed(2);
+  };
+
+  React.useEffect(() => {}, []);
+
+  /*
+   *   1. should be infinite scroll if user has infinite cards
+   *   2. scroll up animation => main card in to header
+   *   3. scroll down animation => main header in to card
+   *   4. round up to decimal places =>
+   *   5.
+   */
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        padding: 10,
+      }}
+    >
+      <View
+        style={{
+          display: 'flex',
+          width: '100%',
+          minHeight: 150,
+          backgroundColor: 'blue',
+          borderRadius: 10,
+          justifyContent: 'flex-end',
+        }}
+      >
+        <Text
+          style={{
+            fontFamily: 'SF-Pro-Rounded-Bold',
+            fontSize: 42,
+            color: 'white',
+            padding: 10,
+          }}
+        >
+          NFTS
+        </Text>
+      </View>
+      <View
+        style={{
+          flex: 1,
+          flexShrink: 2,
+          display: 'flex',
+          flexDirection: 'row',
+          width: '100%',
+        }}
+      >
+        {nfts.map((item: any, index: any) => {
+          return (
+            <TouchableOpacity
+              key={index}
+              onPress={() => view}
+              style={{
+                width: '45%',
+                minHeight: 100,
+                margin: 10,
+                borderRadius: 20,
+                borderWidth: 1,
+              }}
+            >
+              <View
+                style={{
+                  backgroundColor: 'blue',
+                  width: '100%',
+                  borderTopLeftRadius: 20,
+                  borderTopRightRadius: 20,
+                  height: 100,
+                }}
+              >
+                <Text>{}</Text>
+              </View>
+              <View
+                style={{
+                  padding: 10,
+                }}
+              >
+                <Text>{`${item.name}`}</Text>
+                <Text> {`R ${roundOf(item.price)}`}</Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
 };
 
 const mapStateToProps = (state: any, props: any) => {
-    return { markets: state.markets };
+  return { nfts: state.nfts };
 };
 
 export default connect(mapStateToProps)(NFTS);

@@ -25,20 +25,19 @@ export const Load = (props: any) => {
     };
 
     React.useEffect(() => {
-        if(markets){
+        if(markets && connected){
             navigation.navigate('Home');
-            console.log(markets)
         }
-    },[markets])
+    },[markets, connected])
 
     React.useEffect(() => {
         SplashScreen.hide();
         Animated.timing(progress, {
             toValue: 1,
-            useNativeDriver: true
+            useNativeDriver: true,
         }).start();
         setTimeout(isConnected, 5000);
-    }, [props.connected]);
+    }, [connected]);
 
     return (
         <View 

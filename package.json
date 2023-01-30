@@ -57,6 +57,7 @@
         "react-native-dotenv": "^3.3.1",
         "react-native-fs": "^2.20.0",
         "react-native-level-fs": "^3.0.0",
+        "react-native-logs": "^5.0.1",
         "react-native-qrcode": "^0.2.7",
         "react-native-qrcode-svg": "^6.2.0",
         "react-native-randombytes": "^3.6.1",

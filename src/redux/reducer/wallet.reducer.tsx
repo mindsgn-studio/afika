@@ -1,3 +1,4 @@
+import { ALCHEMY_SDK } from '@env';
 import {
   CONNECT,
   DISCONNECT,
@@ -7,8 +8,10 @@ import {
   GET_CHAIN_ID,
   GET_ADDRESS,
   GET_TOKEN_LIST,
+  SWITCH_NETWORK,
   //@ts-ignore
 } from '@orbyt/constants';
+import { Network } from 'alchemy-sdk';
 
 import { walletState } from '../../interface';
 
@@ -29,6 +32,10 @@ const initialState: walletState = {
   tokenList: [],
   currency: 'zar',
   currencySymbol: 'R',
+  settings: {
+    apiKey: ALCHEMY_SDK,
+    network: Network.MATIC_MAINNET,
+  },
 };
 
 export default (state = initialState, action: any) => {
@@ -73,6 +80,12 @@ export default (state = initialState, action: any) => {
       return {
         ...state,
         tokenList: action.tokenList,
+      };
+    case SWITCH_NETWORK:
+      return {
+        ...state,
+        settings: action.settings,
+        providerUrl: action.providerUrl,
       };
     case ERROR:
       return {

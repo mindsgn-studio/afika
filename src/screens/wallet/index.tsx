@@ -4,6 +4,7 @@ import {
   TokenContainer,
   ReceiveCard,
   SendCard,
+  SwitchNetworkCard,
 } from '@orbyt/components';
 //@ts-ignore
 import { colors } from '@orbyt/constants';
@@ -119,6 +120,7 @@ const Wallet = (props: any) => {
       <TokenContainer />
       <ReceiveCard />
       <SendCard />
+      <SwitchNetworkCard />
     </View>
   );
 };

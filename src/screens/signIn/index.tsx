@@ -14,7 +14,8 @@ import { connect } from 'react-redux';
 import { style } from './style';
 
 const SignIn = (props: any) => {
-  const { connected, navigation, privKey, address } = props;
+  const { connected, navigation, privKey, address, providerUrl, settings } =
+    props;
   const {
     connectWithWeb3Auth,
     testConnection,
@@ -35,10 +36,10 @@ const SignIn = (props: any) => {
 
   React.useEffect(() => {
     if (connected) {
-      getChainId();
+      getChainId(providerUrl);
       getAccount(privKey);
-      getTokenList(address);
-      navigation.navigate('HOME');
+      getTokenList(address, settings);
+      navigation.navigate('Home');
     }
   }, [connected]);
 
@@ -99,6 +100,8 @@ const mapStateToProps = (state: any, props: any) => {
     connected: state.wallet.connected,
     privKey: state.wallet.privKey,
     address: state.wallet.address,
+    providerUrl: state.wallet.providerUrl,
+    settings: state.wallet.settings,
   };
 };
 

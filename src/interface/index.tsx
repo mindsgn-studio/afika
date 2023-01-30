@@ -34,6 +34,10 @@ export interface walletState {
   tokenList: any[];
   currency: string;
   currencySymbol: string;
+<<<<<<< HEAD
+  settings: any;
+=======
+>>>>>>> f4aa1f2448e7494a500eda5f8a90aec45b5385b0
 }
 
 export interface nft {

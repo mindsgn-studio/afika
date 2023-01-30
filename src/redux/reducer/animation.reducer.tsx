@@ -8,12 +8,10 @@ import {
 } from '@orbyt/constants';
 
 const initialState: any = {
-  loading: true,
+  loading: false,
   receive: false,
   send: false,
-  switch: false,
-  networkID: 137,
-  networkName: 'Matic',
+  switchNetwork: false,
 };
 
 export default (state = initialState, action: any) => {
@@ -36,7 +34,7 @@ export default (state = initialState, action: any) => {
     case UPDATE_SWITCH_NETWORK:
       return {
         ...state,
-        switch: action.switch,
+        switchNetwork: action.switchNetwork,
       };
     default:
       return state;

@@ -7,7 +7,8 @@ import { connect } from 'react-redux';
 import { style } from './style';
 
 const Load = (props: any) => {
-  const { getChainId, getAccount, getTokenList } = WalletAction(props);
+  const { getChainId, getAccount, getTokenList, providerUrl, settings } =
+    WalletAction(props);
   const { connected, navigation, privKey, address } = props;
   const [mounted, setMounted] = React.useState<boolean>(false);
   const textOpacity = React.useRef(new Animated.Value(0)).current;
@@ -39,9 +40,9 @@ const Load = (props: any) => {
       }).start();
 
       if (privKey) {
-        getChainId();
+        getChainId(providerUrl);
         getAccount(privKey);
-        getTokenList(address);
+        getTokenList(address, settings);
       }
       setTimeout(isConnected, 2000);
     }
@@ -74,6 +75,8 @@ const mapStateToProps = (state: any, props: any) => {
     connected: state.wallet.connected,
     privKey: state.wallet.privKey,
     address: state.wallet.address,
+    providerUrl: state.wallet.providerUrl,
+    settings: state.wallet.settings,
   };
 };
 

@@ -1,3 +1,5 @@
+import { Network } from 'alchemy-sdk';
+
 export const GET_AUTH = 'GET_AUTH';
 export const CONNECT = 'CONNECT';
 export const DISCONNECT = 'DISCCONNECT';
@@ -12,6 +14,7 @@ export const UPDATE_SWITCH_NETWORK = 'UPDATE_SWITCH_NETWORK';
 export const GET_CHAIN_ID = 'GET_CHAIN_ID';
 export const GET_ADDRESS = 'GET_ADDRESS';
 export const GET_TOKEN_LIST = 'GET_TOKEN_LIST';
+export const SWITCH_NETWORK = 'SWITCH_NETWORK';
 
 export const colors = {
   orange: '#F15A24',
@@ -21,3 +24,26 @@ export const colors = {
   green: '#39B54A',
   gray: '#4C4C4C',
 };
+
+export const network = [
+  {
+    name: 'Mainnet',
+    url: 'https://rpc.ankr.com/eth',
+    network: Network.ETH_MAINNET,
+  },
+  {
+    name: 'Goerli',
+    url: 'https://rpc.ankr.com/eth_goerli',
+    network: Network.ETH_GOERLI,
+  },
+  {
+    name: 'Mumbai',
+    url: 'https://rpc.ankr.com/polygon_mumbai',
+    network: Network.MATIC_MUMBAI,
+  },
+  {
+    name: 'Polygon',
+    url: 'https://rpc.ankr.com/polygon',
+    network: Network.MATIC_MAINNET,
+  },
+];

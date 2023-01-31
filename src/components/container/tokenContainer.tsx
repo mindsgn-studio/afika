@@ -111,10 +111,7 @@ const mapStateToProps = (state: any) => {
   return {
     address: state.wallet.address,
     tokenList: state.wallet.tokenList,
-<<<<<<< HEAD
-=======
     settings: state.wallet.settings,
->>>>>>> e37b31a8b5ba74822739ed4b920b173eceecd95e
   };
 };
 

@@ -136,11 +136,11 @@ android {
     }
     
     defaultConfig {
-        applicationId "seni.tembe.orbyt"
+        applicationId "mindsgn.studio.orbyt"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 01
-        versionName "mvp@0.1"
+        versionCode 1
+        versionName "1"
         multiDexEnabled true
     }
     splits {

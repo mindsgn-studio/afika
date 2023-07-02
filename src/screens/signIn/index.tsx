@@ -64,21 +64,6 @@ const SignIn = (props: any) => {
           Sign in your wallet
         </Text>
       </View>
-      <View>
-        <Animated.Text
-          style={[
-            {
-              color: `${colors.gray}`,
-              fontSize: 25,
-              width: 300,
-              fontFamily: 'SF-Pro-Rounded-Bold',
-            },
-          ]}
-        >
-          welcome to the world of decentralized finance, you just one step
-          closer to total fincancial freedom.
-        </Animated.Text>
-      </View>
       <View
         style={{
           width: '90%',

@@ -1,5 +1,5 @@
 //@ts-ignore
-import { COINGECKO_API, CLIENT_ID } from '@env';
+import { COINGECKO_API, WEB3_CLIENT_ID } from '@env';
 import {
   CONNECT,
   DISCONNECT,
@@ -36,8 +36,8 @@ export const WalletAction = (props: any) => {
   const connectWithWeb3Auth = async () => {
     try {
       const response = await new Web3Auth(WebBrowser, {
-        clientId: `${CLIENT_ID}`,
-        network: OPENLOGIN_NETWORK.TESTNET,
+        clientId: `${WEB3_CLIENT_ID}`,
+        network: OPENLOGIN_NETWORK.CYAN,
       });
 
       const info = await response.login({

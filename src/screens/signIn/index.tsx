@@ -13,22 +13,8 @@ import { connect } from 'react-redux';
 import { style } from './style';
 
 const SignIn = (props: any) => {
-  const {
-    connected,
-    navigation,
-    marketTokenList,
-    privKey,
-    address,
-    providerUrl,
-    settings,
-  } = props;
-  const {
-    connectWithWeb3Auth,
-    getChainId,
-    getAccount,
-    getTokenList,
-    getMarketList,
-  } = WalletAction(props);
+  const { connected, navigation, privKey, providerUrl } = props;
+  const { connectWithWeb3Auth, getChainId, getAccount } = WalletAction(props);
   const progress = React.useRef(new Animated.Value(0)).current;
   const scale = React.useRef(new Animated.Value(0)).current;
 
@@ -63,21 +49,6 @@ const SignIn = (props: any) => {
         >
           Sign in your wallet
         </Text>
-      </View>
-      <View>
-        <Animated.Text
-          style={[
-            {
-              color: `${colors.gray}`,
-              fontSize: 25,
-              width: 300,
-              fontFamily: 'SF-Pro-Rounded-Bold',
-            },
-          ]}
-        >
-          welcome to the world of decentralized finance, you just one step
-          closer to total fincancial freedom.
-        </Animated.Text>
       </View>
       <View
         style={{

@@ -1,12 +1,7 @@
 import { StyleSheet } from 'react-native';
-import { colors } from '../../constants';
+import { colors } from '@orbyt/constants';
 
 export const style = StyleSheet.create({
-  default: {
-    flex: 1,
-    display: 'flex',
-    backgroundColor: 'black',
-  },
   tokenCard: {
     flex: 1,
     width: '95%',

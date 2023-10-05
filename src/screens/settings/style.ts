@@ -8,5 +8,6 @@ export const style = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'black',
+    paddingBottom: 100,
   },
 });

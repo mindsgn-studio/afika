@@ -15,17 +15,25 @@
     "baseUrl": ".",
     "resolveJsonModule": true,
     "paths": {
-      "@env": ["node_modules/react-native-dotenv"]
+      "@env": ["node_modules/react-native-dotenv"],
+      "@orbyt/components": ["./src/components"],
+      "@orbyt/context": ["./src/context"],
+      "@orbyt/assets": ["./src/assets"],
+      "@orbyt/constants": ["./src/constants"],
+      "@orbyt/screen": ["./src/screen"],
+      "@orbyt/types": ["./src/types"],
+      "@orbyt/style": ["./src/style"],
+      "@orbyt/hooks": ["./src/hooks"]
     }
   },
   "include": ["./src/**/*"],
   "exclude": [
-    "android",
-    "ios",
-    "node_modules",
-    "babel.config.js",
-    "metro.config.js",
-    "jest.config.js"
+    "./android",
+    "./ios",
+    "./node_modules",
+    "./babel.config.js",
+    "./metro.config.js",
+    "./jest.config.js"
   ],
   "moduleFileExtensions": ["ts", "tsx"]
 }

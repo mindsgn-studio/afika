@@ -42,7 +42,7 @@ const TransactionCard = ({
   }, [amount]);
 
   return (
-    <TouchableOpacity style={style.default}>
+    <TouchableOpacity onPress={() => {}} style={style.default}>
       <View style={style.transactionDetails}>
         <View style={style.icon}>
           {label === 'out' ? (

@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, Text } from 'react-native';
-import { Button } from '../../components';
-import { useAuth } from '../../context';
-import { colors } from '../../constants';
+import { View } from 'react-native';
 
 import { style } from './style';
+import { Button } from '../../components';
+import { colors } from '../../constants';
+import { useAuth } from '../../context';
 
 const Settings = (props: any) => {
   const { route, navigation } = props;
@@ -26,10 +26,14 @@ const Settings = (props: any) => {
 
   return (
     <View style={style.default}>
-      <View />
       <View>
         <Button title={'LOGOUT'} color={colors.red} onPress={() => logout()} />
       </View>
+      <View
+        style={{
+          flex: 1,
+        }}
+      />
     </View>
   );
 };

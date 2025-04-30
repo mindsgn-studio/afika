@@ -2,41 +2,59 @@
 import { formatCompactNumber } from "../utils/formatCompactNumber"
 
 interface GetTotalHistory {
-    network: string,
     address: string,
     tokenValue: number
-   
 }
 
 interface Transactions {
-    fiatValue: number,
-    formatedFiatValue: string | number | undefined,
-    transactionType: string | "deposit" | "withdraw",
-    timeStamp: string
+    fiatValue?: number,
+    formatedFiatValue?: string | number | undefined,
+    transactionType?: string | "deposit" | "withdraw",
+    timeStamp?: string
+    blockNumber?: string,
+    hash?: string,
+    nonce?: string
+    blockHash?: string,
+    transactionIndex?: string,
+    to?: string, 
+    transactionFee?: number
 }
 
-const getTotalHistory = async({
-    network,
-    address,
-    tokenValue,
-}: GetTotalHistory) => {
+const getTotalHistory = async({address, tokenValue }: GetTotalHistory) => {
     try{
-        const polygonscanEndpoint = `https://api.polygonscan.com/api?module=account&action=txlist&address=${address}&offset=10&sort=desc&apikey=${process.env.POLYGONSCAN_API}`;
-
-        const response = await fetch(polygonscanEndpoint);
+        const gnosisscanEndpoint = `${process.env.GNOSISSCAN_API_URL}?module=account&action=txlist&address=${address}&offset=10&sort=desc&apikey=${process.env.GNOSISSCAN_API_KEY}`;
         
+        const response = await fetch(gnosisscanEndpoint);
         if (!response.ok) {
-            throw new Error(`Polygonscan API error: ${response.statusText}`);
+            throw new Error(` API error: ${response.statusText}`);
         }
-    
-        const data = await response.json();
         
+        const data = await response.json();
         const transactions = data.result;
+
         const formatedTransactions: Transactions[] = [];
 
         //@ts-expect-error
         transactions.map((transaction, index) => {
-            const { value, from, timeStamp } = transaction;
+            const { 
+                    value, 
+                    from, 
+                    timeStamp, 
+                    blockNumber, 
+                    hash, 
+                    nonce, 
+                    blockHash, 
+                    transactionIndex, 
+                    to 
+            } = transaction;
+            
+            const feeUsed = BigInt(transaction.gasUsed);
+            const feePrice = BigInt(transaction.gasPrice);
+
+            const gasFeeWei = feeUsed * feePrice;
+
+            const transactionFee = (Number(gasFeeWei) / 1e18) * tokenValue;
+            
             const valueInEth = Number(value) / 1e18;
             const fiatValue : number = valueInEth * tokenValue;
             
@@ -52,21 +70,25 @@ const getTotalHistory = async({
                 fiatValue,
                 formatedFiatValue,
                 transactionType,
-                timeStamp
+                timeStamp,
+                blockNumber,
+                hash,
+                nonce,
+                blockHash, 
+                transactionIndex, 
+                to,
+                transactionFee
             });
         })
 
-        // const gnosisScan = `https://api.gnosisscan.io/api?module=account&action=txlist&address=${address}&offset=10&sort=desc&apikey=${process.env.GNOSISSCAN_API}`
-
         if (data.status === '1') {
             return formatedTransactions;
-        } else {
-            return [];
         }
+
+        return [];
     } catch (error) {
-        return {
-           
-        }
+        console.log(error)
+        return []
     }
 }
 

@@ -11,65 +11,78 @@ interface Tokens {
     lastUpdatedAt: string
 };
 
+
 interface GetBalance {
-    network: string,
     address: string,
 };
 
 const getTotalBalance = async({
-    network,
-    address
+    address,
 }: GetBalance) => {
+    const currency = "zar"
+    const lastUpdatedAt = `${new Date()}`
+    let value = 1;
     let tokens: Tokens[] = [];
     let totalBalance: number = 0; 
 
     try{
-        let _network =  Network.MATIC_MAINNET
+        const coingeckoEndpoint = 'https://api.coingecko.com/api/v3/simple/price';
 
-        if(network==="testnet"){
-            _network = Network.MATIC_MAINNET
+        const queryParams = new URLSearchParams({
+            ids: 'xdai',
+            vs_currencies: 'zar',
+        });
+
+        const response = await fetch(`${coingeckoEndpoint}?${queryParams}`);
+
+        if (response.ok) {
+            const data = await response.json();
+            const { xdai } = data;
+            const { zar } = xdai;
+            value = zar;
         }
+
+        let _network =  Network.GNOSIS_MAINNET
 
         const settings = {
             apiKey: `${process.env.ALCHEMY_API}`,
             network: _network,
         };
-                
+        
         const alchemy = new Alchemy(settings);
-
-        const priceResponse = await alchemy.prices.getTokenPriceBySymbol(["POL"]);
-        const { data: priceData } = priceResponse;
-               
-        const { currency, value, lastUpdatedAt } = priceData[0].prices[0];
-
         const nativeBalance = await alchemy.core.getBalance(address, "latest");
         const { _hex } = nativeBalance;
         const balance = formatEther(_hex);
 
-        const fiatBalance = parseFloat(balance) * parseFloat(value);
+        const fiatBalance = parseFloat(balance) * value;
         totalBalance += fiatBalance;
 
         //@ts-expect-error
-        const formaTotaltedBalance: string = formatCompactNumber(totalBalance)
-
-        console.log(formaTotaltedBalance);
+        const formaTotaltedBalance: string = formatCompactNumber(totalBalance);
 
         tokens.push({
             balance: parseFloat(balance),
             fiatBalance,
-            symbol: "POL",
+            symbol: "xDAI",
             currency,
-            value: parseFloat(value),
+            value,
             lastUpdatedAt
         });
 
         return {
             totalBalance: formaTotaltedBalance,
             tokens,
-            tokenValue: parseFloat(value),
+            tokenValue: value,
+            currency,
+            lastUpdatedAt,
         }
+        
     } catch (error) {
-        return []
+        return {
+            error: {
+                message: "",
+            }
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-package native_wallet
+package walletcore
 
 type NativeWallet struct{}
 

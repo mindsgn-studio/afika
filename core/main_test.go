@@ -1,4 +1,4 @@
-package native_wallet
+package walletcore
 
 import "testing"
 

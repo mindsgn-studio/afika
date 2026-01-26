@@ -1,3 +1,5 @@
+.DEFAULT_GOAL := build
+
 GO ?= go
 GOPATH ?= $(shell $(GO) env GOPATH)
 GOROOT ?= $(shell $(GO) env GOROOT)
@@ -6,8 +8,8 @@ GOBIND ?= $(GOPATH)/bin/gobind
 
 MOBILE_PKG_SRC = $(GOPATH)/src/golang.org/x/mobile
 
-ANDROID_OUTPUT = ../mobile-app/android/app/libs/gobridge.aar
-IOS_OUTPUT = ../mobile-app/ios/Frameworks/Gobridge.xcframework
+ANDROID_OUTPUT = ../app/android/app/libs/walletcore.aar
+IOS_OUTPUT = ../app/ios/Frameworks/Walletcore.xcframework
 
 ANDROID_API = 23
 
@@ -119,6 +121,8 @@ vet:
 	@echo "Running go vet..."
 	@$(GO) vet ./...
 
+build: test android ios
+
 help:
 	@echo "Available targets:"
 	@echo "  make setup        - Install all dependencies (gomobile, mobile source)"
@@ -130,5 +134,5 @@ help:
 	@echo "  make test         - Run Go tests"
 	@echo "  make fmt          - Format Go code"
 	@echo "  make vet          - Run go vet"
-echo "  make fmt          - Format Go code"
+	@echo "  make fmt          - Format Go code"
 	@echo "  make vet          - Run go vet"

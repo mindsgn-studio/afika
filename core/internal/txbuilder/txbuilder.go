@@ -1,4 +1,3 @@
-// internal/txbuilder/txbuilder.go
 package txbuilder
 
 import (
@@ -10,10 +9,11 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 )
 
-// ERC-20 transfer ABI fragment
+// erc20ABI is the minimal ABI fragment for ERC-20 transfer(address,uint256).
 const erc20ABI = `[{
     "name":"transfer",
     "type":"function",
+    "stateMutability":"nonpayable",
     "inputs":[
         {"name":"_to","type":"address"},
         {"name":"_value","type":"uint256"}
@@ -22,6 +22,7 @@ const erc20ABI = `[{
 }]`
 
 // TxBuilder constructs unsigned EVM transactions for USDC transfers.
+// It has no access to private keys — signing is the KeyManager's responsibility.
 type TxBuilder struct {
 	contractABI abi.ABI
 	usdcAddress common.Address
@@ -41,8 +42,13 @@ func New(usdcAddress string, chainID int64) (*TxBuilder, error) {
 	}, nil
 }
 
-// BuildTransfer constructs an unsigned EIP-1559 transaction that calls
-// USDC.transfer(to, amountMicro). amountMicro is in USDC micro-units (6 decimals).
+// BuildTransfer constructs an unsigned EIP-1559 transaction calling
+// USDC.transfer(to, amountMicro). amountMicro is in USDC micro-units (6 decimals):
+//
+//	1 USDC == 1_000_000 micro-units
+//
+// The caller provides gasLimit, maxFeePerGas, and maxPriorityFeePerGas from
+// the current network conditions (fetched by the Facade before calling this).
 func (b *TxBuilder) BuildTransfer(
 	to string,
 	amountMicro *big.Int,
@@ -53,7 +59,6 @@ func (b *TxBuilder) BuildTransfer(
 ) (*types.Transaction, error) {
 	toAddr := common.HexToAddress(to)
 
-	// ABI-encode the transfer calldata
 	data, err := b.contractABI.Pack("transfer", toAddr, amountMicro)
 	if err != nil {
 		return nil, err
@@ -66,8 +71,14 @@ func (b *TxBuilder) BuildTransfer(
 		GasFeeCap: maxFeePerGas,
 		Gas:       gasLimit,
 		To:        &b.usdcAddress,
-		Value:     big.NewInt(0), // ERC-20 transfer — no ETH value
+		Value:     big.NewInt(0), // ERC-20 transfer carries no ETH value
 		Data:      data,
 	})
 	return tx, nil
 }
+
+// USDCAddress returns the USDC contract address this builder targets.
+func (b *TxBuilder) USDCAddress() common.Address { return b.usdcAddress }
+
+// ChainID returns the chain ID this builder targets.
+func (b *TxBuilder) ChainID() *big.Int { return new(big.Int).Set(b.chainID) }

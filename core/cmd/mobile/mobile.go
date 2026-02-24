@@ -1,7 +1,7 @@
-// mobile/facade.go
 //go:build ignore || ignore || Kept || as || a || gomobile || bind || target
 // +build ignore ignore Kept as a gomobile bind target
 
+// mobile/facade.go
 package mobile
 
 import (

@@ -29,7 +29,9 @@
       "predictiveBackGestureEnabled": false,
       "package": "mindsgn.studio.pockt"
     },
-    "plugins": [],
+    "plugins": [
+      "expo-router"
+    ],
     "experiments": {
       "typedRoutes": true
     },

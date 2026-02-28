@@ -116,6 +116,21 @@ func (d *DB) InsertWallet(
 	address string,
 	encryptedPrivateKey []byte,
 ) error {
+	if d == nil || d.db == nil {
+		return errors.New("database is not initialized")
+	}
+	if walletType == "" {
+		return errors.New("wallet type is required")
+	}
+	if name == "" {
+		return errors.New("wallet name is required")
+	}
+	if address == "" {
+		return errors.New("wallet address is required")
+	}
+	if len(encryptedPrivateKey) == 0 {
+		return errors.New("encrypted private key is required")
+	}
 
 	const q = `
 	INSERT INTO wallet (
@@ -147,6 +162,10 @@ func (d *DB) InsertWallet(
 }
 
 func (d *DB) WalletExists(ctx context.Context) (bool, error) {
+	if d == nil || d.db == nil {
+		return false, errors.New("database is not initialized")
+	}
+
 	const q = `SELECT COUNT(*) FROM wallet;`
 
 	var c int
@@ -158,6 +177,10 @@ func (d *DB) WalletExists(ctx context.Context) (bool, error) {
 }
 
 func (d *DB) ListWallets(ctx context.Context) ([]Wallet, error) {
+	if d == nil || d.db == nil {
+		return nil, errors.New("database is not initialized")
+	}
+
 	const q = `
 	SELECT uuid, name, type, address
 	FROM wallet

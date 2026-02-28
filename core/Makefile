@@ -8,8 +8,8 @@ GOBIND ?= $(GOPATH)/bin/gobind
 
 MOBILE_PKG_SRC = $(GOPATH)/src/golang.org/x/mobile
 
-ANDROID_OUTPUT = ../app/modules/pockt-core/android/src/libs/core.aar
-IOS_OUTPUT = ../app/modules/pockt-core/ios/Core.xcframework
+ANDROID_OUTPUT = ../app/modules/core/android/src/libs/core.aar
+IOS_OUTPUT = ../app/modules/core/ios/Core.xcframework
 
 ANDROID_API = 23
 
@@ -17,9 +17,10 @@ CLI_APP_NAME = pockt-cli
 CLI_OUTPUT_DIR = ./.bin
 CLI_BINARY = $(CLI_OUTPUT_DIR)/$(CLI_APP_NAME)
 
+
 .PHONY: all setup android ios clean check-go install-gomobile setup-mobile-src cli run
 
-all: build-cli android ios
+all: build
 
 setup: check-go install-gomobile setup-mobile-src
 	@echo "Setup complete!"
@@ -87,8 +88,8 @@ android: check-setup
 	@GOPATH=$(GOPATH) PATH=$(GOPATH)/bin:$(MOBILE_PKG_SRC):$(GOROOT)/bin:$$PATH $(GOMOBILE) bind \
 		-target=android \
 		-androidapi $(ANDROID_API) \
-		-o $(ANDROID_OUTPUT)
-		./mobile.go
+		-o $(ANDROID_OUTPUT) \
+		.
 	@echo "✓ Android AAR built successfully at $(ANDROID_OUTPUT)"
 
 ios: check-setup
@@ -97,8 +98,8 @@ ios: check-setup
 	@$(GO) mod download
 	@GOPATH=$(GOPATH) PATH=$(GOPATH)/bin:$(MOBILE_PKG_SRC):$(GOROOT)/bin:$$PATH $(GOMOBILE) bind \
 		-target=ios \
-		-o $(IOS_OUTPUT)
-		./mobile.go
+		-o $(IOS_OUTPUT) \
+		.
 	@echo "✓ iOS XCFramework built successfully at $(IOS_OUTPUT)"
 
 cli: check-setup

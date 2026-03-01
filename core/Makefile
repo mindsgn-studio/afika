@@ -8,8 +8,8 @@ GOBIND ?= $(GOPATH)/bin/gobind
 
 MOBILE_PKG_SRC = $(GOPATH)/src/golang.org/x/mobile
 
-ANDROID_OUTPUT = ../app/modules/core/android/src/libs/core.aar
-IOS_OUTPUT = ../app/modules/core/ios/Core.xcframework
+ANDROID_OUTPUT = ../app/modules/pocket-module/android/src/libs/core.aar
+IOS_OUTPUT = ../app/modules/pocket-module/ios/PocketCore.xcframework
 
 ANDROID_API = 23
 

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/argon2"
@@ -34,6 +35,33 @@ type Wallet struct {
 	Name       string
 	WalletType string
 	Address    string
+}
+
+type WalletSecret struct {
+	UUID       string
+	Name       string
+	WalletType string
+	Address    string
+	PrivateKey []byte
+}
+
+type TransactionRecord struct {
+	UUID            string
+	TxHash          string
+	Nonce           int64
+	Chain           string
+	Token           string
+	Amount          string
+	TransactionType string
+	State           string
+	Note            string
+	Source          string
+	Destination     string
+	ProviderID      string
+	WalletAddress   string
+	Counterparty    string
+	CreatedAt       int64
+	UpdatedAt       int64
 }
 
 type DB struct {
@@ -161,6 +189,23 @@ func (d *DB) InsertWallet(
 	return err
 }
 
+func (d *DB) InsertWalletIfMissing(
+	ctx context.Context,
+	walletType string,
+	name string,
+	address string,
+	encryptedPrivateKey []byte,
+) error {
+	err := d.InsertWallet(ctx, walletType, name, address, encryptedPrivateKey)
+	if err == nil {
+		return nil
+	}
+	if strings.Contains(strings.ToLower(err.Error()), "unique") {
+		return nil
+	}
+	return err
+}
+
 func (d *DB) WalletExists(ctx context.Context) (bool, error) {
 	if d == nil || d.db == nil {
 		return false, errors.New("database is not initialized")
@@ -206,6 +251,221 @@ func (d *DB) ListWallets(ctx context.Context) ([]Wallet, error) {
 	return out, rows.Err()
 }
 
+func (d *DB) ListWalletSecrets(ctx context.Context) ([]WalletSecret, error) {
+	if d == nil || d.db == nil {
+		return nil, errors.New("database is not initialized")
+	}
+
+	const q = `
+	SELECT uuid, name, type, address, private_key
+	FROM wallet
+	ORDER BY created_at ASC;
+	`
+
+	rows, err := d.db.QueryContext(ctx, q)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []WalletSecret
+	for rows.Next() {
+		var w WalletSecret
+		var privateKeyB64 string
+		if err := rows.Scan(&w.UUID, &w.Name, &w.WalletType, &w.Address, &privateKeyB64); err != nil {
+			return nil, err
+		}
+
+		privateKey, err := base64.StdEncoding.DecodeString(privateKeyB64)
+		if err != nil {
+			return nil, err
+		}
+
+		w.PrivateKey = privateKey
+		out = append(out, w)
+	}
+
+	return out, rows.Err()
+}
+
+func (d *DB) FindWalletSecretByAddress(ctx context.Context, address string) (*WalletSecret, error) {
+	if d == nil || d.db == nil {
+		return nil, errors.New("database is not initialized")
+	}
+	if address == "" {
+		return nil, errors.New("wallet address is required")
+	}
+
+	const q = `
+	SELECT uuid, name, type, address, private_key
+	FROM wallet
+	WHERE address = ?
+	LIMIT 1;
+	`
+
+	var out WalletSecret
+	var privateKeyB64 string
+	err := d.db.QueryRowContext(ctx, q, address).Scan(&out.UUID, &out.Name, &out.WalletType, &out.Address, &privateKeyB64)
+	if err != nil {
+		return nil, err
+	}
+
+	privateKey, err := base64.StdEncoding.DecodeString(privateKeyB64)
+	if err != nil {
+		return nil, err
+	}
+	out.PrivateKey = privateKey
+
+	return &out, nil
+}
+
+func (d *DB) InsertTransaction(ctx context.Context, tx TransactionRecord) error {
+	if d == nil || d.db == nil {
+		return errors.New("database is not initialized")
+	}
+	if tx.TxHash == "" {
+		return errors.New("transaction hash is required")
+	}
+	if tx.Token == "" {
+		return errors.New("token is required")
+	}
+
+	const q = `
+	INSERT INTO transactions (
+		uuid, tx_hash, nonce, chain, token, amount, tx_type, state,
+		note, source, destination, provider_id, wallet_address,
+		counterparty_address, created_at, updated_at
+	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+	`
+
+	now := time.Now().Unix()
+	if tx.UUID == "" {
+		tx.UUID = newID()
+	}
+	if tx.CreatedAt == 0 {
+		tx.CreatedAt = now
+	}
+	if tx.UpdatedAt == 0 {
+		tx.UpdatedAt = now
+	}
+
+	stmt, err := d.db.PrepareContext(ctx, q)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(
+		ctx,
+		tx.UUID,
+		tx.TxHash,
+		tx.Nonce,
+		tx.Chain,
+		tx.Token,
+		tx.Amount,
+		tx.TransactionType,
+		tx.State,
+		tx.Note,
+		tx.Source,
+		tx.Destination,
+		tx.ProviderID,
+		tx.WalletAddress,
+		tx.Counterparty,
+		tx.CreatedAt,
+		tx.UpdatedAt,
+	)
+
+	return err
+}
+
+func (d *DB) InsertTransactionIfMissing(ctx context.Context, tx TransactionRecord) error {
+	err := d.InsertTransaction(ctx, tx)
+	if err == nil {
+		return nil
+	}
+	if strings.Contains(strings.ToLower(err.Error()), "unique") {
+		return nil
+	}
+	return err
+}
+
+func (d *DB) UpdateTransactionState(ctx context.Context, txHash string, state string) error {
+	if d == nil || d.db == nil {
+		return errors.New("database is not initialized")
+	}
+	if txHash == "" {
+		return errors.New("transaction hash is required")
+	}
+
+	const q = `
+	UPDATE transactions
+	SET state = ?, updated_at = ?
+	WHERE tx_hash = ?;
+	`
+
+	_, err := d.db.ExecContext(ctx, q, state, time.Now().Unix(), txHash)
+	return err
+}
+
+func (d *DB) ListTransactions(ctx context.Context, walletAddress string, token string, limit int, offset int) ([]TransactionRecord, error) {
+	if d == nil || d.db == nil {
+		return nil, errors.New("database is not initialized")
+	}
+	if token == "" {
+		return nil, errors.New("token is required")
+	}
+	if limit <= 0 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	const q = `
+	SELECT uuid, tx_hash, nonce, chain, token, amount, tx_type, state,
+		note, source, destination, provider_id, wallet_address,
+		counterparty_address, created_at, updated_at
+	FROM transactions
+	WHERE wallet_address = ? AND token = ?
+	ORDER BY created_at DESC
+	LIMIT ? OFFSET ?;
+	`
+
+	rows, err := d.db.QueryContext(ctx, q, walletAddress, token, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []TransactionRecord
+	for rows.Next() {
+		var tx TransactionRecord
+		if err := rows.Scan(
+			&tx.UUID,
+			&tx.TxHash,
+			&tx.Nonce,
+			&tx.Chain,
+			&tx.Token,
+			&tx.Amount,
+			&tx.TransactionType,
+			&tx.State,
+			&tx.Note,
+			&tx.Source,
+			&tx.Destination,
+			&tx.ProviderID,
+			&tx.WalletAddress,
+			&tx.Counterparty,
+			&tx.CreatedAt,
+			&tx.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		out = append(out, tx)
+	}
+
+	return out, rows.Err()
+}
+
 // ---------- Schema / Hardening ----------
 
 func createSchema(ctx context.Context, db *sql.DB) error {
@@ -222,6 +482,31 @@ func createSchema(ctx context.Context, db *sql.DB) error {
 
 	CREATE INDEX IF NOT EXISTS idx_wallet_address
 	ON wallet(address);
+
+	CREATE TABLE IF NOT EXISTS transactions (
+		uuid                 TEXT PRIMARY KEY NOT NULL,
+		tx_hash              TEXT NOT NULL UNIQUE,
+		nonce                INTEGER NOT NULL DEFAULT 0,
+		chain                TEXT NOT NULL,
+		token                TEXT NOT NULL,
+		amount               TEXT NOT NULL,
+		tx_type              TEXT NOT NULL,
+		state                TEXT NOT NULL,
+		note                 TEXT NOT NULL DEFAULT '',
+		source               TEXT NOT NULL DEFAULT '',
+		destination          TEXT NOT NULL DEFAULT '',
+		provider_id          TEXT NOT NULL DEFAULT '',
+		wallet_address       TEXT NOT NULL,
+		counterparty_address TEXT NOT NULL DEFAULT '',
+		created_at           INTEGER NOT NULL,
+		updated_at           INTEGER NOT NULL
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_transactions_wallet_token
+	ON transactions(wallet_address, token, created_at DESC);
+
+	CREATE INDEX IF NOT EXISTS idx_transactions_state
+	ON transactions(state);
 	`
 	_, err := db.ExecContext(ctx, q)
 	return err

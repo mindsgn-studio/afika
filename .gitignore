@@ -1,11 +1,27 @@
-app/node_modules
-app/.env
-backend/functions/.env
-app/.expo
-go-lib
-_app_
-_specs
-go
-ios
-android
+.expo
+dist/
+web-build/
+expo-env.d.ts
 docs
+<<<<<<< HEAD
+=======
+node_modules
+.kotlin
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+.metro-health-check*
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.DS_Store
+*.pem
+.env*.local
+*.tsbuildinfo
+package-lock.json
+frontend
+build
+>>>>>>> f4b1669ed29d1c4f27f78bab8832155d4d79f3de

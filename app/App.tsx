@@ -1,25 +1,35 @@
-import React, { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
-import WalletCore from './WalletCore';
+import { useEffect } from 'react';
+import { StyleSheet, View } from 'react-native';
+import PocketCore from '@/modules/pocket-module';
+import { File, Directory, Paths } from 'expo-file-system';
 
 export default function App() {
-  const [message, setMessage] = useState('Loading...');
-
   useEffect(() => {
-    async function fetchFromGo() {
+    const bootstrapWallet = async () => {
+      const dataDir = new Directory(Paths.document);
+      const password = 'dev-password-change-me'
+
       try {
-        const msg = await WalletCore.helloWorld();
-        setMessage(msg);
-      } catch (e) {
-        setMessage('Error calling Go: ' + e);
+        await PocketCore.initWalletSecure(dataDir.uri, password)
+      } catch (error) {
+        console.error('PocketCore initWalletSecure failed:', error)
       }
     }
-    fetchFromGo();
-  }, []);
+
+    bootstrapWallet()
+  }, [])
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>{message}</Text>
+    <View style={styles.container}>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

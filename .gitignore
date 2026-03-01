@@ -19,6 +19,6 @@ yarn-error.*
 *.pem
 .env*.local
 *.tsbuildinfo
-android
 package-lock.json
 frontend
+build

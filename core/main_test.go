@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 package core
 
 import (
@@ -69,5 +70,28 @@ func TestWalletCoreSendMoneyStub(t *testing.T) {
 	_, err := wallet.SendMoneyTo("ethereum", "0x1", "1")
 	if err == nil {
 		t.Fatalf("expected not implemented error")
+=======
+package native_wallet
+
+import "testing"
+
+func TestHelloWorld(t *testing.T) {
+	tests := []struct {
+		name string
+		want string
+	}{
+		{"Pocket Money Native Wallet", "Hello World from GO"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wallet := &NativeWallet{}
+			got := wallet.HelloWorld()
+
+			if got != tt.want {
+				t.Errorf("HelloWorld() got int %s, want %s", got, tt.want)
+			}
+		})
+>>>>>>> 3635bb9ec1634dc03f64574278f098ea20ae88cc
 	}
 }

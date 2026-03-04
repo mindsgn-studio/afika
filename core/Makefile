@@ -1,6 +1,10 @@
+<<<<<<< HEAD
 .DEFAULT_GOAL := build
 
 GO       ?= go
+=======
+GO ?= go
+>>>>>>> 3635bb9ec1634dc03f64574278f098ea20ae88cc
 GOPATH ?= $(shell $(GO) env GOPATH)
 GOROOT ?= $(shell $(GO) env GOROOT)
 GOMOBILE ?= $(GOPATH)/bin/gomobile
@@ -8,6 +12,7 @@ GOBIND ?= $(GOPATH)/bin/gobind
 
 MOBILE_PKG_SRC = $(GOPATH)/src/golang.org/x/mobile
 
+<<<<<<< HEAD
 ANDROID_OUTPUT = ../app/modules/pocket-module/android/src/libs/core.aar
 IOS_OUTPUT = ../app/modules/pocket-module/ios/PocketCore.xcframework
 
@@ -21,6 +26,16 @@ CLI_BINARY = $(CLI_OUTPUT_DIR)/$(CLI_APP_NAME)
 .PHONY: all setup android ios clean check-go install-gomobile setup-mobile-src cli run
 
 all: build
+=======
+ANDROID_OUTPUT = ../mobile-app/android/app/libs/gobridge.aar
+IOS_OUTPUT = ../mobile-app/ios/Frameworks/Gobridge.xcframework
+
+ANDROID_API = 23
+
+.PHONY: all setup android ios clean check-go install-gomobile setup-mobile-src
+
+all: android
+>>>>>>> 3635bb9ec1634dc03f64574278f098ea20ae88cc
 
 setup: check-go install-gomobile setup-mobile-src
 	@echo "Setup complete!"
@@ -89,7 +104,11 @@ android: check-setup
 		-target=android \
 		-androidapi $(ANDROID_API) \
 		-o $(ANDROID_OUTPUT) \
+<<<<<<< HEAD
 		.
+=======
+		./
+>>>>>>> 3635bb9ec1634dc03f64574278f098ea20ae88cc
 	@echo "✓ Android AAR built successfully at $(ANDROID_OUTPUT)"
 
 ios: check-setup
@@ -99,6 +118,7 @@ ios: check-setup
 	@GOPATH=$(GOPATH) PATH=$(GOPATH)/bin:$(MOBILE_PKG_SRC):$(GOROOT)/bin:$$PATH $(GOMOBILE) bind \
 		-target=ios \
 		-o $(IOS_OUTPUT) \
+<<<<<<< HEAD
 		.
 	@echo "✓ iOS XCFramework built successfully at $(IOS_OUTPUT)"
 
@@ -112,13 +132,21 @@ run:
 	@echo "Running CLI application..."
 	@$(GO) run ./cmd/cli
 
+=======
+		./
+	@echo "✓ iOS XCFramework built successfully at $(IOS_OUTPUT)"
+
+>>>>>>> 3635bb9ec1634dc03f64574278f098ea20ae88cc
 clean:
 	@echo "Cleaning build artifacts..."
 	@rm -f $(ANDROID_OUTPUT)
 	@rm -rf $(IOS_OUTPUT)
+<<<<<<< HEAD
 	@if [ -f "$(CLI_BINARY)" ]; then \
 		rm -f $(CLI_BINARY); \
 	fi
+=======
+>>>>>>> 3635bb9ec1634dc03f64574278f098ea20ae88cc
 	@echo "✓ Clean complete"
 
 clean-all: clean
@@ -139,17 +167,28 @@ vet:
 	@echo "Running go vet..."
 	@$(GO) vet ./...
 
+<<<<<<< HEAD
 build: cli android ios
+=======
+>>>>>>> 3635bb9ec1634dc03f64574278f098ea20ae88cc
 help:
 	@echo "Available targets:"
 	@echo "  make setup        - Install all dependencies (gomobile, mobile source)"
 	@echo "  make android      - Build Android AAR"
 	@echo "  make ios          - Build iOS XCFramework"
+<<<<<<< HEAD
 	@echo "  make cli          - Build the command-line application"
 	@echo "  make run          - Run the command-line application"
+=======
+>>>>>>> 3635bb9ec1634dc03f64574278f098ea20ae88cc
 	@echo "  make clean        - Remove build artifacts"
 	@echo "  make clean-all    - Remove build artifacts and dependencies"
 	@echo "  make check-setup  - Verify build environment"
 	@echo "  make test         - Run Go tests"
 	@echo "  make fmt          - Format Go code"
+<<<<<<< HEAD
+=======
+	@echo "  make vet          - Run go vet"
+echo "  make fmt          - Format Go code"
+>>>>>>> 3635bb9ec1634dc03f64574278f098ea20ae88cc
 	@echo "  make vet          - Run go vet"

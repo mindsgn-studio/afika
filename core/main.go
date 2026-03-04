@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 package core
 
 import (
@@ -448,4 +449,12 @@ func (w *WalletCore) getDB() (*database.DB, error) {
 	}
 
 	return w.db, nil
+=======
+package native_wallet
+
+type NativeWallet struct{}
+
+func (w *NativeWallet) HelloWorld() string {
+	return "Hello World from GO"
+>>>>>>> 3635bb9ec1634dc03f64574278f098ea20ae88cc
 }

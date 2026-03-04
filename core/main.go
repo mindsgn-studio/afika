@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 package core
 
 import (
@@ -75,7 +74,10 @@ type backupPayload struct {
 	Version int            `json:"version"`
 	Wallets []walletBackup `json:"wallets"`
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> f4b1669ed29d1c4f27f78bab8832155d4d79f3de
 type WalletCore struct {
 	mu sync.RWMutex
 	db *database.DB
@@ -449,12 +451,4 @@ func (w *WalletCore) getDB() (*database.DB, error) {
 	}
 
 	return w.db, nil
-=======
-package native_wallet
-
-type NativeWallet struct{}
-
-func (w *NativeWallet) HelloWorld() string {
-	return "Hello World from GO"
->>>>>>> 3635bb9ec1634dc03f64574278f098ea20ae88cc
 }

@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 package core
 
 import (
@@ -70,6 +69,7 @@ func TestWalletCoreSendMoneyStub(t *testing.T) {
 	_, err := wallet.SendMoneyTo("ethereum", "0x1", "1")
 	if err == nil {
 		t.Fatalf("expected not implemented error")
+<<<<<<< HEAD
 =======
 package native_wallet
 
@@ -92,6 +92,5 @@ func TestHelloWorld(t *testing.T) {
 				t.Errorf("HelloWorld() got int %s, want %s", got, tt.want)
 			}
 		})
->>>>>>> 3635bb9ec1634dc03f64574278f098ea20ae88cc
 	}
 }

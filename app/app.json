@@ -15,10 +15,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "mindsgn.studio.pockt",
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
+      "bundleIdentifier": "mindsgn.studio.pockt"
     },
     "android": {
       "adaptiveIcon": {

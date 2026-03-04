@@ -139,7 +139,7 @@ vet:
 	@echo "Running go vet..."
 	@$(GO) vet ./...
 
-build: cli android ios
+build: test android ios
 help:
 	@echo "Available targets:"
 	@echo "  make setup        - Install all dependencies (gomobile, mobile source)"

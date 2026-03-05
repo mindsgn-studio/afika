@@ -16,10 +16,12 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/mindsgn-studio/pocket-money-app/core/internal/config"
 	"github.com/mindsgn-studio/pocket-money-app/core/internal/database"
 )
 
@@ -82,13 +84,36 @@ type networkDetails struct {
 	RPC        []string `json:"rpc"`
 }
 
+type TokenConfig struct {
+	Identifier string `json:"identifier"`
+	Symbol     string `json:"symbol"`
+	Address    string `json:"address"`
+	Decimals   int    `json:"decimals"`
+	IsNative   bool   `json:"isNative"`
+}
+
+type TokenBalance struct {
+	Identifier string `json:"identifier"`
+	Symbol     string `json:"symbol"`
+	Address    string `json:"address"`
+	Decimals   int    `json:"decimals"`
+	IsNative   bool   `json:"isNative"`
+	Balance    string `json:"balance"`
+}
+
+type AccountSnapshot struct {
+	OwnerAddress   string         `json:"ownerAddress"`
+	AccountAddress string         `json:"accountAddress"`
+	Network        string         `json:"network"`
+	Balances       []TokenBalance `json:"balances"`
+}
+
 var NetworkMainnetList []string = []string{
-	"gnosis-mainnet",
-	"polygon-mainnet",
+	"ethereum-mainnet",
 }
 
 var NetworkTestnetList []string = []string{
-	"polygon-mumbai",
+	"ethereum-sepolia",
 }
 
 type balanceClient interface {
@@ -103,11 +128,21 @@ var dialClient = func(url string) (balanceClient, error) {
 var fetchMarketData = GetData
 
 const (
-	USDCSymbol             = "USDC"
-	USDCGnosisDecimals     = 6
-	USDCGnosisContractAddr = "0xDDAfbb505ad214D7b80b1f830fccc89B60fb7A83"
-	MinGasReserveWei       = 2000000000000000 // 0.002 xDAI
+	NativeTokenIdentifier = "native"
+	USDCSymbol            = "USDC"
+	USDCDecimals          = 6
 )
+
+var tokenRegistry = map[string][]TokenConfig{
+	"ethereum-sepolia": {
+		{Identifier: NativeTokenIdentifier, Symbol: "ETH", Address: "", Decimals: 18, IsNative: true},
+		{Identifier: "usdc", Symbol: USDCSymbol, Address: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", Decimals: USDCDecimals, IsNative: false},
+	},
+	"ethereum-mainnet": {
+		{Identifier: NativeTokenIdentifier, Symbol: "ETH", Address: "", Decimals: 18, IsNative: true},
+		{Identifier: "usdc", Symbol: USDCSymbol, Address: "0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", Decimals: USDCDecimals, IsNative: false},
+	},
+}
 
 var erc20ABI = mustParseABI(`[{
 	"constant":true,
@@ -121,6 +156,14 @@ var erc20ABI = mustParseABI(`[{
 	"inputs":[{"name":"to","type":"address"},{"name":"value","type":"uint256"}],
 	"name":"transfer",
 	"outputs":[{"name":"","type":"bool"}],
+	"stateMutability":"nonpayable",
+	"type":"function"
+}]`)
+
+var smartAccountABI = mustParseABI(`[{
+	"inputs":[{"internalType":"address","name":"target","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"},{"internalType":"bytes","name":"data","type":"bytes"}],
+	"name":"execute",
+	"outputs":[{"internalType":"bytes","name":"","type":"bytes"}],
 	"stateMutability":"nonpayable",
 	"type":"function"
 }]`)
@@ -251,6 +294,115 @@ func CreateNewEthereumWallet(ctx context.Context, db *database.DB, name string) 
 	return address, nil
 }
 
+func CreateOrGetSmartAccount(ctx context.Context, db *database.DB, network string) (string, string, error) {
+	if db == nil {
+		return "", "", errors.New("database is required")
+	}
+
+	walletSecrets, err := db.ListWalletSecrets(ctx)
+	if err != nil {
+		return "", "", err
+	}
+	if len(walletSecrets) == 0 {
+		return "", "", errors.New("no wallet found")
+	}
+
+	owner := walletSecrets[0]
+	if !common.IsHexAddress(owner.Address) {
+		return "", "", errors.New("invalid owner address")
+	}
+
+	existing, err := db.FindSmartAccountByOwnerNetwork(ctx, owner.Address, network)
+	if err == nil && common.IsHexAddress(existing.Address) {
+		return owner.Address, existing.Address, nil
+	}
+
+	deployment, err := config.GetDeployment(network)
+	if err != nil {
+		return "", "", err
+	}
+	if !common.IsHexAddress(deployment.FactoryAddress) {
+		return "", "", errors.New("invalid factory address in deployment config")
+	}
+
+	networkConfig := GetNetwork(network)
+	if len(networkConfig.RPC) == 0 {
+		return "", "", fmt.Errorf("unsupported network: %s", network)
+	}
+
+	client, err := ethclient.DialContext(ctx, networkConfig.RPC[0])
+	if err != nil {
+		return "", "", err
+	}
+	defer client.Close()
+
+	factory, err := NewFactory(common.HexToAddress(deployment.FactoryAddress), client)
+	if err != nil {
+		return "", "", err
+	}
+
+	ownerAddress := common.HexToAddress(owner.Address)
+	predicted, err := factory.GetAddress(&bind.CallOpts{Context: ctx}, ownerAddress)
+	if err != nil {
+		return "", "", err
+	}
+
+	code, err := client.CodeAt(ctx, predicted, nil)
+	if err != nil {
+		return "", "", err
+	}
+	if len(code) > 0 {
+		if err := db.UpsertSmartAccount(ctx, owner.Address, network, predicted.Hex()); err != nil {
+			return "", "", err
+		}
+		return owner.Address, predicted.Hex(), nil
+	}
+
+	privateKey, err := crypto.ToECDSA(owner.PrivateKey)
+	if err != nil {
+		return "", "", err
+	}
+
+	chainID := big.NewInt(int64(networkConfig.ChainID))
+	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
+	if err != nil {
+		return "", "", err
+	}
+	auth.Context = ctx
+
+	if _, err := factory.CreateAccount(auth, ownerAddress); err != nil {
+		return "", "", err
+	}
+
+	if err := db.UpsertSmartAccount(ctx, owner.Address, network, predicted.Hex()); err != nil {
+		return "", "", err
+	}
+
+	return owner.Address, predicted.Hex(), nil
+}
+
+func GetSmartAccount(ctx context.Context, db *database.DB, network string) (string, string, error) {
+	if db == nil {
+		return "", "", errors.New("database is required")
+	}
+
+	wallets, err := db.ListWallets(ctx)
+	if err != nil {
+		return "", "", err
+	}
+	if len(wallets) == 0 {
+		return "", "", errors.New("no wallet found")
+	}
+
+	ownerAddress := wallets[0].Address
+	record, err := db.FindSmartAccountByOwnerNetwork(ctx, ownerAddress, network)
+	if err != nil {
+		return ownerAddress, "", err
+	}
+
+	return ownerAddress, record.Address, nil
+}
+
 func GetUSDCBalance(ctx context.Context, db *database.DB, network string) (string, string, error) {
 	if db == nil {
 		return "", "", errors.New("database is required")
@@ -265,7 +417,7 @@ func GetUSDCBalance(ctx context.Context, db *database.DB, network string) (strin
 	}
 
 	walletAddress := wallets[0].Address
-	balance, err := GetUSDCBalanceForAddress(ctx, walletAddress, network)
+	balance, err := GetTokenBalanceForAddress(ctx, walletAddress, network, "usdc")
 	if err != nil {
 		return "", "", err
 	}
@@ -273,9 +425,13 @@ func GetUSDCBalance(ctx context.Context, db *database.DB, network string) (strin
 	return balance, walletAddress, nil
 }
 
-func GetUSDCBalanceForAddress(ctx context.Context, walletAddress string, network string) (string, error) {
+func GetTokenBalanceForAddress(ctx context.Context, walletAddress string, network string, tokenIdentifier string) (string, error) {
 	if walletAddress == "" {
 		return "", errors.New("wallet address is required")
+	}
+	token, err := resolveToken(network, tokenIdentifier)
+	if err != nil {
+		return "", err
 	}
 
 	networkConfig := GetNetwork(network)
@@ -289,8 +445,16 @@ func GetUSDCBalanceForAddress(ctx context.Context, walletAddress string, network
 	}
 	defer client.Close()
 
-	tokenAddress := common.HexToAddress(USDCGnosisContractAddr)
 	ownerAddress := common.HexToAddress(walletAddress)
+	if token.IsNative {
+		nativeBalance, err := client.BalanceAt(ctx, ownerAddress, nil)
+		if err != nil {
+			return "", err
+		}
+		return formatTokenUnits(nativeBalance, token.Decimals), nil
+	}
+
+	tokenAddress := common.HexToAddress(token.Address)
 
 	data, err := erc20ABI.Pack("balanceOf", ownerAddress)
 	if err != nil {
@@ -315,13 +479,68 @@ func GetUSDCBalanceForAddress(ctx context.Context, walletAddress string, network
 		return "", errors.New("invalid balance type")
 	}
 
-	return formatTokenUnits(rawBalance, USDCGnosisDecimals), nil
+	return formatTokenUnits(rawBalance, token.Decimals), nil
+}
+
+func GetUSDCBalanceForAddress(ctx context.Context, walletAddress string, network string) (string, error) {
+	return GetTokenBalanceForAddress(ctx, walletAddress, network, "usdc")
+}
+
+func GetAccountSnapshot(ctx context.Context, db *database.DB, network string) (AccountSnapshot, error) {
+	if db == nil {
+		return AccountSnapshot{}, errors.New("database is required")
+	}
+
+	ownerAddress, accountAddress, err := GetSmartAccount(ctx, db, network)
+	if err != nil {
+		return AccountSnapshot{}, err
+	}
+	if !common.IsHexAddress(accountAddress) {
+		return AccountSnapshot{}, errors.New("smart account not initialized")
+	}
+
+	tokens := tokenRegistry[strings.ToLower(strings.TrimSpace(network))]
+	balances := make([]TokenBalance, 0, len(tokens))
+	for _, token := range tokens {
+		balance, err := GetTokenBalanceForAddress(ctx, accountAddress, network, token.Identifier)
+		if err != nil {
+			return AccountSnapshot{}, err
+		}
+		balances = append(balances, TokenBalance{
+			Identifier: token.Identifier,
+			Symbol:     token.Symbol,
+			Address:    token.Address,
+			Decimals:   token.Decimals,
+			IsNative:   token.IsNative,
+			Balance:    balance,
+		})
+	}
+
+	return AccountSnapshot{
+		OwnerAddress:   ownerAddress,
+		AccountAddress: accountAddress,
+		Network:        network,
+		Balances:       balances,
+	}, nil
 }
 
 func SendUSDC(
 	ctx context.Context,
 	db *database.DB,
 	network string,
+	recipientAddress string,
+	amount string,
+	note string,
+	providerID string,
+) (string, error) {
+	return SendToken(ctx, db, network, "usdc", recipientAddress, amount, note, providerID)
+}
+
+func SendToken(
+	ctx context.Context,
+	db *database.DB,
+	network string,
+	tokenIdentifier string,
 	recipientAddress string,
 	amount string,
 	note string,
@@ -336,8 +555,12 @@ func SendUSDC(
 	if !common.IsHexAddress(recipientAddress) {
 		return "", errors.New("invalid recipient address")
 	}
+	token, err := resolveToken(network, tokenIdentifier)
+	if err != nil {
+		return "", err
+	}
 
-	amountUnits, err := parseTokenAmount(amount, USDCGnosisDecimals)
+	amountUnits, err := parseTokenAmount(amount, token.Decimals)
 	if err != nil {
 		return "", err
 	}
@@ -358,16 +581,25 @@ func SendUSDC(
 		return "", errors.New("invalid sender address")
 	}
 
-	currentBalance, err := GetUSDCBalanceForAddress(ctx, sender.Address, network)
+	record, err := db.FindSmartAccountByOwnerNetwork(ctx, sender.Address, network)
+	if err != nil {
+		return "", errors.New("smart account not found for sender")
+	}
+	if !common.IsHexAddress(record.Address) {
+		return "", errors.New("invalid smart account address")
+	}
+	senderSmartAccount := record.Address
+
+	currentBalance, err := GetTokenBalanceForAddress(ctx, senderSmartAccount, network, token.Identifier)
 	if err != nil {
 		return "", err
 	}
-	currentBalanceUnits, err := parseTokenAmount(currentBalance, USDCGnosisDecimals)
+	currentBalanceUnits, err := parseTokenAmount(currentBalance, token.Decimals)
 	if err != nil {
 		return "", err
 	}
 	if currentBalanceUnits.Cmp(amountUnits) < 0 {
-		return "", errors.New("insufficient USDC balance")
+		return "", fmt.Errorf("insufficient %s balance", token.Symbol)
 	}
 
 	networkConfig := GetNetwork(network)
@@ -386,7 +618,7 @@ func SendUSDC(
 	if err != nil {
 		return "", err
 	}
-	if nativeBalance.Cmp(big.NewInt(MinGasReserveWei)) < 0 {
+	if nativeBalance.Cmp(minGasReserveWei(network)) < 0 {
 		return "", errors.New("insufficient native gas token reserve")
 	}
 
@@ -405,16 +637,34 @@ func SendUSDC(
 		return "", err
 	}
 
-	contract := common.HexToAddress(USDCGnosisContractAddr)
-	transferData, err := erc20ABI.Pack("transfer", common.HexToAddress(recipientAddress), amountUnits)
+	recipient := common.HexToAddress(recipientAddress)
+	smartAccount := common.HexToAddress(senderSmartAccount)
+
+	var target common.Address
+	var value *big.Int
+	var executeData []byte
+	if token.IsNative {
+		target = recipient
+		value = amountUnits
+		executeData = []byte{}
+	} else {
+		target = common.HexToAddress(token.Address)
+		value = big.NewInt(0)
+		executeData, err = erc20ABI.Pack("transfer", recipient, amountUnits)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	callData, err := smartAccountABI.Pack("execute", target, value, executeData)
 	if err != nil {
 		return "", err
 	}
 
 	call := ethereum.CallMsg{
 		From: senderAddress,
-		To:   &contract,
-		Data: transferData,
+		To:   &smartAccount,
+		Data: callData,
 	}
 
 	gasLimit, err := client.EstimateGas(ctx, call)
@@ -422,7 +672,7 @@ func SendUSDC(
 		gasLimit = 120000
 	}
 
-	tx := types.NewTransaction(nonce, contract, big.NewInt(0), gasLimit, gasPrice, transferData)
+	tx := types.NewTransaction(nonce, smartAccount, big.NewInt(0), gasLimit, gasPrice, callData)
 	signer := types.NewEIP155Signer(big.NewInt(int64(networkConfig.ChainID)))
 	signedTx, err := types.SignTx(tx, signer, privateKey)
 	if err != nil {
@@ -438,12 +688,15 @@ func SendUSDC(
 		TxHash:          txHash,
 		Nonce:           int64(nonce),
 		Chain:           network,
-		Token:           USDCSymbol,
-		Amount:          formatTokenUnits(amountUnits, USDCGnosisDecimals),
+		Token:           token.Symbol,
+		TokenAddress:    token.Address,
+		TokenDecimals:   token.Decimals,
+		NativeToken:     token.IsNative,
+		Amount:          formatTokenUnits(amountUnits, token.Decimals),
 		TransactionType: "transfer",
 		State:           "pending",
 		Note:            note,
-		Source:          sender.Address,
+		Source:          senderSmartAccount,
 		Destination:     recipientAddress,
 		ProviderID:      providerID,
 		WalletAddress:   sender.Address,
@@ -533,7 +786,59 @@ func parseTokenAmount(value string, decimals int) (*big.Int, error) {
 	return scaled.Num(), nil
 }
 
+func resolveToken(network string, tokenIdentifier string) (TokenConfig, error) {
+	networkKey := strings.ToLower(strings.TrimSpace(network))
+	tokenKey := strings.ToLower(strings.TrimSpace(tokenIdentifier))
+	if tokenKey == "" {
+		tokenKey = NativeTokenIdentifier
+	}
+
+	tokens, ok := tokenRegistry[networkKey]
+	if !ok {
+		return TokenConfig{}, fmt.Errorf("unsupported network: %s", network)
+	}
+
+	for _, token := range tokens {
+		if strings.EqualFold(token.Identifier, tokenKey) || strings.EqualFold(token.Symbol, tokenKey) {
+			return token, nil
+		}
+		if !token.IsNative && strings.EqualFold(token.Address, tokenKey) {
+			return token, nil
+		}
+	}
+
+	return TokenConfig{}, errors.New("token is not allowlisted on network")
+}
+
+func ListTokenConfigs(network string) ([]TokenConfig, error) {
+	networkKey := strings.ToLower(strings.TrimSpace(network))
+	tokens, ok := tokenRegistry[networkKey]
+	if !ok {
+		return nil, fmt.Errorf("unsupported network: %s", network)
+	}
+
+	result := make([]TokenConfig, 0, len(tokens))
+	result = append(result, tokens...)
+	return result, nil
+}
+
+func minGasReserveWei(network string) *big.Int {
+	value := strings.ToLower(strings.TrimSpace(network))
+	switch value {
+	case "ethereum-mainnet":
+		return big.NewInt(0).SetUint64(50_000_000_000_000) // 0.00005 ETH
+	case "ethereum-sepolia":
+		return big.NewInt(0).SetUint64(10_000_000_000_000) // 0.00001 ETH
+	default:
+		return big.NewInt(0).SetUint64(2_000_000_000_000_000)
+	}
+}
+
 func ListUSDCTransactions(ctx context.Context, db *database.DB, network string, limit, offset int) ([]database.TransactionRecord, error) {
+	return ListTokenTransactions(ctx, db, network, "usdc", limit, offset)
+}
+
+func ListTokenTransactions(ctx context.Context, db *database.DB, network string, tokenIdentifier string, limit, offset int) ([]database.TransactionRecord, error) {
 	if db == nil {
 		return nil, errors.New("database is required")
 	}
@@ -546,7 +851,12 @@ func ListUSDCTransactions(ctx context.Context, db *database.DB, network string, 
 		return []database.TransactionRecord{}, nil
 	}
 
-	transactions, err := db.ListTransactions(ctx, wallets[0].Address, USDCSymbol, limit, offset)
+	token, err := resolveToken(network, tokenIdentifier)
+	if err != nil {
+		return nil, err
+	}
+
+	transactions, err := db.ListTransactions(ctx, wallets[0].Address, token.Symbol, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -571,8 +881,83 @@ func ListUSDCTransactions(ctx context.Context, db *database.DB, network string, 
 	return transactions, nil
 }
 
+func ListAllTransactions(ctx context.Context, db *database.DB, network string, limit, offset int) ([]database.TransactionRecord, error) {
+	if db == nil {
+		return nil, errors.New("database is required")
+	}
+
+	wallets, err := db.ListWallets(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(wallets) == 0 {
+		return []database.TransactionRecord{}, nil
+	}
+
+	tokens, err := ListTokenConfigs(network)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]database.TransactionRecord, 0)
+	for _, token := range tokens {
+		txs, err := db.ListTransactions(ctx, wallets[0].Address, token.Symbol, limit, offset)
+		if err != nil {
+			continue
+		}
+		items = append(items, txs...)
+	}
+
+	for idx, tx := range items {
+		if tx.State != "pending" {
+			continue
+		}
+
+		status, err := SyncTransactionStatus(ctx, tx.TxHash, network)
+		if err != nil {
+			continue
+		}
+
+		if status != tx.State {
+			_ = db.UpdateTransactionState(ctx, tx.TxHash, status)
+			items[idx].State = status
+			items[idx].UpdatedAt = time.Now().Unix()
+		}
+	}
+
+	return items, nil
+}
+
 func GetNetwork(network string) networkDetails {
 	switch network {
+	case "ethereum-mainnet", "mainnet":
+		rpcList := []string{
+			"https://eth.llamarpc.com",
+			"https://rpc.ankr.com/eth",
+		}
+
+		return networkDetails{
+			Name:       "ethereum",
+			ChainID:    1,
+			ChainIDHex: "0x1",
+			Currency:   "ETH",
+			Mainnet:    true,
+			RPC:        rpcList,
+		}
+	case "ethereum-sepolia", "sepolia", "testnet":
+		rpcList := []string{
+			"https://ethereum-sepolia-rpc.publicnode.com",
+			"https://rpc.sepolia.org",
+		}
+
+		return networkDetails{
+			Name:       "ethereum",
+			ChainID:    11155111,
+			ChainIDHex: "0xaa36a7",
+			Currency:   "ETH",
+			Mainnet:    false,
+			RPC:        rpcList,
+		}
 	case "polygon-mainnet":
 		rpcList := []string{
 			"wss://polygon-bor-rpc.publicnode.com",

@@ -24,3 +24,13 @@ frontend
 build
 _app/*
 app
+.DS_store
+
+node_modules
+dist
+bundle
+artifacts
+cache
+types
+coverage
+*.env

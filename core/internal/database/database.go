@@ -59,6 +59,9 @@ type TransactionRecord struct {
 	Nonce           int64
 	Chain           string
 	Token           string
+	TokenAddress    string
+	TokenDecimals   int
+	NativeToken     bool
 	Amount          string
 	TransactionType string
 	State           string
@@ -70,6 +73,15 @@ type TransactionRecord struct {
 	Counterparty    string
 	CreatedAt       int64
 	UpdatedAt       int64
+}
+
+type SmartAccountRecord struct {
+	UUID         string
+	OwnerAddress string
+	Network      string
+	Address      string
+	CreatedAt    int64
+	UpdatedAt    int64
 }
 
 type DB struct {
@@ -341,9 +353,10 @@ func (d *DB) InsertTransaction(ctx context.Context, tx TransactionRecord) error 
 	const q = `
 	INSERT INTO transactions (
 		uuid, tx_hash, nonce, chain, token, amount, tx_type, state,
+		token_address, token_decimals, is_native_token,
 		note, source, destination, provider_id, wallet_address,
 		counterparty_address, created_at, updated_at
-	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 	`
 
 	now := time.Now().Unix()
@@ -373,6 +386,9 @@ func (d *DB) InsertTransaction(ctx context.Context, tx TransactionRecord) error 
 		tx.Amount,
 		tx.TransactionType,
 		tx.State,
+		tx.TokenAddress,
+		tx.TokenDecimals,
+		tx.NativeToken,
 		tx.Note,
 		tx.Source,
 		tx.Destination,
@@ -384,6 +400,72 @@ func (d *DB) InsertTransaction(ctx context.Context, tx TransactionRecord) error 
 	)
 
 	return err
+}
+
+func (d *DB) UpsertSmartAccount(ctx context.Context, ownerAddress string, network string, accountAddress string) error {
+	if d == nil || d.db == nil {
+		return errors.New("database is not initialized")
+	}
+	ownerAddress = strings.TrimSpace(ownerAddress)
+	network = strings.TrimSpace(network)
+	accountAddress = strings.TrimSpace(accountAddress)
+	if ownerAddress == "" {
+		return errors.New("owner address is required")
+	}
+	if network == "" {
+		return errors.New("network is required")
+	}
+	if accountAddress == "" {
+		return errors.New("smart account address is required")
+	}
+
+	const q = `
+	INSERT INTO smart_accounts (
+		uuid, owner_address, network, account_address, created_at, updated_at
+	) VALUES (?, ?, ?, ?, ?, ?)
+	ON CONFLICT(owner_address, network)
+	DO UPDATE SET account_address = excluded.account_address, updated_at = excluded.updated_at;
+	`
+
+	now := time.Now().Unix()
+	_, err := d.db.ExecContext(ctx, q, newID(), ownerAddress, network, accountAddress, now, now)
+	return err
+}
+
+func (d *DB) FindSmartAccountByOwnerNetwork(ctx context.Context, ownerAddress string, network string) (*SmartAccountRecord, error) {
+	if d == nil || d.db == nil {
+		return nil, errors.New("database is not initialized")
+	}
+	ownerAddress = strings.TrimSpace(ownerAddress)
+	network = strings.TrimSpace(network)
+	if ownerAddress == "" {
+		return nil, errors.New("owner address is required")
+	}
+	if network == "" {
+		return nil, errors.New("network is required")
+	}
+
+	const q = `
+	SELECT uuid, owner_address, network, account_address, created_at, updated_at
+	FROM smart_accounts
+	WHERE owner_address = ? AND network = ?
+	LIMIT 1;
+	`
+
+	var out SmartAccountRecord
+	err := d.db.QueryRowContext(ctx, q, ownerAddress, network).Scan(
+		&out.UUID,
+		&out.OwnerAddress,
+		&out.Network,
+		&out.Address,
+		&out.CreatedAt,
+		&out.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &out, nil
 }
 
 func (d *DB) InsertTransactionIfMissing(ctx context.Context, tx TransactionRecord) error {
@@ -431,6 +513,7 @@ func (d *DB) ListTransactions(ctx context.Context, walletAddress string, token s
 
 	const q = `
 	SELECT uuid, tx_hash, nonce, chain, token, amount, tx_type, state,
+		token_address, token_decimals, is_native_token,
 		note, source, destination, provider_id, wallet_address,
 		counterparty_address, created_at, updated_at
 	FROM transactions
@@ -457,6 +540,9 @@ func (d *DB) ListTransactions(ctx context.Context, walletAddress string, token s
 			&tx.Amount,
 			&tx.TransactionType,
 			&tx.State,
+			&tx.TokenAddress,
+			&tx.TokenDecimals,
+			&tx.NativeToken,
 			&tx.Note,
 			&tx.Source,
 			&tx.Destination,
@@ -500,6 +586,9 @@ func createSchema(ctx context.Context, db *sql.DB) error {
 		amount               TEXT NOT NULL,
 		tx_type              TEXT NOT NULL,
 		state                TEXT NOT NULL,
+		token_address        TEXT NOT NULL DEFAULT '',
+		token_decimals       INTEGER NOT NULL DEFAULT 0,
+		is_native_token      INTEGER NOT NULL DEFAULT 0,
 		note                 TEXT NOT NULL DEFAULT '',
 		source               TEXT NOT NULL DEFAULT '',
 		destination          TEXT NOT NULL DEFAULT '',
@@ -515,9 +604,42 @@ func createSchema(ctx context.Context, db *sql.DB) error {
 
 	CREATE INDEX IF NOT EXISTS idx_transactions_state
 	ON transactions(state);
+
+	CREATE TABLE IF NOT EXISTS smart_accounts (
+		uuid          TEXT PRIMARY KEY NOT NULL,
+		owner_address TEXT NOT NULL,
+		network       TEXT NOT NULL,
+		account_address TEXT NOT NULL,
+		created_at    INTEGER NOT NULL,
+		updated_at    INTEGER NOT NULL,
+		UNIQUE(owner_address, network)
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_smart_accounts_owner_network
+	ON smart_accounts(owner_address, network);
 	`
-	_, err := db.ExecContext(ctx, q)
-	return err
+	if _, err := db.ExecContext(ctx, q); err != nil {
+		return err
+	}
+
+	// Backfill columns for databases created before token metadata support.
+	migrations := []string{
+		"ALTER TABLE transactions ADD COLUMN token_address TEXT NOT NULL DEFAULT '';",
+		"ALTER TABLE transactions ADD COLUMN token_decimals INTEGER NOT NULL DEFAULT 0;",
+		"ALTER TABLE transactions ADD COLUMN is_native_token INTEGER NOT NULL DEFAULT 0;",
+	}
+
+	for _, statement := range migrations {
+		if _, err := db.ExecContext(ctx, statement); err != nil {
+			message := strings.ToLower(err.Error())
+			if strings.Contains(message, "duplicate column name") {
+				continue
+			}
+			return err
+		}
+	}
+
+	return nil
 }
 
 func hardenDatabase(ctx context.Context, db *sql.DB) error {

@@ -29,7 +29,7 @@ async function main() {
     const chainId = await publicClient.getChainId();
 
     const deployment = {
-        network: network.name,
+        network: connection.networkName,
         chainId,
         deployer: deployerAddr,
         implementation: implementationAddr,
@@ -39,12 +39,12 @@ async function main() {
 
     const deploymentsDir = path.resolve(process.cwd(), "deployments");
     fs.mkdirSync(deploymentsDir, { recursive: true });
-    const deploymentPath = path.join(deploymentsDir, `${network.name}.json`);
+    const deploymentPath = path.join(deploymentsDir, `${connection.networkName}.json`);
     fs.writeFileSync(deploymentPath, JSON.stringify(deployment, null, 2));
     
     console.log("\n📜 Deployment Summary");
     console.log("-------------------");
-    console.log(`Network:      ${network.name} (ID: ${chainId})`);
+    console.log(`Network:      ${connection.networkName} (ID: ${chainId})`);
     console.log(`Deployer:     ${deployerAddr}`);
     console.log(`Implementation: ${implementationAddr}`);
     console.log(`Factory:      ${factoryAddr}`);

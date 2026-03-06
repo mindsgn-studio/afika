@@ -23,4 +23,16 @@ package-lock.json
 frontend
 build
 _app/*
-app
+.DS_store
+app/android
+app/ios
+node_modules
+dist
+bundle
+artifacts
+cache
+types
+coverage
+*.env
+app/modules/pocket-module/android
+app/modules/pocket-module/ios

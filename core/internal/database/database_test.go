@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"math/big"
 	"testing"
 )
 
@@ -109,5 +110,75 @@ func TestInsertWalletValidation(t *testing.T) {
 
 	if err := db.InsertWallet(ctx, "", "", "", nil); err == nil {
 		t.Fatalf("expected validation error for uninitialized db")
+	}
+}
+
+func TestSponsoredOperationsPersistenceAndAggregation(t *testing.T) {
+	db, err := Open(context.Background(), t.TempDir(), "password", newTestSecureKeyStore())
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer db.Close()
+
+	ctx := context.Background()
+	sender := "0x1111111111111111111111111111111111111111"
+
+	if err := db.RecordSponsoredOperation(ctx, SponsoredOperation{
+		UserOperationID: "0xaaa",
+		SenderAddress:   sender,
+		Network:         "ethereum-sepolia",
+		TokenAddress:    "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+		Recipient:       "0x2222222222222222222222222222222222222222",
+		AmountUnits:     "15000000",
+		Status:          "submitted",
+	}); err != nil {
+		t.Fatalf("RecordSponsoredOperation(first) error = %v", err)
+	}
+
+	if err := db.RecordSponsoredOperation(ctx, SponsoredOperation{
+		UserOperationID: "0xbbb",
+		SenderAddress:   sender,
+		Network:         "ethereum-sepolia",
+		TokenAddress:    "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+		Recipient:       "0x3333333333333333333333333333333333333333",
+		AmountUnits:     "5000000",
+		Status:          "submitted",
+	}); err != nil {
+		t.Fatalf("RecordSponsoredOperation(second) error = %v", err)
+	}
+
+	count, err := db.CountSponsoredOperationsToday(ctx, sender)
+	if err != nil {
+		t.Fatalf("CountSponsoredOperationsToday() error = %v", err)
+	}
+	if count != 2 {
+		t.Fatalf("expected 2 sponsored ops, got %d", count)
+	}
+
+	sum, err := db.SumSponsoredAmountToday(ctx, sender)
+	if err != nil {
+		t.Fatalf("SumSponsoredAmountToday() error = %v", err)
+	}
+	if sum.Cmp(big.NewInt(20_000_000)) != 0 {
+		t.Fatalf("expected sponsored sum 20000000, got %s", sum.String())
+	}
+}
+
+func TestRecordPaymasterValidation(t *testing.T) {
+	db, err := Open(context.Background(), t.TempDir(), "password", newTestSecureKeyStore())
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer db.Close()
+
+	err = db.RecordPaymasterValidation(context.Background(), PaymasterValidation{
+		SenderAddress:   "0x1111111111111111111111111111111111111111",
+		Decision:        "rejected",
+		RejectionReason: "token is not eligible for sponsorship",
+		AmountUnits:     "1000000",
+		Metadata:        "ethereum-sepolia",
+	})
+	if err != nil {
+		t.Fatalf("RecordPaymasterValidation() error = %v", err)
 	}
 }

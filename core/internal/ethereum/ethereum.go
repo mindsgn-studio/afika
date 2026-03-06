@@ -16,10 +16,12 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/mindsgn-studio/pocket-money-app/core/internal/config"
 	"github.com/mindsgn-studio/pocket-money-app/core/internal/database"
 )
 
@@ -82,13 +84,46 @@ type networkDetails struct {
 	RPC        []string `json:"rpc"`
 }
 
+type TokenConfig struct {
+	Identifier string `json:"identifier"`
+	Symbol     string `json:"symbol"`
+	Address    string `json:"address"`
+	Decimals   int    `json:"decimals"`
+	IsNative   bool   `json:"isNative"`
+}
+
+type TokenBalance struct {
+	Identifier string `json:"identifier"`
+	Symbol     string `json:"symbol"`
+	Address    string `json:"address"`
+	Decimals   int    `json:"decimals"`
+	IsNative   bool   `json:"isNative"`
+	Balance    string `json:"balance"`
+}
+
+type AccountSnapshot struct {
+	OwnerAddress   string         `json:"ownerAddress"`
+	AccountAddress string         `json:"accountAddress"`
+	Network        string         `json:"network"`
+	Balances       []TokenBalance `json:"balances"`
+}
+
+type SendResult struct {
+	OperationHash string `json:"operationHash"`
+	UserOpHash    string `json:"userOpHash"`
+	TxHash        string `json:"txHash"`
+	Mode          string `json:"mode"`
+	Sponsored     bool   `json:"sponsored"`
+	Network       string `json:"network"`
+	Token         string `json:"token"`
+}
+
 var NetworkMainnetList []string = []string{
-	"gnosis-mainnet",
-	"polygon-mainnet",
+	"ethereum-mainnet",
 }
 
 var NetworkTestnetList []string = []string{
-	"polygon-mumbai",
+	"ethereum-sepolia",
 }
 
 type balanceClient interface {
@@ -103,11 +138,21 @@ var dialClient = func(url string) (balanceClient, error) {
 var fetchMarketData = GetData
 
 const (
-	USDCSymbol             = "USDC"
-	USDCGnosisDecimals     = 6
-	USDCGnosisContractAddr = "0xDDAfbb505ad214D7b80b1f830fccc89B60fb7A83"
-	MinGasReserveWei       = 2000000000000000 // 0.002 xDAI
+	NativeTokenIdentifier = "native"
+	USDCSymbol            = "USDC"
+	USDCDecimals          = 6
 )
+
+var tokenRegistry = map[string][]TokenConfig{
+	"ethereum-sepolia": {
+		{Identifier: NativeTokenIdentifier, Symbol: "ETH", Address: "", Decimals: 18, IsNative: true},
+		{Identifier: "usdc", Symbol: USDCSymbol, Address: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", Decimals: USDCDecimals, IsNative: false},
+	},
+	"ethereum-mainnet": {
+		{Identifier: NativeTokenIdentifier, Symbol: "ETH", Address: "", Decimals: 18, IsNative: true},
+		{Identifier: "usdc", Symbol: USDCSymbol, Address: "0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", Decimals: USDCDecimals, IsNative: false},
+	},
+}
 
 var erc20ABI = mustParseABI(`[{
 	"constant":true,
@@ -122,6 +167,22 @@ var erc20ABI = mustParseABI(`[{
 	"name":"transfer",
 	"outputs":[{"name":"","type":"bool"}],
 	"stateMutability":"nonpayable",
+	"type":"function"
+}]`)
+
+var smartAccountABI = mustParseABI(`[{
+	"inputs":[{"internalType":"address","name":"target","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"},{"internalType":"bytes","name":"data","type":"bytes"}],
+	"name":"execute",
+	"outputs":[{"internalType":"bytes","name":"","type":"bytes"}],
+	"stateMutability":"nonpayable",
+	"type":"function"
+}]`)
+
+var entryPointABI = mustParseABI(`[{ 
+	"inputs":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"uint192","name":"key","type":"uint192"}],
+	"name":"getNonce",
+	"outputs":[{"internalType":"uint256","name":"nonce","type":"uint256"}],
+	"stateMutability":"view",
 	"type":"function"
 }]`)
 
@@ -251,6 +312,115 @@ func CreateNewEthereumWallet(ctx context.Context, db *database.DB, name string) 
 	return address, nil
 }
 
+func CreateOrGetSmartAccount(ctx context.Context, db *database.DB, network string) (string, string, error) {
+	if db == nil {
+		return "", "", errors.New("database is required")
+	}
+
+	walletSecrets, err := db.ListWalletSecrets(ctx)
+	if err != nil {
+		return "", "", err
+	}
+	if len(walletSecrets) == 0 {
+		return "", "", errors.New("no wallet found")
+	}
+
+	owner := walletSecrets[0]
+	if !common.IsHexAddress(owner.Address) {
+		return "", "", errors.New("invalid owner address")
+	}
+
+	existing, err := db.FindSmartAccountByOwnerNetwork(ctx, owner.Address, network)
+	if err == nil && common.IsHexAddress(existing.Address) {
+		return owner.Address, existing.Address, nil
+	}
+
+	deployment, err := config.GetDeployment(network)
+	if err != nil {
+		return "", "", err
+	}
+	if !common.IsHexAddress(deployment.FactoryAddress) {
+		return "", "", errors.New("invalid factory address in deployment config")
+	}
+
+	networkConfig := GetNetwork(network)
+	if len(networkConfig.RPC) == 0 {
+		return "", "", fmt.Errorf("unsupported network: %s", network)
+	}
+
+	client, err := ethclient.DialContext(ctx, networkConfig.RPC[0])
+	if err != nil {
+		return "", "", err
+	}
+	defer client.Close()
+
+	factory, err := NewFactory(common.HexToAddress(deployment.FactoryAddress), client)
+	if err != nil {
+		return "", "", err
+	}
+
+	ownerAddress := common.HexToAddress(owner.Address)
+	predicted, err := factory.GetAddress(&bind.CallOpts{Context: ctx}, ownerAddress)
+	if err != nil {
+		return "", "", err
+	}
+
+	code, err := client.CodeAt(ctx, predicted, nil)
+	if err != nil {
+		return "", "", err
+	}
+	if len(code) > 0 {
+		if err := db.UpsertSmartAccount(ctx, owner.Address, network, predicted.Hex()); err != nil {
+			return "", "", err
+		}
+		return owner.Address, predicted.Hex(), nil
+	}
+
+	privateKey, err := crypto.ToECDSA(owner.PrivateKey)
+	if err != nil {
+		return "", "", err
+	}
+
+	chainID := big.NewInt(int64(networkConfig.ChainID))
+	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
+	if err != nil {
+		return "", "", err
+	}
+	auth.Context = ctx
+
+	if _, err := factory.CreateAccount(auth, ownerAddress); err != nil {
+		return "", "", err
+	}
+
+	if err := db.UpsertSmartAccount(ctx, owner.Address, network, predicted.Hex()); err != nil {
+		return "", "", err
+	}
+
+	return owner.Address, predicted.Hex(), nil
+}
+
+func GetSmartAccount(ctx context.Context, db *database.DB, network string) (string, string, error) {
+	if db == nil {
+		return "", "", errors.New("database is required")
+	}
+
+	wallets, err := db.ListWallets(ctx)
+	if err != nil {
+		return "", "", err
+	}
+	if len(wallets) == 0 {
+		return "", "", errors.New("no wallet found")
+	}
+
+	ownerAddress := wallets[0].Address
+	record, err := db.FindSmartAccountByOwnerNetwork(ctx, ownerAddress, network)
+	if err != nil {
+		return ownerAddress, "", err
+	}
+
+	return ownerAddress, record.Address, nil
+}
+
 func GetUSDCBalance(ctx context.Context, db *database.DB, network string) (string, string, error) {
 	if db == nil {
 		return "", "", errors.New("database is required")
@@ -265,7 +435,7 @@ func GetUSDCBalance(ctx context.Context, db *database.DB, network string) (strin
 	}
 
 	walletAddress := wallets[0].Address
-	balance, err := GetUSDCBalanceForAddress(ctx, walletAddress, network)
+	balance, err := GetTokenBalanceForAddress(ctx, walletAddress, network, "usdc")
 	if err != nil {
 		return "", "", err
 	}
@@ -273,9 +443,13 @@ func GetUSDCBalance(ctx context.Context, db *database.DB, network string) (strin
 	return balance, walletAddress, nil
 }
 
-func GetUSDCBalanceForAddress(ctx context.Context, walletAddress string, network string) (string, error) {
+func GetTokenBalanceForAddress(ctx context.Context, walletAddress string, network string, tokenIdentifier string) (string, error) {
 	if walletAddress == "" {
 		return "", errors.New("wallet address is required")
+	}
+	token, err := resolveToken(network, tokenIdentifier)
+	if err != nil {
+		return "", err
 	}
 
 	networkConfig := GetNetwork(network)
@@ -289,8 +463,16 @@ func GetUSDCBalanceForAddress(ctx context.Context, walletAddress string, network
 	}
 	defer client.Close()
 
-	tokenAddress := common.HexToAddress(USDCGnosisContractAddr)
 	ownerAddress := common.HexToAddress(walletAddress)
+	if token.IsNative {
+		nativeBalance, err := client.BalanceAt(ctx, ownerAddress, nil)
+		if err != nil {
+			return "", err
+		}
+		return formatTokenUnits(nativeBalance, token.Decimals), nil
+	}
+
+	tokenAddress := common.HexToAddress(token.Address)
 
 	data, err := erc20ABI.Pack("balanceOf", ownerAddress)
 	if err != nil {
@@ -315,7 +497,49 @@ func GetUSDCBalanceForAddress(ctx context.Context, walletAddress string, network
 		return "", errors.New("invalid balance type")
 	}
 
-	return formatTokenUnits(rawBalance, USDCGnosisDecimals), nil
+	return formatTokenUnits(rawBalance, token.Decimals), nil
+}
+
+func GetUSDCBalanceForAddress(ctx context.Context, walletAddress string, network string) (string, error) {
+	return GetTokenBalanceForAddress(ctx, walletAddress, network, "usdc")
+}
+
+func GetAccountSnapshot(ctx context.Context, db *database.DB, network string) (AccountSnapshot, error) {
+	if db == nil {
+		return AccountSnapshot{}, errors.New("database is required")
+	}
+
+	ownerAddress, accountAddress, err := GetSmartAccount(ctx, db, network)
+	if err != nil {
+		return AccountSnapshot{}, err
+	}
+	if !common.IsHexAddress(accountAddress) {
+		return AccountSnapshot{}, errors.New("smart account not initialized")
+	}
+
+	tokens := tokenRegistry[strings.ToLower(strings.TrimSpace(network))]
+	balances := make([]TokenBalance, 0, len(tokens))
+	for _, token := range tokens {
+		balance, err := GetTokenBalanceForAddress(ctx, accountAddress, network, token.Identifier)
+		if err != nil {
+			return AccountSnapshot{}, err
+		}
+		balances = append(balances, TokenBalance{
+			Identifier: token.Identifier,
+			Symbol:     token.Symbol,
+			Address:    token.Address,
+			Decimals:   token.Decimals,
+			IsNative:   token.IsNative,
+			Balance:    balance,
+		})
+	}
+
+	return AccountSnapshot{
+		OwnerAddress:   ownerAddress,
+		AccountAddress: accountAddress,
+		Network:        network,
+		Balances:       balances,
+	}, nil
 }
 
 func SendUSDC(
@@ -327,94 +551,190 @@ func SendUSDC(
 	note string,
 	providerID string,
 ) (string, error) {
-	if db == nil {
-		return "", errors.New("database is required")
-	}
-	if recipientAddress == "" {
-		return "", errors.New("recipient address is required")
-	}
-	if !common.IsHexAddress(recipientAddress) {
-		return "", errors.New("invalid recipient address")
-	}
+	return SendToken(ctx, db, network, "usdc", recipientAddress, amount, note, providerID)
+}
 
-	amountUnits, err := parseTokenAmount(amount, USDCGnosisDecimals)
+func SendToken(
+	ctx context.Context,
+	db *database.DB,
+	network string,
+	tokenIdentifier string,
+	recipientAddress string,
+	amount string,
+	note string,
+	providerID string,
+) (string, error) {
+	result, err := SendTokenWithMode(ctx, db, network, tokenIdentifier, recipientAddress, amount, note, providerID, SendModeAuto)
 	if err != nil {
 		return "", err
 	}
+	if result.OperationHash != "" {
+		return result.OperationHash, nil
+	}
+	return result.TxHash, nil
+}
+
+func SendTokenWithMode(
+	ctx context.Context,
+	db *database.DB,
+	network string,
+	tokenIdentifier string,
+	recipientAddress string,
+	amount string,
+	note string,
+	providerID string,
+	sendMode string,
+) (SendResult, error) {
+	if db == nil {
+		return SendResult{}, errors.New("database is required")
+	}
+	if recipientAddress == "" {
+		return SendResult{}, errors.New("recipient address is required")
+	}
+	if !common.IsHexAddress(recipientAddress) {
+		return SendResult{}, errors.New("invalid recipient address")
+	}
+	token, err := resolveToken(network, tokenIdentifier)
+	if err != nil {
+		return SendResult{}, err
+	}
+
+	amountUnits, err := parseTokenAmount(amount, token.Decimals)
+	if err != nil {
+		return SendResult{}, err
+	}
 	if amountUnits.Sign() <= 0 {
-		return "", errors.New("amount must be greater than zero")
+		return SendResult{}, errors.New("amount must be greater than zero")
 	}
 
 	walletSecrets, err := db.ListWalletSecrets(ctx)
 	if err != nil {
-		return "", err
+		return SendResult{}, err
 	}
 	if len(walletSecrets) == 0 {
-		return "", errors.New("no wallet found")
+		return SendResult{}, errors.New("no wallet found")
 	}
 
 	sender := walletSecrets[0]
 	if !common.IsHexAddress(sender.Address) {
-		return "", errors.New("invalid sender address")
+		return SendResult{}, errors.New("invalid sender address")
 	}
 
-	currentBalance, err := GetUSDCBalanceForAddress(ctx, sender.Address, network)
+	record, err := db.FindSmartAccountByOwnerNetwork(ctx, sender.Address, network)
 	if err != nil {
-		return "", err
+		return SendResult{}, errors.New("smart account not found for sender")
 	}
-	currentBalanceUnits, err := parseTokenAmount(currentBalance, USDCGnosisDecimals)
+	if !common.IsHexAddress(record.Address) {
+		return SendResult{}, errors.New("invalid smart account address")
+	}
+	senderSmartAccount := record.Address
+
+	currentBalance, err := GetTokenBalanceForAddress(ctx, senderSmartAccount, network, token.Identifier)
 	if err != nil {
-		return "", err
+		return SendResult{}, err
+	}
+	currentBalanceUnits, err := parseTokenAmount(currentBalance, token.Decimals)
+	if err != nil {
+		return SendResult{}, err
 	}
 	if currentBalanceUnits.Cmp(amountUnits) < 0 {
-		return "", errors.New("insufficient USDC balance")
+		return SendResult{}, fmt.Errorf("insufficient %s balance", token.Symbol)
 	}
 
 	networkConfig := GetNetwork(network)
 	if len(networkConfig.RPC) == 0 {
-		return "", fmt.Errorf("unsupported network: %s", network)
+		return SendResult{}, fmt.Errorf("unsupported network: %s", network)
 	}
 
 	client, err := ethclient.DialContext(ctx, networkConfig.RPC[0])
 	if err != nil {
-		return "", err
+		return SendResult{}, err
 	}
 	defer client.Close()
 
+	privateKey, err := crypto.ToECDSA(sender.PrivateKey)
+	if err != nil {
+		return SendResult{}, err
+	}
+
+	recipient := common.HexToAddress(recipientAddress)
+	smartAccount := common.HexToAddress(senderSmartAccount)
+
+	target := recipient
+	value := amountUnits
+	executeData := []byte{}
+	if !token.IsNative {
+		target = common.HexToAddress(token.Address)
+		value = big.NewInt(0)
+		executeData, err = erc20ABI.Pack("transfer", recipient, amountUnits)
+		if err != nil {
+			return SendResult{}, err
+		}
+	}
+
+	callData, err := smartAccountABI.Pack("execute", target, value, executeData)
+	if err != nil {
+		return SendResult{}, err
+	}
+
+	mode := ResolveSendMode(sendMode)
+	if mode != SendModeDirect {
+		aaResult, aaErr := sendTokenViaUserOperation(ctx, db, client, network, networkConfig, sender, smartAccount, recipientAddress, token, amountUnits, callData, note, providerID, mode, privateKey)
+		if aaErr == nil {
+			return aaResult, nil
+		}
+		if mode == SendModeSponsored {
+			return SendResult{}, aaErr
+		}
+	}
+
+	directResult, err := sendTokenDirect(ctx, db, client, network, networkConfig, sender, smartAccount, recipientAddress, token, amountUnits, callData, note, providerID, privateKey)
+	if err != nil {
+		return SendResult{}, err
+	}
+
+	return directResult, nil
+}
+
+func sendTokenDirect(
+	ctx context.Context,
+	db *database.DB,
+	client *ethclient.Client,
+	network string,
+	networkConfig networkDetails,
+	sender database.WalletSecret,
+	smartAccount common.Address,
+	recipientAddress string,
+	token TokenConfig,
+	amountUnits *big.Int,
+	callData []byte,
+	note string,
+	providerID string,
+	privateKey *ecdsa.PrivateKey,
+) (SendResult, error) {
 	senderAddress := common.HexToAddress(sender.Address)
 	nativeBalance, err := client.BalanceAt(ctx, senderAddress, nil)
 	if err != nil {
-		return "", err
+		return SendResult{}, err
 	}
-	if nativeBalance.Cmp(big.NewInt(MinGasReserveWei)) < 0 {
-		return "", errors.New("insufficient native gas token reserve")
-	}
-
-	privateKey, err := crypto.ToECDSA(sender.PrivateKey)
-	if err != nil {
-		return "", err
+	if nativeBalance.Cmp(minGasReserveWei(network)) < 0 {
+		return SendResult{}, errors.New("insufficient native gas token reserve")
 	}
 
 	nonce, err := client.PendingNonceAt(ctx, senderAddress)
 	if err != nil {
-		return "", err
+		return SendResult{}, err
 	}
 
 	gasPrice, err := client.SuggestGasPrice(ctx)
 	if err != nil {
-		return "", err
-	}
-
-	contract := common.HexToAddress(USDCGnosisContractAddr)
-	transferData, err := erc20ABI.Pack("transfer", common.HexToAddress(recipientAddress), amountUnits)
-	if err != nil {
-		return "", err
+		return SendResult{}, err
 	}
 
 	call := ethereum.CallMsg{
 		From: senderAddress,
-		To:   &contract,
-		Data: transferData,
+		To:   &smartAccount,
+		Data: callData,
 	}
 
 	gasLimit, err := client.EstimateGas(ctx, call)
@@ -422,15 +742,15 @@ func SendUSDC(
 		gasLimit = 120000
 	}
 
-	tx := types.NewTransaction(nonce, contract, big.NewInt(0), gasLimit, gasPrice, transferData)
+	tx := types.NewTransaction(nonce, smartAccount, big.NewInt(0), gasLimit, gasPrice, callData)
 	signer := types.NewEIP155Signer(big.NewInt(int64(networkConfig.ChainID)))
 	signedTx, err := types.SignTx(tx, signer, privateKey)
 	if err != nil {
-		return "", err
+		return SendResult{}, err
 	}
 
 	if err := client.SendTransaction(ctx, signedTx); err != nil {
-		return "", err
+		return SendResult{}, err
 	}
 
 	txHash := signedTx.Hash().Hex()
@@ -438,27 +758,221 @@ func SendUSDC(
 		TxHash:          txHash,
 		Nonce:           int64(nonce),
 		Chain:           network,
-		Token:           USDCSymbol,
-		Amount:          formatTokenUnits(amountUnits, USDCGnosisDecimals),
+		EntryPoint:      "",
+		Token:           token.Symbol,
+		TokenAddress:    token.Address,
+		TokenDecimals:   token.Decimals,
+		NativeToken:     token.IsNative,
+		Amount:          formatTokenUnits(amountUnits, token.Decimals),
 		TransactionType: "transfer",
 		State:           "pending",
+		BundlerStatus:   "",
+		TxMode:          "direct",
+		SponsorshipMode: SendModeDirect,
 		Note:            note,
-		Source:          sender.Address,
+		Source:          smartAccount.Hex(),
 		Destination:     recipientAddress,
 		ProviderID:      providerID,
 		WalletAddress:   sender.Address,
 		Counterparty:    recipientAddress,
 	}); err != nil {
-		return "", err
+		return SendResult{}, err
 	}
 
-	return txHash, nil
+	return SendResult{
+		OperationHash: txHash,
+		TxHash:        txHash,
+		Mode:          "direct",
+		Sponsored:     false,
+		Network:       network,
+		Token:         token.Symbol,
+	}, nil
+}
+
+func sendTokenViaUserOperation(
+	ctx context.Context,
+	db *database.DB,
+	client *ethclient.Client,
+	network string,
+	networkConfig networkDetails,
+	sender database.WalletSecret,
+	smartAccount common.Address,
+	recipientAddress string,
+	token TokenConfig,
+	amountUnits *big.Int,
+	callData []byte,
+	note string,
+	providerID string,
+	sendMode string,
+	privateKey *ecdsa.PrivateKey,
+) (SendResult, error) {
+	sponsored := sendMode == SendModeSponsored
+	deployment, err := config.ValidateAAConfig(network, sponsored)
+	if err != nil {
+		return SendResult{}, err
+	}
+	if !common.IsHexAddress(deployment.EntryPointAddress) {
+		return SendResult{}, errors.New("invalid entry point address")
+	}
+
+	entryPointAddress := common.HexToAddress(deployment.EntryPointAddress)
+	nonceData, err := entryPointABI.Pack("getNonce", smartAccount, uint64(0))
+	if err != nil {
+		return SendResult{}, err
+	}
+	nonceRaw, err := client.CallContract(ctx, ethereum.CallMsg{To: &entryPointAddress, Data: nonceData}, nil)
+	if err != nil {
+		return SendResult{}, err
+	}
+	decodedNonce, err := entryPointABI.Unpack("getNonce", nonceRaw)
+	if err != nil || len(decodedNonce) != 1 {
+		return SendResult{}, errors.New("failed to decode entry point nonce")
+	}
+	nonce, ok := decodedNonce[0].(*big.Int)
+	if !ok {
+		return SendResult{}, errors.New("invalid nonce type")
+	}
+
+	gasPrice, err := client.SuggestGasPrice(ctx)
+	if err != nil {
+		return SendResult{}, err
+	}
+	priorityFee := new(big.Int).Div(gasPrice, big.NewInt(4))
+	if priorityFee.Sign() == 0 {
+		priorityFee = big.NewInt(1)
+	}
+
+	op := UserOperation{
+		Sender:               smartAccount,
+		Nonce:                nonce,
+		InitCode:             []byte{},
+		CallData:             callData,
+		CallGasLimit:         big.NewInt(220000),
+		VerificationGasLimit: big.NewInt(120000),
+		PreVerificationGas:   big.NewInt(50000),
+		MaxFeePerGas:         gasPrice,
+		MaxPriorityFeePerGas: priorityFee,
+		PaymasterAndData:     []byte{},
+	}
+
+	if sponsored {
+		policy := LoadPaymasterPolicy()
+		if err := ValidateSponsoredTransfer(policy, token, amountUnits); err != nil {
+			_ = db.RecordPaymasterValidation(ctx, database.PaymasterValidation{
+				SenderAddress:   sender.Address,
+				Decision:        "rejected",
+				RejectionReason: err.Error(),
+				AmountUnits:     amountUnits.String(),
+				Metadata:        network,
+			})
+			return SendResult{}, err
+		}
+
+		countToday, err := db.CountSponsoredOperationsToday(ctx, sender.Address)
+		if err == nil && countToday >= 50 {
+			return SendResult{}, errors.New("sponsorship daily operation limit reached")
+		}
+
+		sumToday, err := db.SumSponsoredAmountToday(ctx, sender.Address)
+		if err == nil {
+			next := new(big.Int).Add(sumToday, amountUnits)
+			if next.Cmp(policy.DailyLimit) > 0 {
+				return SendResult{}, errors.New("sponsorship daily amount limit exceeded")
+			}
+		}
+
+		paymasterAndData, err := BuildPaymasterAndData(deployment.PaymasterAddress)
+		if err != nil {
+			return SendResult{}, err
+		}
+		op.PaymasterAndData = paymasterAndData
+
+		_ = db.RecordPaymasterValidation(ctx, database.PaymasterValidation{
+			SenderAddress: sender.Address,
+			Decision:      "approved",
+			AmountUnits:   amountUnits.String(),
+			Metadata:      network,
+		})
+	}
+
+	bundler := NewBundlerClient(deployment.BundlerURL)
+	if estimate, err := bundler.EstimateUserOperationGas(ctx, op, entryPointAddress.Hex()); err == nil {
+		op.PreVerificationGas = estimate.PreVerificationGas
+		op.VerificationGasLimit = estimate.VerificationGasLimit
+		op.CallGasLimit = estimate.CallGasLimit
+	}
+
+	signature, userOpHash, err := SignUserOperation(op, entryPointAddress, big.NewInt(int64(networkConfig.ChainID)), privateKey)
+	if err != nil {
+		return SendResult{}, err
+	}
+	op.Signature = signature
+
+	sentUserOpHash, err := bundler.SendUserOperation(ctx, op, entryPointAddress.Hex())
+	if err != nil {
+		return SendResult{}, err
+	}
+	if strings.TrimSpace(sentUserOpHash) == "" {
+		sentUserOpHash = userOpHash.Hex()
+	}
+
+	if err := db.InsertTransactionIfMissing(ctx, database.TransactionRecord{
+		TxHash:          sentUserOpHash,
+		UserOpHash:      sentUserOpHash,
+		Nonce:           op.Nonce.Int64(),
+		Chain:           network,
+		EntryPoint:      entryPointAddress.Hex(),
+		Token:           token.Symbol,
+		TokenAddress:    token.Address,
+		TokenDecimals:   token.Decimals,
+		NativeToken:     token.IsNative,
+		Amount:          formatTokenUnits(amountUnits, token.Decimals),
+		TransactionType: "transfer",
+		State:           "pending",
+		BundlerStatus:   "submitted",
+		TxMode:          "userop",
+		SponsorshipMode: sendMode,
+		Note:            note,
+		Source:          smartAccount.Hex(),
+		Destination:     recipientAddress,
+		ProviderID:      providerID,
+		WalletAddress:   sender.Address,
+		Counterparty:    recipientAddress,
+	}); err != nil {
+		return SendResult{}, err
+	}
+
+	if sponsored {
+		_ = db.RecordSponsoredOperation(ctx, database.SponsoredOperation{
+			UserOperationID: sentUserOpHash,
+			SenderAddress:   sender.Address,
+			Network:         network,
+			TokenAddress:    token.Address,
+			Recipient:       recipientAddress,
+			AmountUnits:     amountUnits.String(),
+			Status:          "submitted",
+		})
+	}
+
+	return SendResult{
+		OperationHash: sentUserOpHash,
+		UserOpHash:    sentUserOpHash,
+		Mode:          "userop",
+		Sponsored:     sponsored,
+		Network:       network,
+		Token:         token.Symbol,
+	}, nil
 }
 
 func SyncTransactionStatus(ctx context.Context, txHash string, network string) (string, error) {
 	if txHash == "" {
 		return "", errors.New("transaction hash is required")
 	}
+
+	if status, _, _, err := SyncUserOperationStatus(ctx, txHash, network); err == nil && status != "" {
+		return status, nil
+	}
+
 	networkConfig := GetNetwork(network)
 	if len(networkConfig.RPC) == 0 {
 		return "", fmt.Errorf("unsupported network: %s", network)
@@ -484,6 +998,28 @@ func SyncTransactionStatus(ctx context.Context, txHash string, network string) (
 	}
 
 	return "failed", nil
+}
+
+func SyncUserOperationStatus(ctx context.Context, userOpHash string, network string) (string, string, string, error) {
+	deployment, err := config.ValidateAAConfig(network, false)
+	if err != nil {
+		return "", "", "", err
+	}
+
+	bundler := NewBundlerClient(deployment.BundlerURL)
+	receipt, err := bundler.GetUserOperationReceipt(ctx, userOpHash)
+	if err != nil {
+		return "", "", "", err
+	}
+	if receipt == nil {
+		return "pending", "", "pending", nil
+	}
+
+	if receipt.Success {
+		return "completed", strings.TrimSpace(receipt.TransactionHash), "included", nil
+	}
+
+	return "failed", strings.TrimSpace(receipt.TransactionHash), "failed", nil
 }
 
 func formatTokenUnits(amount *big.Int, decimals int) string {
@@ -533,7 +1069,59 @@ func parseTokenAmount(value string, decimals int) (*big.Int, error) {
 	return scaled.Num(), nil
 }
 
+func resolveToken(network string, tokenIdentifier string) (TokenConfig, error) {
+	networkKey := strings.ToLower(strings.TrimSpace(network))
+	tokenKey := strings.ToLower(strings.TrimSpace(tokenIdentifier))
+	if tokenKey == "" {
+		tokenKey = NativeTokenIdentifier
+	}
+
+	tokens, ok := tokenRegistry[networkKey]
+	if !ok {
+		return TokenConfig{}, fmt.Errorf("unsupported network: %s", network)
+	}
+
+	for _, token := range tokens {
+		if strings.EqualFold(token.Identifier, tokenKey) || strings.EqualFold(token.Symbol, tokenKey) {
+			return token, nil
+		}
+		if !token.IsNative && strings.EqualFold(token.Address, tokenKey) {
+			return token, nil
+		}
+	}
+
+	return TokenConfig{}, errors.New("token is not allowlisted on network")
+}
+
+func ListTokenConfigs(network string) ([]TokenConfig, error) {
+	networkKey := strings.ToLower(strings.TrimSpace(network))
+	tokens, ok := tokenRegistry[networkKey]
+	if !ok {
+		return nil, fmt.Errorf("unsupported network: %s", network)
+	}
+
+	result := make([]TokenConfig, 0, len(tokens))
+	result = append(result, tokens...)
+	return result, nil
+}
+
+func minGasReserveWei(network string) *big.Int {
+	value := strings.ToLower(strings.TrimSpace(network))
+	switch value {
+	case "ethereum-mainnet":
+		return big.NewInt(0).SetUint64(50_000_000_000_000) // 0.00005 ETH
+	case "ethereum-sepolia":
+		return big.NewInt(0).SetUint64(10_000_000_000_000) // 0.00001 ETH
+	default:
+		return big.NewInt(0).SetUint64(2_000_000_000_000_000)
+	}
+}
+
 func ListUSDCTransactions(ctx context.Context, db *database.DB, network string, limit, offset int) ([]database.TransactionRecord, error) {
+	return ListTokenTransactions(ctx, db, network, "usdc", limit, offset)
+}
+
+func ListTokenTransactions(ctx context.Context, db *database.DB, network string, tokenIdentifier string, limit, offset int) ([]database.TransactionRecord, error) {
 	if db == nil {
 		return nil, errors.New("database is required")
 	}
@@ -546,13 +1134,32 @@ func ListUSDCTransactions(ctx context.Context, db *database.DB, network string, 
 		return []database.TransactionRecord{}, nil
 	}
 
-	transactions, err := db.ListTransactions(ctx, wallets[0].Address, USDCSymbol, limit, offset)
+	token, err := resolveToken(network, tokenIdentifier)
+	if err != nil {
+		return nil, err
+	}
+
+	transactions, err := db.ListTransactions(ctx, wallets[0].Address, token.Symbol, limit, offset)
 	if err != nil {
 		return nil, err
 	}
 
 	for idx, tx := range transactions {
 		if tx.State != "pending" {
+			continue
+		}
+
+		if tx.TxMode == "userop" || tx.UserOpHash != "" {
+			status, _, bundlerStatus, err := SyncUserOperationStatus(ctx, tx.TxHash, network)
+			if err != nil {
+				continue
+			}
+			if status != tx.State || bundlerStatus != tx.BundlerStatus {
+				_ = db.UpdateTransactionSettlement(ctx, tx.TxHash, status, bundlerStatus)
+				transactions[idx].State = status
+				transactions[idx].BundlerStatus = bundlerStatus
+				transactions[idx].UpdatedAt = time.Now().Unix()
+			}
 			continue
 		}
 
@@ -571,8 +1178,97 @@ func ListUSDCTransactions(ctx context.Context, db *database.DB, network string, 
 	return transactions, nil
 }
 
+func ListAllTransactions(ctx context.Context, db *database.DB, network string, limit, offset int) ([]database.TransactionRecord, error) {
+	if db == nil {
+		return nil, errors.New("database is required")
+	}
+
+	wallets, err := db.ListWallets(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if len(wallets) == 0 {
+		return []database.TransactionRecord{}, nil
+	}
+
+	tokens, err := ListTokenConfigs(network)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]database.TransactionRecord, 0)
+	for _, token := range tokens {
+		txs, err := db.ListTransactions(ctx, wallets[0].Address, token.Symbol, limit, offset)
+		if err != nil {
+			continue
+		}
+		items = append(items, txs...)
+	}
+
+	for idx, tx := range items {
+		if tx.State != "pending" {
+			continue
+		}
+
+		if tx.TxMode == "userop" || tx.UserOpHash != "" {
+			status, _, bundlerStatus, err := SyncUserOperationStatus(ctx, tx.TxHash, network)
+			if err != nil {
+				continue
+			}
+			if status != tx.State || bundlerStatus != tx.BundlerStatus {
+				_ = db.UpdateTransactionSettlement(ctx, tx.TxHash, status, bundlerStatus)
+				items[idx].State = status
+				items[idx].BundlerStatus = bundlerStatus
+				items[idx].UpdatedAt = time.Now().Unix()
+			}
+			continue
+		}
+
+		status, err := SyncTransactionStatus(ctx, tx.TxHash, network)
+		if err != nil {
+			continue
+		}
+
+		if status != tx.State {
+			_ = db.UpdateTransactionState(ctx, tx.TxHash, status)
+			items[idx].State = status
+			items[idx].UpdatedAt = time.Now().Unix()
+		}
+	}
+
+	return items, nil
+}
+
 func GetNetwork(network string) networkDetails {
 	switch network {
+	case "ethereum-mainnet", "mainnet":
+		rpcList := []string{
+			"https://eth.llamarpc.com",
+			"https://rpc.ankr.com/eth",
+		}
+
+		return networkDetails{
+			Name:       "ethereum",
+			ChainID:    1,
+			ChainIDHex: "0x1",
+			Currency:   "ETH",
+			Mainnet:    true,
+			RPC:        rpcList,
+		}
+	case "ethereum-sepolia", "sepolia", "testnet":
+		rpcList := []string{
+			"https://ethereum-sepolia-rpc.publicnode.com",
+			"https://rpc.sepolia.org",
+		}
+
+		return networkDetails{
+			Name:       "ethereum",
+			ChainID:    11155111,
+			ChainIDHex: "0xaa36a7",
+			Currency:   "ETH",
+			Mainnet:    false,
+			RPC:        rpcList,
+		}
 	case "polygon-mainnet":
 		rpcList := []string{
 			"wss://polygon-bor-rpc.publicnode.com",

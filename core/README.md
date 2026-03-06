@@ -1,114 +1,108 @@
 # Pocket Money Core
 
-A Go wallet core designed to be consumed via gomobile (Android/iOS) and kept agnostic from app UI frameworks.
+Go wallet core for gomobile (iOS/Android), now with ERC-4337 UserOperation transport and optional self-hosted paymaster sponsorship flow.
 
 ## Architecture
 
-- `main.go`: gomobile-safe facade (`WalletCore`) that owns DB lifecycle
-- `internal/database`: SQLCipher-backed encrypted wallet storage
-- `internal/ethereum`: Ethereum wallet generation and balance aggregation
+- `main.go`
+	- gomobile-safe `WalletCore` facade
+	- lifecycle ownership of encrypted DB
+	- network resolution and response shaping
+- `internal/database`
+	- SQLCipher encrypted persistence
+	- wallet keys, smart account mappings, transaction history
+	- UserOp and sponsorship tracking tables
+- `internal/config`
+	- network deployment metadata (`Factory`, `Implementation`, `EntryPoint`, `BundlerURL`, `Paymaster`)
+- `internal/ethereum`
+	- chain/token operations
+	- smart-account lifecycle
+	- UserOperation build/sign/send (`userop.go`)
+	- bundler RPC client (`bundler.go`)
+	- sponsorship policy helpers (`paymaster.go`)
 
-## Public facade (`WalletCore`)
+## Public `WalletCore` API
 
-`WalletCore` is the bindable entry point:
-
+Core lifecycle:
 - `Init(dataDir, password, masterKeyB64, kdfSaltB64) error`
 - `Close() error`
+
+Wallet/account:
 - `CreateEthereumWallet(name string) (string, error)`
 - `OpenOrCreateWallet(name string) (string, error)`
+- `ListAccounts() (string, error)`
+- `CreateSmartContractAccount(network string) (string, error)`
+- `GetSmartContractAccount(network string) (string, error)`
+
+Balances:
 - `GetBalance(network string) (string, error)`
 - `GetAccountSummary(network string) (string, error)`
-- `ListAccounts() (string, error)`
-- `SendMoneyTo(blockchain, to, amount string) (string, error)`
+- `GetAccountSnapshot(network string) (string, error)`
+
+Transfers:
 - `SendUsdc(network, destination, amount, note, providerID string) (string, error)`
+- `SendUsdcWithMode(network, destination, amount, note, providerID, sendMode string) (string, error)`
+- `SendToken(network, tokenIdentifier, destination, amount, note, providerID string) (string, error)`
+- `SendTokenWithMode(network, tokenIdentifier, destination, amount, note, providerID, sendMode string) (string, error)`
+- `SendMoneyTo(...)` remains legacy stub.
+
+History/backup:
 - `ListUsdcTransactions(network string, limit, offset int) (string, error)`
+- `ListTokenTransactions(network, tokenIdentifier string, limit, offset int) (string, error)`
+- `ListAllTransactions(network string, limit, offset int) (string, error)`
 - `ExportWalletBackup(passphrase string) (string, error)`
 - `ImportWalletBackup(payload, passphrase string) (string, error)`
 
-Methods return simple strings/JSON payloads and errors to keep gomobile bindings straightforward.
+`SendTokenWithMode` supports:
+- `auto`: try AA path and fallback to direct tx
+- `direct`: force legacy direct tx
+- `sponsored`: require sponsorship (no direct fallback)
 
-## Expo module mapping
+## Production Configuration Gate
 
-The Expo bridge in `app/modules/pocket-module` currently exposes these `WalletCore` methods:
+When `POCKET_APP_ENV=production`, `Init(...)` validates AA config for `ethereum-mainnet` and fails fast if missing:
+- `FactoryAddress`
+- `ImplementationAddress`
+- `EntryPointAddress`
+- `BundlerURL`
+- `PaymasterAddress`
 
-- `Init` as `initWallet(dataDir, password, masterKeyB64, kdfSaltB64)`
-- `Init` as `initWalletSecure(dataDir, password)`
-- `Close` as `closeWallet()`
-- `CreateEthereumWallet` as `createEthereumWallet(name)`
-- `OpenOrCreateWallet` as `openOrCreateWallet(name)`
-- `GetBalance` as `getBalance(network)`
-- `GetAccountSummary` as `getAccountSummary(network)`
-- `ListAccounts` as `listAccounts()`
-- `SendUsdc` as `sendUsdc(network, destination, amount, note, providerID)`
-- `ListUsdcTransactions` as `getUsdcTransactions(network, limit, offset)`
-- `ExportWalletBackup` as `exportBackup(passphrase)`
-- `ImportWalletBackup` as `importBackup(payload, passphrase)`
+This prevents silent misconfiguration in production releases.
 
-`SendMoneyTo` remains a legacy stub and is superseded by `SendUsdc` for current banking-first flows.
+## Expo Bridge Mapping
 
-Bridge contract notes:
-- `initWalletSecure` generates and persists key material natively in iOS Keychain and Android Keystore-backed EncryptedSharedPreferences.
-- `initWallet` remains available for explicit/manual key material initialization in migration and testing scenarios.
-- `getBalance` and `listAccounts` are returned as raw JSON strings to keep native bridge logic minimal.
+The Expo module (`app/modules/pocket-module`) exposes the same core methods, including mode-aware transfer methods:
+- `sendUsdcWithMode(...)`
+- `sendTokenWithMode(...)`
 
-## Security model
+Key contract behavior:
+- JSON payloads are returned as strings for stable gomobile boundaries.
+- secure init path (`initWalletSecure`) sources key material from iOS Keychain / Android Keystore.
 
-Database encryption key material is derived from:
-- User password
-- Device-protected master key
-- Stable KDF salt
+## Security Notes
 
-The mobile app should source the master key and salt from secure platform stores:
-- iOS Keychain
-- Android Keystore
+- DB encryption key uses user password + device master key + KDF salt.
+- Core keeps transfer token scope allowlisted (v1 native ETH + USDC).
+- Sponsored mode enforces USDC-only policy and strict caps from policy/env.
+- UserOp lifecycle persists `userOpHash` and bundler settlement status for auditability.
 
-## Testing
-
-Run from `core/`:
-
-- `go test ./...`
-- `go test ./... -race -cover`
-
-## Build
+## Build and Test
 
 From `core/`:
-
+- `go test ./...`
+- `go test ./... -race -cover`
 - `make test`
 - `make android`
 - `make ios`
 
-## Current limitations
+## Current Scope (v1)
 
-- `SendMoneyTo` remains a stub and returns "not implemented"
-- Current productized send/balance flow is intentionally scoped to USDC on Gnosis
-- Multi-chain abstraction and additional asset support are follow-up work
+- Dev default network: `ethereum-sepolia`
+- Prod default network: `ethereum-mainnet`
+- Account abstraction target: EntryPoint `v0.7`
+- Sponsorship policy: USDC-only with strict caps
 
-## Banking-first roadmap (Gnosis + USDC)
-
-Execution scope is intentionally narrow to ship a reliable first version:
-- Network: Gnosis (`chainId: 100`)
-- Asset: USDC only
-- Goal: expose normalized banking-friendly outputs to the app layer
-
-Implemented core domain additions:
-- Account summary model
-- Transaction model with normalized semantics:
-	- Types: `credit`, `debit`, `transfer`
-	- States: `pending`, `completed`, `failed`, `reversed`
-	- Metadata: note, source, destination, provider id
-
-Implemented phases:
-1. Extended DB schema with transaction ledger and metadata fields.
-2. Added Gnosis network constants and USDC contract support.
-3. Implemented USDC-only balance via ERC-20 `balanceOf`.
-4. Implemented `SendUsdc` with preflight validation:
-	 - positive amount
-	 - valid recipient
-	 - sufficient USDC balance
-	 - sufficient gas token reserve
-5. Persisted outgoing transactions as `pending` and update to terminal state via status sync.
-6. Added USDC transaction listing with normalized output.
-7. Added backup export/import interfaces in core (encrypted payload only).
-
-Bridge/app mapping target:
-- The Expo module should expose high-level methods (open/create wallet, account summary, send USDC, tx history, backup) and keep chain specifics hidden from UI.
+Out of scope for v1:
+- dynamic token sponsorship expansion
+- advanced social recovery modules
+- multi-paymaster orchestration

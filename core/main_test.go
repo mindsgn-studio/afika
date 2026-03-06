@@ -71,3 +71,40 @@ func TestWalletCoreSendMoneyStub(t *testing.T) {
 		t.Fatalf("expected not implemented error")
 	}
 }
+
+func TestWalletCoreGetAAReadiness(t *testing.T) {
+	wallet := NewWalletCore()
+	masterKey, salt := testKeyMaterial()
+	if err := wallet.Init(t.TempDir(), "password", masterKey, salt); err != nil {
+		t.Fatalf("Init() error = %v", err)
+	}
+	defer wallet.Close()
+
+	t.Setenv("POCKET_BUNDLER_URL_ETHEREUM_SEPOLIA", "https://bundler.example")
+
+	raw, err := wallet.GetAAReadiness("sepolia")
+	if err != nil {
+		t.Fatalf("GetAAReadiness() error = %v", err)
+	}
+
+	var payload map[string]any
+	if err := json.Unmarshal([]byte(raw), &payload); err != nil {
+		t.Fatalf("readiness JSON unmarshal error = %v", err)
+	}
+
+	if payload["network"] != "ethereum-sepolia" {
+		t.Fatalf("unexpected network: %v", payload["network"])
+	}
+	if payload["entryPointConfigured"] != true {
+		t.Fatalf("expected entryPointConfigured=true, got %v", payload["entryPointConfigured"])
+	}
+	if payload["bundlerConfigured"] != true {
+		t.Fatalf("expected bundlerConfigured=true, got %v", payload["bundlerConfigured"])
+	}
+	if payload["paymasterConfigured"] != true {
+		t.Fatalf("expected paymasterConfigured=true, got %v", payload["paymasterConfigured"])
+	}
+	if payload["sponsorshipReady"] != true {
+		t.Fatalf("expected sponsorshipReady=true, got %v", payload["sponsorshipReady"])
+	}
+}

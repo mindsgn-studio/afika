@@ -1,74 +1,98 @@
-# POCKET MONEY
+# Pocket Money
 
-Pocket Money is a mobile wallet project with a Go core intended for gomobile bindings and React Native integration.
+Pocket Money is a mobile wallet project with a Go core (`gomobile`), native Expo bridges (iOS/Android), and an ERC-4337 smart-account + paymaster contract stack.
 
-## Core library
+## Monorepo map
 
-The Go wallet library lives in [core/README.md](core/README.md).
+- `core/`: Go wallet core (SQLCipher persistence, smart-account orchestration, token send flows)
+- `app/`: Expo app + native bridge module (`modules/pocket-module`)
+- `contract/`: Hardhat contracts, tests, and deployment scripts
+- `docs/`: architecture notes, implementation logs, active tasks
 
-It provides:
-- Encrypted wallet database (SQLCipher)
-- Ethereum wallet creation
-- Gomobile-safe facade API in `core/main.go`
+## Current network defaults
 
-## Expo bridge API
+- Development default network: `ethereum-sepolia`
+- Production default network: `ethereum-mainnet`
+- Default asset scope in app/core: `native` and `usdc`
 
-The Expo module at `app/modules/pocket-module` is a functions-only native bridge to the Go facade.
+## Sepolia deployment (current)
 
-Exposed methods:
+- `implementation`: `0xF8b10Fc20F1eC48c37234007a675453fC0f92152`
+- `factory`: `0xFD6EacA961d88FF0422898CDBb284f963D613369`
+- `entryPoint`: `0x0000000071727De22E5E9d8BAf0edAc6f37da032`
+- `usdc`: `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238`
+- `paymaster`: `0x7F1BE467e9f0c2731ab9E8a646cF5972E71A66d8`
+
+Source of truth: `contract/deployments/sepolia.json`.
+
+## Core API surface (bridge-facing)
+
+The Expo bridge (`PocketCore`) exposes the `WalletCore` facade methods, including:
+
 - `initWallet(dataDir, password, masterKeyB64, kdfSaltB64)`
 - `initWalletSecure(dataDir, password)`
 - `closeWallet()`
-- `createEthereumWallet(name)`
 - `openOrCreateWallet(name)`
-- `getBalance(network)`
+- `createEthereumWallet(name)`
 - `getAccountSummary(network)`
-- `listAccounts()`
-- `sendUsdc(network, destination, amount, note, providerID)`
-- `getUsdcTransactions(network, limit, offset)`
+- `getAccountSnapshot(network)`
+- `getAAReadiness(network)`
+- `createSmartContractAccount(network)`
+- `getSmartContractAccount(network)`
+- `sendUsdcWithMode(network, destination, amount, note, providerID, sendMode)`
+- `sendTokenWithMode(network, tokenIdentifier, destination, amount, note, providerID, sendMode)`
+- `listAllTransactions(network, limit, offset)`
 - `exportBackup(passphrase)`
 - `importBackup(payload, passphrase)`
 
-Notes:
-- `initWalletSecure` is the recommended production path.
-- `masterKeyB64` and `kdfSaltB64` are generated and persisted natively in the module (`iOS Keychain` / `Android Keystore-backed EncryptedSharedPreferences`).
-- `getBalance` and `listAccounts` return raw JSON strings from Go.
-- USDC methods return JSON strings to keep the native bridge thin.
-- Network defaults in core normalize `mainnet`/`gnosis` to `gnosis-mainnet` for the USDC flow.
+`sendMode` supports `auto`, `direct`, and `sponsored`.
 
-## Product direction (banking-first UX)
+## AA and paymaster config
 
-The product direction is to make the app feel like a normal banking app while keeping crypto complexity inside the Go core.
+Core deployment config is loaded from defaults with env override precedence.
 
-Current scope focus:
-- Chain: Gnosis only
-- Asset: USDC only
-- UX style: banking language and flows (no crypto-heavy terminology in primary UI)
+Pattern:
 
-## Implemented banking-first scope (current)
+- `POCKET_FACTORY_<NETWORK>`
+- `POCKET_IMPLEMENTATION_<NETWORK>`
+- `POCKET_ENTRY_POINT_<NETWORK>`
+- `POCKET_BUNDLER_URL_<NETWORK>`
+- `POCKET_PAYMASTER_<NETWORK>`
 
-Go core now includes:
-- Gnosis + USDC transfer support with preflight checks (recipient validation, positive amount, USDC balance, gas reserve)
-- USDC-only account summary via ERC-20 `balanceOf`
-- USDC transaction persistence with normalized semantics:
-	- Types: `credit`, `debit`, `transfer`
-	- States: `pending`, `completed`, `failed`, `reversed`
-	- Metadata: note, source, destination, provider id
-- Wallet backup export/import with encrypted payload handling in core
+Example network suffixes:
 
-App now includes a single-screen flow that demonstrates:
-- Open/create wallet
-- Account summary fetch
-- Send USDC action
-- Backup export/import actions
-- Transaction list fetch
+- `ETHEREUM_SEPOLIA`
+- `ETHEREUM_MAINNET`
 
-Testing roadmap:
-- Core unit tests for guard paths, state mapping, and DB behavior
-- Android/iOS bridge smoke validations
-- Maestro end-to-end flows for key user journeys
+Sponsorship mode requires EntryPoint + bundler + paymaster configuration.
 
-## Build reference
+## Validation commands
 
-Reference article:
-https://medium.com/@ykanavalik/how-to-run-golang-code-in-your-react-native-android-application-using-expo-go-d4e46438b753
+### Contracts
+
+```bash
+cd contract
+npm test
+```
+
+### Go core
+
+```bash
+cd core
+go test ./...
+```
+
+### Expo app TypeScript
+
+```bash
+cd app
+npm run lint
+npx tsc --noEmit
+```
+
+## More docs
+
+- Contract architecture: `docs/contract.md`
+- Working notes: `docs/notes.md`
+- Active task list: `docs/tasks.md`
+- Core internals: `core/README.md`

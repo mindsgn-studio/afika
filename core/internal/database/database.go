@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"math/big"
 	"path/filepath"
 	"strings"
 	"time"
@@ -56,12 +57,20 @@ type BalanceHistory struct {
 type TransactionRecord struct {
 	UUID            string
 	TxHash          string
+	UserOpHash      string
 	Nonce           int64
 	Chain           string
+	EntryPoint      string
 	Token           string
+	TokenAddress    string
+	TokenDecimals   int
+	NativeToken     bool
 	Amount          string
 	TransactionType string
 	State           string
+	BundlerStatus   string
+	TxMode          string
+	SponsorshipMode string
 	Note            string
 	Source          string
 	Destination     string
@@ -70,6 +79,39 @@ type TransactionRecord struct {
 	Counterparty    string
 	CreatedAt       int64
 	UpdatedAt       int64
+}
+
+type SmartAccountRecord struct {
+	UUID         string
+	OwnerAddress string
+	Network      string
+	Address      string
+	CreatedAt    int64
+	UpdatedAt    int64
+}
+
+type SponsoredOperation struct {
+	UUID            string
+	UserOperationID string
+	SenderAddress   string
+	Network         string
+	TokenAddress    string
+	Recipient       string
+	AmountUnits     string
+	Status          string
+	BundlerTxHash   string
+	CreatedAt       int64
+	UpdatedAt       int64
+}
+
+type PaymasterValidation struct {
+	UUID            string
+	SenderAddress   string
+	Decision        string
+	RejectionReason string
+	AmountUnits     string
+	Metadata        string
+	CreatedAt       int64
 }
 
 type DB struct {
@@ -341,9 +383,11 @@ func (d *DB) InsertTransaction(ctx context.Context, tx TransactionRecord) error 
 	const q = `
 	INSERT INTO transactions (
 		uuid, tx_hash, nonce, chain, token, amount, tx_type, state,
+		user_op_hash, entry_point_address, bundler_status, tx_mode, sponsorship_mode,
+		token_address, token_decimals, is_native_token,
 		note, source, destination, provider_id, wallet_address,
 		counterparty_address, created_at, updated_at
-	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 	`
 
 	now := time.Now().Unix()
@@ -373,6 +417,14 @@ func (d *DB) InsertTransaction(ctx context.Context, tx TransactionRecord) error 
 		tx.Amount,
 		tx.TransactionType,
 		tx.State,
+		tx.UserOpHash,
+		tx.EntryPoint,
+		tx.BundlerStatus,
+		tx.TxMode,
+		tx.SponsorshipMode,
+		tx.TokenAddress,
+		tx.TokenDecimals,
+		tx.NativeToken,
 		tx.Note,
 		tx.Source,
 		tx.Destination,
@@ -384,6 +436,72 @@ func (d *DB) InsertTransaction(ctx context.Context, tx TransactionRecord) error 
 	)
 
 	return err
+}
+
+func (d *DB) UpsertSmartAccount(ctx context.Context, ownerAddress string, network string, accountAddress string) error {
+	if d == nil || d.db == nil {
+		return errors.New("database is not initialized")
+	}
+	ownerAddress = strings.TrimSpace(ownerAddress)
+	network = strings.TrimSpace(network)
+	accountAddress = strings.TrimSpace(accountAddress)
+	if ownerAddress == "" {
+		return errors.New("owner address is required")
+	}
+	if network == "" {
+		return errors.New("network is required")
+	}
+	if accountAddress == "" {
+		return errors.New("smart account address is required")
+	}
+
+	const q = `
+	INSERT INTO smart_accounts (
+		uuid, owner_address, network, account_address, created_at, updated_at
+	) VALUES (?, ?, ?, ?, ?, ?)
+	ON CONFLICT(owner_address, network)
+	DO UPDATE SET account_address = excluded.account_address, updated_at = excluded.updated_at;
+	`
+
+	now := time.Now().Unix()
+	_, err := d.db.ExecContext(ctx, q, newID(), ownerAddress, network, accountAddress, now, now)
+	return err
+}
+
+func (d *DB) FindSmartAccountByOwnerNetwork(ctx context.Context, ownerAddress string, network string) (*SmartAccountRecord, error) {
+	if d == nil || d.db == nil {
+		return nil, errors.New("database is not initialized")
+	}
+	ownerAddress = strings.TrimSpace(ownerAddress)
+	network = strings.TrimSpace(network)
+	if ownerAddress == "" {
+		return nil, errors.New("owner address is required")
+	}
+	if network == "" {
+		return nil, errors.New("network is required")
+	}
+
+	const q = `
+	SELECT uuid, owner_address, network, account_address, created_at, updated_at
+	FROM smart_accounts
+	WHERE owner_address = ? AND network = ?
+	LIMIT 1;
+	`
+
+	var out SmartAccountRecord
+	err := d.db.QueryRowContext(ctx, q, ownerAddress, network).Scan(
+		&out.UUID,
+		&out.OwnerAddress,
+		&out.Network,
+		&out.Address,
+		&out.CreatedAt,
+		&out.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &out, nil
 }
 
 func (d *DB) InsertTransactionIfMissing(ctx context.Context, tx TransactionRecord) error {
@@ -415,6 +533,178 @@ func (d *DB) UpdateTransactionState(ctx context.Context, txHash string, state st
 	return err
 }
 
+func (d *DB) UpdateTransactionSettlement(ctx context.Context, txHash string, state string, bundlerStatus string) error {
+	if d == nil || d.db == nil {
+		return errors.New("database is not initialized")
+	}
+	if strings.TrimSpace(txHash) == "" {
+		return errors.New("transaction hash is required")
+	}
+
+	const q = `
+	UPDATE transactions
+	SET state = ?, bundler_status = ?, updated_at = ?
+	WHERE tx_hash = ?;
+	`
+
+	_, err := d.db.ExecContext(ctx, q, state, bundlerStatus, time.Now().Unix(), txHash)
+	return err
+}
+
+func (d *DB) RecordSponsoredOperation(ctx context.Context, item SponsoredOperation) error {
+	if d == nil || d.db == nil {
+		return errors.New("database is not initialized")
+	}
+	if strings.TrimSpace(item.UserOperationID) == "" {
+		return errors.New("user operation hash is required")
+	}
+	if strings.TrimSpace(item.SenderAddress) == "" {
+		return errors.New("sender address is required")
+	}
+
+	now := time.Now().Unix()
+	if item.UUID == "" {
+		item.UUID = newID()
+	}
+	if item.CreatedAt == 0 {
+		item.CreatedAt = now
+	}
+	item.UpdatedAt = now
+
+	const q = `
+	INSERT INTO sponsored_operations (
+		uuid, user_operation_hash, sender_address, network, token_address,
+		recipient_address, amount_units, status, bundler_tx_hash, created_at, updated_at
+	) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	ON CONFLICT(user_operation_hash)
+	DO UPDATE SET
+		status = excluded.status,
+		bundler_tx_hash = excluded.bundler_tx_hash,
+		updated_at = excluded.updated_at;
+	`
+
+	_, err := d.db.ExecContext(
+		ctx,
+		q,
+		item.UUID,
+		item.UserOperationID,
+		item.SenderAddress,
+		item.Network,
+		item.TokenAddress,
+		item.Recipient,
+		item.AmountUnits,
+		item.Status,
+		item.BundlerTxHash,
+		item.CreatedAt,
+		item.UpdatedAt,
+	)
+	return err
+}
+
+func (d *DB) RecordPaymasterValidation(ctx context.Context, item PaymasterValidation) error {
+	if d == nil || d.db == nil {
+		return errors.New("database is not initialized")
+	}
+	if strings.TrimSpace(item.SenderAddress) == "" {
+		return errors.New("sender address is required")
+	}
+	if strings.TrimSpace(item.Decision) == "" {
+		return errors.New("decision is required")
+	}
+
+	now := time.Now().Unix()
+	if item.UUID == "" {
+		item.UUID = newID()
+	}
+	if item.CreatedAt == 0 {
+		item.CreatedAt = now
+	}
+
+	const q = `
+	INSERT INTO paymaster_validations (
+		uuid, sender_address, decision, rejection_reason, amount_units, metadata, created_at
+	) VALUES (?, ?, ?, ?, ?, ?, ?);
+	`
+
+	_, err := d.db.ExecContext(
+		ctx,
+		q,
+		item.UUID,
+		item.SenderAddress,
+		item.Decision,
+		item.RejectionReason,
+		item.AmountUnits,
+		item.Metadata,
+		item.CreatedAt,
+	)
+	return err
+}
+
+func (d *DB) CountSponsoredOperationsToday(ctx context.Context, senderAddress string) (int64, error) {
+	if d == nil || d.db == nil {
+		return 0, errors.New("database is not initialized")
+	}
+	if strings.TrimSpace(senderAddress) == "" {
+		return 0, errors.New("sender address is required")
+	}
+
+	start := time.Now().UTC().Truncate(24 * time.Hour).Unix()
+	const q = `
+	SELECT COUNT(*)
+	FROM sponsored_operations
+	WHERE sender_address = ? AND created_at >= ?;
+	`
+
+	var count int64
+	if err := d.db.QueryRowContext(ctx, q, senderAddress, start).Scan(&count); err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func (d *DB) SumSponsoredAmountToday(ctx context.Context, senderAddress string) (*big.Int, error) {
+	if d == nil || d.db == nil {
+		return nil, errors.New("database is not initialized")
+	}
+	if strings.TrimSpace(senderAddress) == "" {
+		return nil, errors.New("sender address is required")
+	}
+
+	start := time.Now().UTC().Truncate(24 * time.Hour).Unix()
+	const q = `
+	SELECT amount_units
+	FROM sponsored_operations
+	WHERE sender_address = ? AND created_at >= ?;
+	`
+
+	rows, err := d.db.QueryContext(ctx, q, senderAddress, start)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	total := big.NewInt(0)
+	for rows.Next() {
+		var value string
+		if err := rows.Scan(&value); err != nil {
+			return nil, err
+		}
+
+		amount := new(big.Int)
+		if _, ok := amount.SetString(strings.TrimSpace(value), 10); !ok {
+			continue
+		}
+		total = total.Add(total, amount)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return total, nil
+}
+
 func (d *DB) ListTransactions(ctx context.Context, walletAddress string, token string, limit int, offset int) ([]TransactionRecord, error) {
 	if d == nil || d.db == nil {
 		return nil, errors.New("database is not initialized")
@@ -431,6 +721,8 @@ func (d *DB) ListTransactions(ctx context.Context, walletAddress string, token s
 
 	const q = `
 	SELECT uuid, tx_hash, nonce, chain, token, amount, tx_type, state,
+		user_op_hash, entry_point_address, bundler_status, tx_mode, sponsorship_mode,
+		token_address, token_decimals, is_native_token,
 		note, source, destination, provider_id, wallet_address,
 		counterparty_address, created_at, updated_at
 	FROM transactions
@@ -457,6 +749,14 @@ func (d *DB) ListTransactions(ctx context.Context, walletAddress string, token s
 			&tx.Amount,
 			&tx.TransactionType,
 			&tx.State,
+			&tx.UserOpHash,
+			&tx.EntryPoint,
+			&tx.BundlerStatus,
+			&tx.TxMode,
+			&tx.SponsorshipMode,
+			&tx.TokenAddress,
+			&tx.TokenDecimals,
+			&tx.NativeToken,
 			&tx.Note,
 			&tx.Source,
 			&tx.Destination,
@@ -500,6 +800,14 @@ func createSchema(ctx context.Context, db *sql.DB) error {
 		amount               TEXT NOT NULL,
 		tx_type              TEXT NOT NULL,
 		state                TEXT NOT NULL,
+		user_op_hash         TEXT NOT NULL DEFAULT '',
+		entry_point_address  TEXT NOT NULL DEFAULT '',
+		bundler_status       TEXT NOT NULL DEFAULT '',
+		tx_mode              TEXT NOT NULL DEFAULT 'direct',
+		sponsorship_mode     TEXT NOT NULL DEFAULT 'direct',
+		token_address        TEXT NOT NULL DEFAULT '',
+		token_decimals       INTEGER NOT NULL DEFAULT 0,
+		is_native_token      INTEGER NOT NULL DEFAULT 0,
 		note                 TEXT NOT NULL DEFAULT '',
 		source               TEXT NOT NULL DEFAULT '',
 		destination          TEXT NOT NULL DEFAULT '',
@@ -515,9 +823,80 @@ func createSchema(ctx context.Context, db *sql.DB) error {
 
 	CREATE INDEX IF NOT EXISTS idx_transactions_state
 	ON transactions(state);
+
+	CREATE INDEX IF NOT EXISTS idx_transactions_userop
+	ON transactions(user_op_hash);
+
+	CREATE TABLE IF NOT EXISTS sponsored_operations (
+		uuid                 TEXT PRIMARY KEY NOT NULL,
+		user_operation_hash  TEXT NOT NULL UNIQUE,
+		sender_address       TEXT NOT NULL,
+		network              TEXT NOT NULL,
+		token_address        TEXT NOT NULL,
+		recipient_address    TEXT NOT NULL,
+		amount_units         TEXT NOT NULL,
+		status               TEXT NOT NULL,
+		bundler_tx_hash      TEXT NOT NULL DEFAULT '',
+		created_at           INTEGER NOT NULL,
+		updated_at           INTEGER NOT NULL
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_sponsored_operations_sender
+	ON sponsored_operations(sender_address, created_at DESC);
+
+	CREATE TABLE IF NOT EXISTS paymaster_validations (
+		uuid              TEXT PRIMARY KEY NOT NULL,
+		sender_address    TEXT NOT NULL,
+		decision          TEXT NOT NULL,
+		rejection_reason  TEXT NOT NULL DEFAULT '',
+		amount_units      TEXT NOT NULL DEFAULT '0',
+		metadata          TEXT NOT NULL DEFAULT '',
+		created_at        INTEGER NOT NULL
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_paymaster_validations_sender
+	ON paymaster_validations(sender_address, created_at DESC);
+
+	CREATE TABLE IF NOT EXISTS smart_accounts (
+		uuid          TEXT PRIMARY KEY NOT NULL,
+		owner_address TEXT NOT NULL,
+		network       TEXT NOT NULL,
+		account_address TEXT NOT NULL,
+		created_at    INTEGER NOT NULL,
+		updated_at    INTEGER NOT NULL,
+		UNIQUE(owner_address, network)
+	);
+
+	CREATE INDEX IF NOT EXISTS idx_smart_accounts_owner_network
+	ON smart_accounts(owner_address, network);
 	`
-	_, err := db.ExecContext(ctx, q)
-	return err
+	if _, err := db.ExecContext(ctx, q); err != nil {
+		return err
+	}
+
+	// Backfill columns for databases created before token metadata support.
+	migrations := []string{
+		"ALTER TABLE transactions ADD COLUMN token_address TEXT NOT NULL DEFAULT '';",
+		"ALTER TABLE transactions ADD COLUMN token_decimals INTEGER NOT NULL DEFAULT 0;",
+		"ALTER TABLE transactions ADD COLUMN is_native_token INTEGER NOT NULL DEFAULT 0;",
+		"ALTER TABLE transactions ADD COLUMN user_op_hash TEXT NOT NULL DEFAULT '';",
+		"ALTER TABLE transactions ADD COLUMN entry_point_address TEXT NOT NULL DEFAULT '';",
+		"ALTER TABLE transactions ADD COLUMN bundler_status TEXT NOT NULL DEFAULT '';",
+		"ALTER TABLE transactions ADD COLUMN tx_mode TEXT NOT NULL DEFAULT 'direct';",
+		"ALTER TABLE transactions ADD COLUMN sponsorship_mode TEXT NOT NULL DEFAULT 'direct';",
+	}
+
+	for _, statement := range migrations {
+		if _, err := db.ExecContext(ctx, statement); err != nil {
+			message := strings.ToLower(err.Error())
+			if strings.Contains(message, "duplicate column name") {
+				continue
+			}
+			return err
+		}
+	}
+
+	return nil
 }
 
 func hardenDatabase(ctx context.Context, db *sql.DB) error {

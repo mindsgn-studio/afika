@@ -10,9 +10,11 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"os"
 	"strings"
 	"sync"
 
+	"github.com/mindsgn-studio/pocket-money-app/core/internal/config"
 	"github.com/mindsgn-studio/pocket-money-app/core/internal/database"
 	"github.com/mindsgn-studio/pocket-money-app/core/internal/ethereum"
 )
@@ -44,15 +46,29 @@ type TransactionMetadata struct {
 }
 
 type Transaction struct {
-	Hash      string              `json:"hash"`
-	Chain     string              `json:"chain"`
-	Token     string              `json:"token"`
-	Amount    string              `json:"amount"`
-	Type      TransactionType     `json:"type"`
-	State     TransactionState    `json:"state"`
-	Metadata  TransactionMetadata `json:"metadata"`
-	CreatedAt int64               `json:"createdAt"`
-	UpdatedAt int64               `json:"updatedAt"`
+	Hash            string              `json:"hash"`
+	UserOpHash      string              `json:"userOpHash"`
+	Chain           string              `json:"chain"`
+	Token           string              `json:"token"`
+	Amount          string              `json:"amount"`
+	Type            TransactionType     `json:"type"`
+	State           TransactionState    `json:"state"`
+	BundlerStatus   string              `json:"bundlerStatus"`
+	Mode            string              `json:"mode"`
+	SponsorshipMode string              `json:"sponsorshipMode"`
+	Metadata        TransactionMetadata `json:"metadata"`
+	CreatedAt       int64               `json:"createdAt"`
+	UpdatedAt       int64               `json:"updatedAt"`
+}
+
+type SendOperationResult struct {
+	OperationHash string `json:"operationHash"`
+	UserOpHash    string `json:"userOpHash"`
+	TxHash        string `json:"txHash"`
+	Mode          string `json:"mode"`
+	Sponsored     bool   `json:"sponsored"`
+	Network       string `json:"network"`
+	Token         string `json:"token"`
 }
 
 type AccountSummary struct {
@@ -61,6 +77,33 @@ type AccountSummary struct {
 	Asset         string `json:"asset"`
 	Balance       string `json:"balance"`
 	Currency      string `json:"currency"`
+}
+
+type TokenBalance struct {
+	Identifier string `json:"identifier"`
+	Symbol     string `json:"symbol"`
+	Address    string `json:"address"`
+	Decimals   int    `json:"decimals"`
+	IsNative   bool   `json:"isNative"`
+	Balance    string `json:"balance"`
+}
+
+type AccountSnapshot struct {
+	OwnerAddress   string         `json:"ownerAddress"`
+	AccountAddress string         `json:"accountAddress"`
+	Network        string         `json:"network"`
+	Balances       []TokenBalance `json:"balances"`
+}
+
+type AAReadiness struct {
+	Network              string `json:"network"`
+	OwnerAddress         string `json:"ownerAddress"`
+	AccountAddress       string `json:"accountAddress"`
+	SmartAccountReady    bool   `json:"smartAccountReady"`
+	EntryPointConfigured bool   `json:"entryPointConfigured"`
+	BundlerConfigured    bool   `json:"bundlerConfigured"`
+	PaymasterConfigured  bool   `json:"paymasterConfigured"`
+	SponsorshipReady     bool   `json:"sponsorshipReady"`
 }
 
 type walletBackup struct {
@@ -98,6 +141,12 @@ func NewWalletCore() *WalletCore {
 }
 
 func (w *WalletCore) Init(dataDir, password, masterKeyB64, kdfSaltB64 string) error {
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("POCKET_APP_ENV")), "production") {
+		if _, err := config.ValidateAAConfig("ethereum-mainnet", true); err != nil {
+			return err
+		}
+	}
+
 	masterKey, err := base64.StdEncoding.DecodeString(masterKeyB64)
 	if err != nil {
 		return err
@@ -221,7 +270,7 @@ func (w *WalletCore) GetAccountSummary(network string) (string, error) {
 		return "", err
 	}
 
-	resolvedNetwork := resolveUSDCNetwork(network)
+	resolvedNetwork := resolveAppNetwork(network)
 	balance, walletAddress, err := ethereum.GetUSDCBalance(context.Background(), db, resolvedNetwork)
 	if err != nil {
 		return "", err
@@ -247,6 +296,144 @@ func (w *WalletCore) GetAccountSummary(network string) (string, error) {
 	return string(encoded), nil
 }
 
+func (w *WalletCore) GetAccountSnapshot(network string) (string, error) {
+	db, err := w.getDB()
+	if err != nil {
+		return "", err
+	}
+
+	resolvedNetwork := resolveAppNetwork(network)
+	snapshot, err := ethereum.GetAccountSnapshot(context.Background(), db, resolvedNetwork)
+	if err != nil {
+		return "", err
+	}
+
+	out := AccountSnapshot{
+		OwnerAddress:   snapshot.OwnerAddress,
+		AccountAddress: snapshot.AccountAddress,
+		Network:        snapshot.Network,
+		Balances:       make([]TokenBalance, 0, len(snapshot.Balances)),
+	}
+	for _, item := range snapshot.Balances {
+		out.Balances = append(out.Balances, TokenBalance{
+			Identifier: item.Identifier,
+			Symbol:     item.Symbol,
+			Address:    item.Address,
+			Decimals:   item.Decimals,
+			IsNative:   item.IsNative,
+			Balance:    item.Balance,
+		})
+	}
+
+	encoded, err := json.Marshal(out)
+	if err != nil {
+		return "", err
+	}
+
+	return string(encoded), nil
+}
+
+func (w *WalletCore) GetAAReadiness(network string) (string, error) {
+	db, err := w.getDB()
+	if err != nil {
+		return "", err
+	}
+
+	resolvedNetwork := resolveAppNetwork(network)
+	deployment, err := config.GetDeployment(resolvedNetwork)
+	if err != nil {
+		return "", err
+	}
+
+	ownerAddress := ""
+	if wallets, err := db.ListWallets(context.Background()); err == nil && len(wallets) > 0 {
+		ownerAddress = wallets[0].Address
+	}
+
+	accountAddress := ""
+	smartReady := false
+	if ownerAddress != "" {
+		if _, account, err := ethereum.GetSmartAccount(context.Background(), db, resolvedNetwork); err == nil && strings.TrimSpace(account) != "" {
+			accountAddress = account
+			smartReady = true
+		}
+	}
+
+	entryPointConfigured := strings.TrimSpace(deployment.EntryPointAddress) != ""
+	bundlerConfigured := strings.TrimSpace(deployment.BundlerURL) != ""
+	paymasterConfigured := strings.TrimSpace(deployment.PaymasterAddress) != ""
+
+	readiness := AAReadiness{
+		Network:              resolvedNetwork,
+		OwnerAddress:         ownerAddress,
+		AccountAddress:       accountAddress,
+		SmartAccountReady:    smartReady,
+		EntryPointConfigured: entryPointConfigured,
+		BundlerConfigured:    bundlerConfigured,
+		PaymasterConfigured:  paymasterConfigured,
+		SponsorshipReady:     entryPointConfigured && bundlerConfigured && paymasterConfigured,
+	}
+
+	encoded, err := json.Marshal(readiness)
+	if err != nil {
+		return "", err
+	}
+
+	return string(encoded), nil
+}
+
+func (w *WalletCore) CreateSmartContractAccount(network string) (string, error) {
+	db, err := w.getDB()
+	if err != nil {
+		return "", err
+	}
+
+	resolvedNetwork := resolveAppNetwork(network)
+	ownerAddress, accountAddress, err := ethereum.CreateOrGetSmartAccount(context.Background(), db, resolvedNetwork)
+	if err != nil {
+		return "", err
+	}
+
+	payload := map[string]string{
+		"ownerAddress":   ownerAddress,
+		"accountAddress": accountAddress,
+		"network":        resolvedNetwork,
+	}
+
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+
+	return string(encoded), nil
+}
+
+func (w *WalletCore) GetSmartContractAccount(network string) (string, error) {
+	db, err := w.getDB()
+	if err != nil {
+		return "", err
+	}
+
+	resolvedNetwork := resolveAppNetwork(network)
+	ownerAddress, accountAddress, err := ethereum.GetSmartAccount(context.Background(), db, resolvedNetwork)
+	if err != nil {
+		return "", err
+	}
+
+	payload := map[string]string{
+		"ownerAddress":   ownerAddress,
+		"accountAddress": accountAddress,
+		"network":        resolvedNetwork,
+	}
+
+	encoded, err := json.Marshal(payload)
+	if err != nil {
+		return "", err
+	}
+
+	return string(encoded), nil
+}
+
 func (w *WalletCore) SendMoneyTo(network string, destination string, amount string) (string, error) {
 	if _, err := w.getDB(); err != nil {
 		return "", err
@@ -256,21 +443,71 @@ func (w *WalletCore) SendMoneyTo(network string, destination string, amount stri
 }
 
 func (w *WalletCore) SendUsdc(network string, destination string, amount string, note string, providerID string) (string, error) {
+	return w.SendToken(network, "usdc", destination, amount, note, providerID)
+}
+
+func (w *WalletCore) SendUsdcWithMode(network string, destination string, amount string, note string, providerID string, sendMode string) (string, error) {
+	return w.SendTokenWithMode(network, "usdc", destination, amount, note, providerID, sendMode)
+}
+
+func (w *WalletCore) SendToken(network string, tokenIdentifier string, destination string, amount string, note string, providerID string) (string, error) {
+	resultJSON, err := w.SendTokenWithMode(network, tokenIdentifier, destination, amount, note, providerID, ethereum.SendModeAuto)
+	if err != nil {
+		return "", err
+	}
+
+	var result SendOperationResult
+	if err := json.Unmarshal([]byte(resultJSON), &result); err != nil {
+		return "", err
+	}
+
+	if strings.TrimSpace(result.OperationHash) != "" {
+		return result.OperationHash, nil
+	}
+
+	return result.TxHash, nil
+}
+
+func (w *WalletCore) SendTokenWithMode(network string, tokenIdentifier string, destination string, amount string, note string, providerID string, sendMode string) (string, error) {
 	db, err := w.getDB()
 	if err != nil {
 		return "", err
 	}
 
-	return ethereum.SendUSDC(context.Background(), db, resolveUSDCNetwork(network), destination, amount, note, providerID)
+	result, err := ethereum.SendTokenWithMode(context.Background(), db, resolveAppNetwork(network), tokenIdentifier, destination, amount, note, providerID, sendMode)
+	if err != nil {
+		return "", err
+	}
+
+	out := SendOperationResult{
+		OperationHash: result.OperationHash,
+		UserOpHash:    result.UserOpHash,
+		TxHash:        result.TxHash,
+		Mode:          result.Mode,
+		Sponsored:     result.Sponsored,
+		Network:       result.Network,
+		Token:         result.Token,
+	}
+
+	encoded, err := json.Marshal(out)
+	if err != nil {
+		return "", err
+	}
+
+	return string(encoded), nil
 }
 
 func (w *WalletCore) ListUsdcTransactions(network string, limit int, offset int) (string, error) {
+	return w.ListTokenTransactions(network, "usdc", limit, offset)
+}
+
+func (w *WalletCore) ListTokenTransactions(network string, tokenIdentifier string, limit int, offset int) (string, error) {
 	db, err := w.getDB()
 	if err != nil {
 		return "", err
 	}
 
-	items, err := ethereum.ListUSDCTransactions(context.Background(), db, resolveUSDCNetwork(network), limit, offset)
+	items, err := ethereum.ListTokenTransactions(context.Background(), db, resolveAppNetwork(network), tokenIdentifier, limit, offset)
 	if err != nil {
 		return "", err
 	}
@@ -278,12 +515,59 @@ func (w *WalletCore) ListUsdcTransactions(network string, limit int, offset int)
 	out := make([]Transaction, 0, len(items))
 	for _, item := range items {
 		out = append(out, Transaction{
-			Hash:   item.TxHash,
-			Chain:  item.Chain,
-			Token:  item.Token,
-			Amount: item.Amount,
-			Type:   TransactionType(item.TransactionType),
-			State:  TransactionState(item.State),
+			Hash:            item.TxHash,
+			UserOpHash:      item.UserOpHash,
+			Chain:           item.Chain,
+			Token:           item.Token,
+			Amount:          item.Amount,
+			Type:            TransactionType(item.TransactionType),
+			State:           TransactionState(item.State),
+			BundlerStatus:   item.BundlerStatus,
+			Mode:            item.TxMode,
+			SponsorshipMode: item.SponsorshipMode,
+			Metadata: TransactionMetadata{
+				Note:        item.Note,
+				Source:      item.Source,
+				Destination: item.Destination,
+				ProviderID:  item.ProviderID,
+			},
+			CreatedAt: item.CreatedAt,
+			UpdatedAt: item.UpdatedAt,
+		})
+	}
+
+	encoded, err := json.Marshal(out)
+	if err != nil {
+		return "", err
+	}
+
+	return string(encoded), nil
+}
+
+func (w *WalletCore) ListAllTransactions(network string, limit int, offset int) (string, error) {
+	db, err := w.getDB()
+	if err != nil {
+		return "", err
+	}
+
+	items, err := ethereum.ListAllTransactions(context.Background(), db, resolveAppNetwork(network), limit, offset)
+	if err != nil {
+		return "", err
+	}
+
+	out := make([]Transaction, 0, len(items))
+	for _, item := range items {
+		out = append(out, Transaction{
+			Hash:            item.TxHash,
+			UserOpHash:      item.UserOpHash,
+			Chain:           item.Chain,
+			Token:           item.Token,
+			Amount:          item.Amount,
+			Type:            TransactionType(item.TransactionType),
+			State:           TransactionState(item.State),
+			BundlerStatus:   item.BundlerStatus,
+			Mode:            item.TxMode,
+			SponsorshipMode: item.SponsorshipMode,
 			Metadata: TransactionMetadata{
 				Note:        item.Note,
 				Source:      item.Source,
@@ -427,13 +711,18 @@ func decryptBackup(passphrase string, encrypted []byte) ([]byte, error) {
 	return gcm.Open(nil, nonce, ciphertext, nil)
 }
 
-func resolveUSDCNetwork(network string) string {
+func resolveAppNetwork(network string) string {
 	value := strings.TrimSpace(strings.ToLower(network))
 	switch value {
-	case "", "mainnet", "gnosis", "gnosis-mainnet":
-		return "gnosis-mainnet"
-	case "testnet", "chiado", "gnosis-chiado":
-		return "gnosis-chiado"
+	case "", "default":
+		if strings.EqualFold(strings.TrimSpace(os.Getenv("POCKET_APP_ENV")), "production") {
+			return "ethereum-mainnet"
+		}
+		return "ethereum-sepolia"
+	case "mainnet", "ethereum-mainnet", "ethereum":
+		return "ethereum-mainnet"
+	case "testnet", "sepolia", "ethereum-sepolia":
+		return "ethereum-sepolia"
 	default:
 		return network
 	}

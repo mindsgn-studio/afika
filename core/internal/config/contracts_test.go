@@ -1,6 +1,7 @@
 package config
 
 import (
+	"math/big"
 	"os"
 	"strings"
 	"testing"
@@ -27,11 +28,11 @@ func TestGetDeploymentSepoliaDefaultsAreCurrent(t *testing.T) {
 }
 
 func TestGetDeploymentEnvOverridesDefaults(t *testing.T) {
-	t.Setenv("POCKET_FACTORY_ETHEREUM_SEPOLIA", "0x00000000000000000000000000000000000000a1")
-	t.Setenv("POCKET_IMPLEMENTATION_ETHEREUM_SEPOLIA", "0x00000000000000000000000000000000000000b2")
-	t.Setenv("POCKET_ENTRY_POINT_ETHEREUM_SEPOLIA", "0x00000000000000000000000000000000000000c3")
-	t.Setenv("POCKET_BUNDLER_URL_ETHEREUM_SEPOLIA", "https://bundler.example")
-	t.Setenv("POCKET_PAYMASTER_ETHEREUM_SEPOLIA", "0x00000000000000000000000000000000000000d4")
+	t.Setenv("EXPO_PUBLIC_POCKET_FACTORY_ETHEREUM_SEPOLIA", "0x00000000000000000000000000000000000000a1")
+	t.Setenv("EXPO_PUBLIC_POCKET_IMPLEMENTATION_ETHEREUM_SEPOLIA", "0x00000000000000000000000000000000000000b2")
+	t.Setenv("EXPO_PUBLIC_POCKET_ENTRY_POINT_ETHEREUM_SEPOLIA", "0x00000000000000000000000000000000000000c3")
+	t.Setenv("EXPO_PUBLIC_POCKET_BUNDLER_URL_ETHEREUM_SEPOLIA", "https://bundler.example")
+	t.Setenv("EXPO_PUBLIC_POCKET_PAYMASTER_ETHEREUM_SEPOLIA", "0x00000000000000000000000000000000000000d4")
 
 	deployment, err := GetDeployment("ethereum-sepolia")
 	if err != nil {
@@ -56,19 +57,19 @@ func TestGetDeploymentEnvOverridesDefaults(t *testing.T) {
 }
 
 func TestValidateAAConfigMissingBundlerReturnsDeterministicError(t *testing.T) {
-	t.Setenv("POCKET_FACTORY_ETHEREUM_MAINNET", "0x00000000000000000000000000000000000000a1")
-	t.Setenv("POCKET_IMPLEMENTATION_ETHEREUM_MAINNET", "0x00000000000000000000000000000000000000b2")
-	t.Setenv("POCKET_ENTRY_POINT_ETHEREUM_MAINNET", "0x00000000000000000000000000000000000000c3")
+	t.Setenv("EXPO_PUBLIC_POCKET_FACTORY_ETHEREUM_MAINNET", "0x00000000000000000000000000000000000000a1")
+	t.Setenv("EXPO_PUBLIC_POCKET_IMPLEMENTATION_ETHEREUM_MAINNET", "0x00000000000000000000000000000000000000b2")
+	t.Setenv("EXPO_PUBLIC_POCKET_ENTRY_POINT_ETHEREUM_MAINNET", "0x00000000000000000000000000000000000000c3")
 
-	prev, hadPrev := os.LookupEnv("POCKET_BUNDLER_URL_ETHEREUM_MAINNET")
+	prev, hadPrev := os.LookupEnv("EXPO_PUBLIC_POCKET_BUNDLER_URL_ETHEREUM_MAINNET")
 	defer func() {
 		if hadPrev {
-			_ = os.Setenv("POCKET_BUNDLER_URL_ETHEREUM_MAINNET", prev)
+			_ = os.Setenv("EXPO_PUBLIC_POCKET_BUNDLER_URL_ETHEREUM_MAINNET", prev)
 			return
 		}
-		_ = os.Unsetenv("POCKET_BUNDLER_URL_ETHEREUM_MAINNET")
+		_ = os.Unsetenv("EXPO_PUBLIC_POCKET_BUNDLER_URL_ETHEREUM_MAINNET")
 	}()
-	_ = os.Unsetenv("POCKET_BUNDLER_URL_ETHEREUM_MAINNET")
+	_ = os.Unsetenv("EXPO_PUBLIC_POCKET_BUNDLER_URL_ETHEREUM_MAINNET")
 
 	_, err := ValidateAAConfig("ethereum-mainnet", true)
 	if err == nil {
@@ -80,20 +81,20 @@ func TestValidateAAConfigMissingBundlerReturnsDeterministicError(t *testing.T) {
 }
 
 func TestValidateAAConfigMissingPaymasterReturnsDeterministicError(t *testing.T) {
-	t.Setenv("POCKET_FACTORY_ETHEREUM_MAINNET", "0x00000000000000000000000000000000000000a1")
-	t.Setenv("POCKET_IMPLEMENTATION_ETHEREUM_MAINNET", "0x00000000000000000000000000000000000000b2")
-	t.Setenv("POCKET_ENTRY_POINT_ETHEREUM_MAINNET", "0x00000000000000000000000000000000000000c3")
-	t.Setenv("POCKET_BUNDLER_URL_ETHEREUM_MAINNET", "https://bundler.example")
+	t.Setenv("EXPO_PUBLIC_POCKET_FACTORY_ETHEREUM_MAINNET", "0x00000000000000000000000000000000000000a1")
+	t.Setenv("EXPO_PUBLIC_POCKET_IMPLEMENTATION_ETHEREUM_MAINNET", "0x00000000000000000000000000000000000000b2")
+	t.Setenv("EXPO_PUBLIC_POCKET_ENTRY_POINT_ETHEREUM_MAINNET", "0x00000000000000000000000000000000000000c3")
+	t.Setenv("EXPO_PUBLIC_POCKET_BUNDLER_URL_ETHEREUM_MAINNET", "https://bundler.example")
 
-	prev, hadPrev := os.LookupEnv("POCKET_PAYMASTER_ETHEREUM_MAINNET")
+	prev, hadPrev := os.LookupEnv("EXPO_PUBLIC_POCKET_PAYMASTER_ETHEREUM_MAINNET")
 	defer func() {
 		if hadPrev {
-			_ = os.Setenv("POCKET_PAYMASTER_ETHEREUM_MAINNET", prev)
+			_ = os.Setenv("EXPO_PUBLIC_POCKET_PAYMASTER_ETHEREUM_MAINNET", prev)
 			return
 		}
-		_ = os.Unsetenv("POCKET_PAYMASTER_ETHEREUM_MAINNET")
+		_ = os.Unsetenv("EXPO_PUBLIC_POCKET_PAYMASTER_ETHEREUM_MAINNET")
 	}()
-	_ = os.Unsetenv("POCKET_PAYMASTER_ETHEREUM_MAINNET")
+	_ = os.Unsetenv("EXPO_PUBLIC_POCKET_PAYMASTER_ETHEREUM_MAINNET")
 
 	_, err := ValidateAAConfig("ethereum-mainnet", true)
 	if err == nil {
@@ -105,7 +106,7 @@ func TestValidateAAConfigMissingPaymasterReturnsDeterministicError(t *testing.T)
 }
 
 func TestValidateAAConfigSucceedsForSepoliaWhenEnvProvided(t *testing.T) {
-	t.Setenv("POCKET_BUNDLER_URL_ETHEREUM_SEPOLIA", "https://bundler.example")
+	t.Setenv("EXPO_PUBLIC_POCKET_BUNDLER_URL_ETHEREUM_SEPOLIA", "https://bundler.example")
 
 	deployment, err := ValidateAAConfig("ethereum-sepolia", true)
 	if err != nil {
@@ -116,5 +117,25 @@ func TestValidateAAConfigSucceedsForSepoliaWhenEnvProvided(t *testing.T) {
 	}
 	if deployment.PaymasterAddress != "0x7F1BE467e9f0c2731ab9E8a646cF5972E71A66d8" {
 		t.Fatalf("unexpected paymaster address: %s", deployment.PaymasterAddress)
+	}
+}
+
+func TestGetOwnerCreationMinGasWeiDefaults(t *testing.T) {
+	sep := GetOwnerCreationMinGasWei("ethereum-sepolia")
+	if sep.Cmp(big.NewInt(3_000_000_000_000_000)) != 0 {
+		t.Fatalf("unexpected sepolia min gas: %s", sep.String())
+	}
+
+	mainnet := GetOwnerCreationMinGasWei("ethereum-mainnet")
+	if mainnet.Cmp(big.NewInt(15_000_000_000_000_000)) != 0 {
+		t.Fatalf("unexpected mainnet min gas: %s", mainnet.String())
+	}
+}
+
+func TestGetOwnerCreationMinGasWeiEnvOverride(t *testing.T) {
+	t.Setenv("EXPO_PUBLIC_POCKET_OWNER_MIN_GAS_WEI_ETHEREUM_SEPOLIA", "4200000000000000")
+	value := GetOwnerCreationMinGasWei("ethereum-sepolia")
+	if value.Cmp(big.NewInt(4_200_000_000_000_000)) != 0 {
+		t.Fatalf("unexpected env override value: %s", value.String())
 	}
 }

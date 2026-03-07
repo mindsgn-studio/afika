@@ -80,7 +80,7 @@ func TestWalletCoreGetAAReadiness(t *testing.T) {
 	}
 	defer wallet.Close()
 
-	t.Setenv("POCKET_BUNDLER_URL_ETHEREUM_SEPOLIA", "https://bundler.example")
+	t.Setenv("EXPO_PUBLIC_POCKET_BUNDLER_URL_ETHEREUM_SEPOLIA", "https://bundler.example")
 
 	raw, err := wallet.GetAAReadiness("sepolia")
 	if err != nil {

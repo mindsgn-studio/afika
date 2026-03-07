@@ -551,7 +551,6 @@ func (d *DB) UpdateTransactionSettlement(ctx context.Context, txHash string, sta
 	return err
 }
 
-<<<<<<< HEAD
 func (d *DB) UpdateUserOperationSettlement(ctx context.Context, userOpHash string, finalTxHash string, state string, bundlerStatus string) error {
 	if d == nil || d.db == nil {
 		return errors.New("database is not initialized")
@@ -559,35 +558,45 @@ func (d *DB) UpdateUserOperationSettlement(ctx context.Context, userOpHash strin
 	if strings.TrimSpace(userOpHash) == "" {
 		return errors.New("user operation hash is required")
 	}
-
-	now := time.Now().Unix()
-	resolvedHash := strings.TrimSpace(finalTxHash)
-	if resolvedHash == "" {
-		resolvedHash = userOpHash
+	if strings.TrimSpace(finalTxHash) == "" {
+		return errors.New("final transaction hash is required")
 	}
 
-	const txQuery = `
+	now := time.Now().Unix()
+	tx, err := d.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+		}
+	}()
+
+	const updateTransactions = `
 	UPDATE transactions
 	SET tx_hash = ?, state = ?, bundler_status = ?, updated_at = ?
-	WHERE user_op_hash = ? OR tx_hash = ?;
+	WHERE user_op_hash = ?;
 	`
 
-	if _, err := d.db.ExecContext(ctx, txQuery, resolvedHash, state, bundlerStatus, now, userOpHash, userOpHash); err != nil {
+	if _, err = tx.ExecContext(ctx, updateTransactions, finalTxHash, state, bundlerStatus, now, userOpHash); err != nil {
 		return err
 	}
 
-	const sponsoredQuery = `
+	const updateSponsored = `
 	UPDATE sponsored_operations
 	SET status = ?, bundler_tx_hash = ?, updated_at = ?
 	WHERE user_operation_hash = ?;
 	`
 
-	_, err := d.db.ExecContext(ctx, sponsoredQuery, state, resolvedHash, now, userOpHash)
+	if _, err = tx.ExecContext(ctx, updateSponsored, bundlerStatus, finalTxHash, now, userOpHash); err != nil {
+		return err
+	}
+
+	err = tx.Commit()
 	return err
 }
 
-=======
->>>>>>> 2c300523feab5fb460405ebae84d31bb5c6427a4
 func (d *DB) RecordSponsoredOperation(ctx context.Context, item SponsoredOperation) error {
 	if d == nil || d.db == nil {
 		return errors.New("database is not initialized")

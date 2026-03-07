@@ -28,4 +28,15 @@ declare class PocketModule extends NativeModule implements PocketApi {
 }
 
 // This call loads the native module object from the JSI.
-export default requireNativeModule<PocketModule>('PocketCore');
+let PocketCoreModule: PocketModule;
+
+try {
+  PocketCoreModule = requireNativeModule<PocketModule>('PocketCore');
+} catch (error) {
+  const details = error instanceof Error ? error.message : String(error);
+  throw new Error(
+    `[PocketCore] Native module is not registered. Rebuild native iOS project and confirm Expo autolinking includes PocketModule. Details: ${details}`,
+  );
+}
+
+export default PocketCoreModule;

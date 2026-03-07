@@ -244,7 +244,7 @@ contract USDCPaymaster is Ownable {
      */
     function validatePaymasterUserOp(
         PackedUserOperation calldata userOp,
-        bytes32 userOpHash,
+        bytes32 /* userOpHash */,
         uint256 /* maxCost */
     ) external onlyEntryPoint returns (bytes memory context, uint256 validationData) {
 

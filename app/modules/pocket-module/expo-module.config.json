@@ -1,9 +1,12 @@
 {
-  "platforms": ["apple", "android"],
+  "platforms": ["apple"],
   "apple": {
-    "modules": ["PocketModule"]
-  },
-  "android": {
-    "modules": ["pocket.module.mindsgn.PocketModule"]
+    "podspecPath": "pocket-module.podspec",
+    "modules": [
+      {
+        "name": "PocketCore",
+        "class": "PocketModule"
+      }
+    ]
   }
 }

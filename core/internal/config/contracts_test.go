@@ -121,6 +121,9 @@ func TestValidateAAConfigSucceedsForSepoliaWhenEnvProvided(t *testing.T) {
 }
 
 func TestGetOwnerCreationMinGasWeiDefaults(t *testing.T) {
+	t.Setenv("EXPO_PUBLIC_POCKET_OWNER_MIN_GAS_WEI_ETHEREUM_SEPOLIA", "")
+	t.Setenv("EXPO_PUBLIC_POCKET_OWNER_MIN_GAS_WEI_ETHEREUM_MAINNET", "")
+
 	sep := GetOwnerCreationMinGasWei("ethereum-sepolia")
 	if sep.Cmp(big.NewInt(3_000_000_000_000_000)) != 0 {
 		t.Fatalf("unexpected sepolia min gas: %s", sep.String())

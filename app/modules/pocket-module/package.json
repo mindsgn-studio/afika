@@ -1,0 +1,19 @@
+{
+  "name": "pocket-module",
+  "version": "1.0.0",
+  "description": "Local Expo native bridge for PocketCore",
+  "main": "index.ts",
+  "types": "index.ts",
+  "private": true,
+  "keywords": [
+    "expo",
+    "expo-module",
+    "react-native",
+    "pocket-core"
+  ],
+  "peerDependencies": {
+    "expo": "*",
+    "react": "*",
+    "react-native": "*"
+  }
+}

@@ -8,25 +8,15 @@ import (
 	"io"
 	"math/big"
 	"net/http"
-<<<<<<< HEAD
 	"os"
 	"strconv"
-=======
->>>>>>> 2c300523feab5fb460405ebae84d31bb5c6427a4
 	"strings"
 	"time"
 )
 
 type BundlerClient struct {
-<<<<<<< HEAD
-	url         string
-	httpClient  *http.Client
-	maxRetries  int
-	baseBackoff time.Duration
-=======
 	url        string
 	httpClient *http.Client
->>>>>>> 2c300523feab5fb460405ebae84d31bb5c6427a4
 }
 
 type userOpReceipt struct {
@@ -60,11 +50,6 @@ func NewBundlerClient(url string) *BundlerClient {
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
-<<<<<<< HEAD
-		maxRetries:  envInt("EXPO_PUBLIC_POCKET_BUNDLER_RETRY_MAX_ATTEMPTS", envInt("EXPO_PUBLIC_POCKET_BUNDLER_RETRY_MAX", 2)),
-		baseBackoff: time.Duration(envInt("EXPO_PUBLIC_POCKET_BUNDLER_RETRY_BACKOFF_MS", 250)) * time.Millisecond,
-=======
->>>>>>> 2c300523feab5fb460405ebae84d31bb5c6427a4
 	}
 }
 
@@ -143,63 +128,6 @@ func (b *BundlerClient) rpcCall(ctx context.Context, method string, params []any
 		return err
 	}
 
-<<<<<<< HEAD
-	maxAttempts := b.maxRetries + 1
-	if maxAttempts < 1 {
-		maxAttempts = 1
-	}
-
-	var lastErr error
-	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		req, reqErr := http.NewRequestWithContext(ctx, http.MethodPost, b.url, bytes.NewReader(body))
-		if reqErr != nil {
-			return reqErr
-		}
-		req.Header.Set("Content-Type", "application/json")
-
-		resp, err := b.httpClient.Do(req)
-		if err != nil {
-			lastErr = err
-		} else {
-			payload, readErr := io.ReadAll(resp.Body)
-			_ = resp.Body.Close()
-			if readErr != nil {
-				lastErr = readErr
-			} else if resp.StatusCode >= 300 {
-				lastErr = fmt.Errorf("bundler rpc failed: status=%d body=%s", resp.StatusCode, string(payload))
-			} else {
-				var rpcResp rpcResponse
-				if err := json.Unmarshal(payload, &rpcResp); err != nil {
-					lastErr = err
-				} else if rpcResp.Error != nil {
-					lastErr = fmt.Errorf("bundler rpc error: %s", rpcResp.Error.Message)
-				} else {
-					if len(rpcResp.Result) == 0 || string(rpcResp.Result) == "null" {
-						return nil
-					}
-					if err := json.Unmarshal(rpcResp.Result, out); err != nil {
-						lastErr = err
-					} else {
-						return nil
-					}
-				}
-			}
-		}
-
-		if attempt == maxAttempts || !isRetryableBundlerError(lastErr) {
-			break
-		}
-
-		backoff := b.baseBackoff * time.Duration(attempt)
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(backoff):
-		}
-	}
-
-	return lastErr
-=======
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, b.url, bytes.NewReader(body))
 	if err != nil {
 		return err
@@ -233,7 +161,6 @@ func (b *BundlerClient) rpcCall(ctx context.Context, method string, params []any
 	}
 
 	return json.Unmarshal(rpcResp.Result, out)
->>>>>>> 2c300523feab5fb460405ebae84d31bb5c6427a4
 }
 
 func parseHexBig(value string) (*big.Int, error) {
@@ -248,19 +175,36 @@ func parseHexBig(value string) (*big.Int, error) {
 	}
 	return parsed, nil
 }
-<<<<<<< HEAD
 
 func isRetryableBundlerError(err error) bool {
 	if err == nil {
 		return false
 	}
+
 	message := strings.ToLower(strings.TrimSpace(err.Error()))
-	if strings.Contains(message, "timeout") || strings.Contains(message, "tempor") || strings.Contains(message, "connection reset") {
-		return true
+	if message == "" {
+		return false
 	}
-	if strings.Contains(message, "status=5") || strings.Contains(message, "service unavailable") || strings.Contains(message, "too many requests") {
-		return true
+
+	retryableTokens := []string{
+		"timeout",
+		"temporary",
+		"too many requests",
+		"status=429",
+		"status=500",
+		"status=502",
+		"status=503",
+		"status=504",
+		"connection reset",
+		"eof",
 	}
+
+	for _, token := range retryableTokens {
+		if strings.Contains(message, token) {
+			return true
+		}
+	}
+
 	return false
 }
 
@@ -269,11 +213,11 @@ func envInt(name string, fallback int) int {
 	if value == "" {
 		return fallback
 	}
+
 	parsed, err := strconv.Atoi(value)
-	if err != nil || parsed < 0 {
+	if err != nil || parsed <= 0 {
 		return fallback
 	}
+
 	return parsed
 }
-=======
->>>>>>> 2c300523feab5fb460405ebae84d31bb5c6427a4

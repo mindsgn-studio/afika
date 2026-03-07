@@ -54,12 +54,12 @@ Core deployment config is loaded from defaults with env override precedence.
 
 Pattern:
 
-- `POCKET_FACTORY_ETHEREUM_SEPOLIA`
-- `POCKET_IMPLEMENTATION_ETHEREUM_SEPOLIA`
-- `POCKET_ENTRY_POINT_ETHEREUM_SEPOLIA`
-- `POCKET_BUNDLER_URL_ETHEREUM_SEPOLIA`
-- `POCKET_PAYMASTER_ETHEREUM_SEPOLIA`
-- `POCKET_OWNER_MIN_GAS_WEI_ETHEREUM_SEPOLIA`
+- `EXPO_PUBLIC_POCKET_FACTORY_ETHEREUM_SEPOLIA`
+- `EXPO_PUBLIC_POCKET_IMPLEMENTATION_ETHEREUM_SEPOLIA`
+- `EXPO_PUBLIC_POCKET_ENTRY_POINT_ETHEREUM_SEPOLIA`
+- `EXPO_PUBLIC_POCKET_BUNDLER_URL_ETHEREUM_SEPOLIA`
+- `EXPO_PUBLIC_POCKET_PAYMASTER_ETHEREUM_SEPOLIA`
+- `EXPO_PUBLIC_POCKET_OWNER_MIN_GAS_WEI_ETHEREUM_SEPOLIA`
 
 Example network suffixes:
 
@@ -72,16 +72,16 @@ For sponsored creation and sponsored sends, core also requires a paymaster signe
 
 Pattern:
 
-- `POCKET_PAYMASTER_SIGNER_PRIVATE_KEY_<NETWORK>`
-- `POCKET_PAYMASTER_SIGNER_PRIVATE_KEY`
+- `EXPO_PUBLIC_POCKET_PAYMASTER_SIGNER_PRIVATE_KEY_<NETWORK>`
+- `EXPO_PUBLIC_POCKET_PAYMASTER_SIGNER_PRIVATE_KEY`
 
 Network-specific key takes priority over global key.
 
 Optional sponsorship and transport tuning:
 
-- `POCKET_PAYMASTER_DAILY_OP_LIMIT_<NETWORK>` (default `50`)
-- `POCKET_BUNDLER_RETRY_MAX_ATTEMPTS` (default `3`)
-- `POCKET_BUNDLER_RETRY_BACKOFF_MS` (default `400`)
+- `EXPO_PUBLIC_POCKET_PAYMASTER_DAILY_OP_LIMIT_<NETWORK>` (default `50`)
+- `EXPO_PUBLIC_POCKET_BUNDLER_RETRY_MAX_ATTEMPTS` (default `3`)
+- `EXPO_PUBLIC_POCKET_BUNDLER_RETRY_BACKOFF_MS` (default `400`)
 
 `getAAReadiness` reports infrastructure readiness. Use `getSmartAccountCreationReadiness` before account creation to validate owner gas/sponsorship and hard-block onboarding on deterministic failure reasons.
 

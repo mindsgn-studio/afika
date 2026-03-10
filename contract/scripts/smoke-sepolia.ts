@@ -12,6 +12,11 @@ async function main() {
   const paymasterAddress = process.env.POCKET_PAYMASTER_ETHEREUM_SEPOLIA || "0x7F1BE467e9f0c2731ab9E8a646cF5972E71A66d8";
   const expectedEntryPoint = process.env.POCKET_ENTRY_POINT_ETHEREUM_SEPOLIA || "0x0000000071727De22E5E9d8BAf0edAc6f37da032";
     
+
+  console.log(`Factory Address: ${factoryAddress}`);
+  console.log(`Paymaster Address: ${paymasterAddress}`);
+  console.log(`Expected Entry Point: ${expectedEntryPoint}`);
+
   const factoryCode = await publicClient.getBytecode({ address: factoryAddress as `0x${string}` });
   const paymasterCode = await publicClient.getBytecode({ address: paymasterAddress as `0x${string}` });
 

@@ -43,6 +43,16 @@ type SponsoredSubmitResponse = {
   status?: string;
 };
 
+type PrepareOwnerResponse = {
+  network: string;
+  ownerAddress: string;
+  status: 'already_funded' | 'funded';
+  funded: boolean;
+  txHash?: string;
+  ownerBalanceWei: string;
+  requiredMinGasWei: string;
+};
+
 const BASE_URL = (process.env.EXPO_PUBLIC_POCKET_BACKEND_BASE_URL || '').trim().replace(/\/$/, '');
 const API_KEY = (process.env.EXPO_PUBLIC_POCKET_BACKEND_API_KEY || '').trim();
 
@@ -95,6 +105,9 @@ export const pocketBackend = {
   },
   async getCreationReadiness(network: string, ownerAddress: string) {
     return callBackend<SmartAccountCreationReadiness>('/v1/aa/readiness', { network, ownerAddress });
+  },
+  async prepareOwner(network: string, ownerAddress: string) {
+    return callBackend<PrepareOwnerResponse>('/v1/aa/prepare-owner', { network, ownerAddress });
   },
   async createSponsoredSmartAccount(network: string, ownerAddress: string) {
     return callBackend<SponsoredCreateResponse>('/v1/aa/create-sponsored', { network, ownerAddress });

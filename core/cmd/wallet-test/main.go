@@ -117,6 +117,7 @@ func main() {
 		flagPassword      = flag.String("password", "", "Wallet DB password (required)")
 		flagMasterKeyB64  = flag.String("master-key-b64", "", "Base64 master key (optional; generated if empty)")
 		flagKDFSaltB64    = flag.String("kdf-salt-b64", "", "Base64 KDF salt (optional; generated if empty)")
+		flagResetDB       = flag.Bool("reset-db", false, "Delete existing wallet.db in data-dir before init (DANGEROUS)")
 		flagOwnerName     = flag.String("owner-name", "Main Wallet", "Owner wallet name")
 		flagBackendURL    = flag.String("backend-base-url", "", "Backend base URL (backend mode)")
 		flagBackendAPIKey = flag.String("backend-api-key", "", "Backend API key (optional)")
@@ -142,8 +143,18 @@ func main() {
 		fatal(err)
 	}
 
+	dbPath := filepath.Join(dataDir, "wallet.db")
+	exists, _, _, _ := fileStatSummary(dbPath)
+	if *flagResetDB && exists {
+		_ = os.Remove(dbPath)
+		exists, _, _, _ = fileStatSummary(dbPath)
+	}
+
 	masterKeyB64 := strings.TrimSpace(*flagMasterKeyB64)
 	kdfSaltB64 := strings.TrimSpace(*flagKDFSaltB64)
+	if exists && (masterKeyB64 == "" || kdfSaltB64 == "") {
+		fatal(errors.New("existing wallet.db found but master-key-b64/kdf-salt-b64 not provided; re-run with the same --master-key-b64 and --kdf-salt-b64 as the original run, or pass --reset-db to delete and recreate the database"))
+	}
 	if masterKeyB64 == "" || kdfSaltB64 == "" {
 		mk, salt, err := generateKeyMaterialB64()
 		if err != nil {
@@ -191,6 +202,17 @@ func main() {
 	default:
 		fatal(fmt.Errorf("invalid mode: %s", selectedMode))
 	}
+}
+
+func fileStatSummary(path string) (exists bool, size int64, modUnix int64, err error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, 0, 0, nil
+		}
+		return false, 0, 0, err
+	}
+	return true, info.Size(), info.ModTime().Unix(), nil
 }
 
 func runLocal(ctx context.Context, w *core.WalletCore, network string) error {
@@ -494,4 +516,3 @@ func fatal(err error) {
 	fmt.Fprintf(os.Stderr, "error: %s\n", err.Error())
 	os.Exit(1)
 }
-

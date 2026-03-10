@@ -9,6 +9,22 @@ Pocket Money is a mobile wallet project with a Go core (`gomobile`), native Expo
 - `contract/`: Hardhat contracts, tests, and deployment scripts
 - `docs/`: architecture notes, implementation logs, active tasks
 
+## Backend Direction (MVP)
+
+Pocket Money is adopting a non-custodial backend sponsorship model for AA-heavy operations.
+
+- Backend implementation target: `core/cmd/api`
+- Move off-device first:
+	- smart-account creation readiness checks
+	- sponsored account creation orchestration
+	- sponsored send orchestration
+- Keep on-device:
+	- user wallet private keys and secure storage
+	- local DB and UI state
+	- direct send fallback path
+
+This is the current best decision because it improves onboarding responsiveness, centralizes infra diagnostics, and removes paymaster signer exposure from app-visible env.
+
 ## Current network defaults
 
 - Development default network: `ethereum-sepolia`
@@ -80,6 +96,12 @@ Pattern:
 
 Network-specific key takes priority over global key.
 
+Planned backend migration:
+
+- paymaster signer keys move to backend-only env
+- app profiles keep only non-secret runtime values
+- app will use backend readiness/sponsored endpoints with direct local fallback
+
 Optional sponsorship and transport tuning:
 
 - `EXPO_PUBLIC_POCKET_PAYMASTER_DAILY_OP_LIMIT_<NETWORK>` (default `50`)
@@ -135,6 +157,7 @@ npx tsc --noEmit
 ## More docs
 
 - Contract architecture: `docs/contract.md`
+- Backend API plan: `docs/backend.md`
 - Working notes: `docs/notes.md`
 - Active task list: `docs/tasks.md`
 - Core internals: `core/README.md`

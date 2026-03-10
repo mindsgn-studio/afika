@@ -18,7 +18,7 @@ CLI_OUTPUT_DIR = ./.bin
 CLI_BINARY = $(CLI_OUTPUT_DIR)/$(CLI_APP_NAME)
 
 
-.PHONY: all setup android ios clean check-go install-gomobile setup-mobile-src cli run
+.PHONY: all setup android ios clean check-go install-gomobile setup-mobile-src cli run api run-api
 
 all: build
 
@@ -112,6 +112,16 @@ run:
 	@echo "Running CLI application..."
 	@$(GO) run ./cmd/cli
 
+api:
+	@echo "Building API application..."
+	@mkdir -p $(CLI_OUTPUT_DIR)
+	@$(GO) build -v -o $(CLI_OUTPUT_DIR)/pocket-api ./cmd/api
+	@echo "✓ API application built successfully at $(CLI_OUTPUT_DIR)/pocket-api"
+
+run-api:
+	@echo "Running API application..."
+	@$(GO) run ./cmd/api
+
 clean:
 	@echo "Cleaning build artifacts..."
 	@rm -f $(ANDROID_OUTPUT)
@@ -147,6 +157,8 @@ help:
 	@echo "  make ios          - Build iOS XCFramework"
 	@echo "  make cli          - Build the command-line application"
 	@echo "  make run          - Run the command-line application"
+	@echo "  make api          - Build the API application"
+	@echo "  make run-api      - Run the API application"
 	@echo "  make clean        - Remove build artifacts"
 	@echo "  make clean-all    - Remove build artifacts and dependencies"
 	@echo "  make check-setup  - Verify build environment"

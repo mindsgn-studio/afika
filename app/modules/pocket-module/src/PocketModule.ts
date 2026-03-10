@@ -13,6 +13,7 @@ declare class PocketModule extends NativeModule implements PocketApi {
   getAccountSnapshot(network: PocketNetwork): Promise<string>;
   getAAReadiness(network: PocketNetwork): Promise<string>;
   getSmartAccountCreationReadiness(network: PocketNetwork): Promise<string>;
+  signUserOperationPayload(network: PocketNetwork, entryPointAddress: string, userOperationJSON: string): Promise<string>;
   createSmartContractAccount(network: PocketNetwork): Promise<string>;
   getSmartContractAccount(network: PocketNetwork): Promise<string>;
   listAccounts(): Promise<string>;

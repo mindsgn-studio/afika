@@ -18,11 +18,11 @@ type Deployment struct {
 
 var defaultDeployments = map[string]Deployment{
 	"ethereum-sepolia": {
-		FactoryAddress:        "0xFD6EacA961d88FF0422898CDBb284f963D613369",
-		ImplementationAddress: "0xF8b10Fc20F1eC48c37234007a675453fC0f92152",
+		FactoryAddress:        "0x149C7e88FF747F4d275fc1898B2aCa5b900f76a8",
+		ImplementationAddress: "0xe802566FbC5C754ea5fEb6c76331a0B611ff4668",
 		EntryPointAddress:     "0x0000000071727De22E5E9d8BAf0edAc6f37da032",
 		BundlerURL:            "",
-		PaymasterAddress:      "0x7F1BE467e9f0c2731ab9E8a646cF5972E71A66d8",
+		PaymasterAddress:      "0x909badF15C6738f772F2F19Bc7B6bD6C46f68b59",
 	},
 	"ethereum-mainnet": {
 		FactoryAddress:        "",

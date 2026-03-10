@@ -12,6 +12,9 @@ Deployments are written to `contract/deployments/<network>.json` and consumed by
 
 For mobile builds, mirror deployment outputs into `app/eas.json` profile env fields (`EXPO_PUBLIC_POCKET_*`) so app/core runtime values match deployed contracts.
 
+For backend sponsorship rollout, mirror the same deployment outputs into backend service env/config used by `core/cmd/api` endpoints.
+Do not place paymaster signer private keys in app profile env.
+
 ## Prerequisites
 
 - Node.js 22+
@@ -54,6 +57,8 @@ The smoke script validates on-chain prerequisites for sponsored creation/send:
 - paymaster signer is configured (non-zero)
 - factory is trusted by paymaster
 - paymaster deposit is non-zero
+
+For backend API pre-release, treat this smoke check as a deployment gate before enabling sponsored endpoints in app.
 
 ## Testing Notes
 

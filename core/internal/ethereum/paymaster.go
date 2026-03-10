@@ -47,7 +47,7 @@ func LoadPaymasterPolicy(network string) PaymasterPolicy {
 		dailyLimit = new(big.Int).Set(maxPerOp)
 	}
 
-	enabled := strings.EqualFold(strings.TrimSpace(os.Getenv("EXPO_PUBLIC_POCKET_PAYMASTER_ENABLED")), "true")
+	// enabled := strings.EqualFold(strings.TrimSpace(os.Getenv("EXPO_PUBLIC_POCKET_PAYMASTER_ENABLED")), "true")
 	token := strings.ToUpper(strings.TrimSpace(os.Getenv("EXPO_PUBLIC_POCKET_PAYMASTER_TOKEN")))
 	if token == "" {
 		token = USDCSymbol
@@ -55,7 +55,7 @@ func LoadPaymasterPolicy(network string) PaymasterPolicy {
 	dailyOperationLimit := envInt64ForNetwork(network, "EXPO_PUBLIC_POCKET_PAYMASTER_DAILY_OP_LIMIT", 50)
 
 	return PaymasterPolicy{
-		Enabled:              enabled,
+		Enabled:              true,
 		SupportedTokenSymbol: token,
 		MaxPerOperation:      maxPerOp,
 		DailyLimit:           dailyLimit,
@@ -123,6 +123,10 @@ func getPaymasterSignerPrivateKey(network string) string {
 	}
 
 	return strings.TrimSpace(os.Getenv("EXPO_PUBLIC_POCKET_PAYMASTER_SIGNER_PRIVATE_KEY"))
+}
+
+func HasPaymasterSignerPrivateKey(network string) bool {
+	return strings.TrimSpace(getPaymasterSignerPrivateKey(network)) != ""
 }
 
 func parsePrivateKey(value string) (*ecdsa.PrivateKey, error) {

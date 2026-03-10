@@ -21,6 +21,23 @@ Go wallet core for gomobile (iOS/Android), with ERC-4337 UserOperation transport
   - bundler RPC client (`bundler.go`)
   - sponsorship policy helpers (`paymaster.go`)
 
+## Backend API Direction
+
+Phase 1 backend service is planned in `core/cmd/api` to reuse current domain logic.
+
+Initial backend endpoint scope:
+
+- `POST /v1/aa/readiness`
+- `POST /v1/aa/create-sponsored`
+- `POST /v1/aa/send-sponsored`
+- `GET /health`
+
+Why this is the current best decision:
+
+- fastest path to production for sponsorship flows
+- avoids rule duplication across client and server
+- keeps one source of truth for AA/policy behavior while contracts stabilize
+
 ## Public `WalletCore` API
 
 Core lifecycle:
@@ -114,6 +131,11 @@ Policy and reliability controls:
 
 If the signer key is missing, sponsored mode is rejected with a deterministic configuration error.
 
+Security migration note:
+
+- paymaster signer keys should move to backend-only env and not remain in app-visible `EXPO_PUBLIC_*` configuration.
+- mobile should call backend sponsorship endpoints and retain direct-send fallback locally.
+
 ## Creation Gas Threshold Policy
 
 Owner wallet minimum native gas for direct creation uses network defaults and can be overridden with:
@@ -128,6 +150,11 @@ From `core/`:
 - `make test`
 - `make android`
 - `make ios`
+
+Planned backend targets:
+
+- `make api` (build API binary)
+- `make run-api` (run API locally)
 
 ## Current Scope (v1)
 

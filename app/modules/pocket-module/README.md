@@ -17,6 +17,12 @@ If any of these are missing, `requireNativeModule('PocketCore')` will fail at ru
 Pocket runtime config values for Expo builds are defined in `app/eas.json`.
 Keep all current `EXPO_PUBLIC_POCKET_*` keys populated for every profile (`development`, `preview`, `production`) so the native bridge and Go core see consistent config at app startup.
 
+Backend sponsorship direction:
+
+- use backend endpoints for readiness and sponsored operations
+- keep direct send fallback in mobile core/module path
+- do not keep paymaster signer keys in app-visible env
+
 ## Regenerate and validate iOS registration
 
 ```bash

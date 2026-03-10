@@ -366,9 +366,16 @@ contract USDCPaymaster is Ownable {
     function _verifyPaymasterSignature(PackedUserOperation calldata userOp) internal view {
         if (paymasterSigner == address(0)) return; // skip in dev/test
 
-        require(userOp.paymasterAndData.length >= 85, "MISSING_PAYMASTER_SIGNATURE");
-
-        bytes memory sig = userOp.paymasterAndData[20:85];
+        // Support both layouts:
+        // v0.6: paymasterAndData = paymaster(20) ++ signature(65)
+        // v0.7: paymasterAndData = paymaster(20) ++ verificationGas(16) ++ postOpGas(16) ++ signature(65)
+        bytes memory sig;
+        if (userOp.paymasterAndData.length >= 117) {
+            sig = userOp.paymasterAndData[52:117];
+        } else {
+            require(userOp.paymasterAndData.length >= 85, "MISSING_PAYMASTER_SIGNATURE");
+            sig = userOp.paymasterAndData[20:85];
+        }
 
         bytes32 approvalHash = keccak256(
             abi.encodePacked(

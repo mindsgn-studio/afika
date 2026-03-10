@@ -26,6 +26,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/health", api.Health())
 	mux.Handle("/v1/aa/readiness", api.Readiness())
+	mux.Handle("/v1/aa/prepare-owner", api.PrepareOwner())
 	mux.Handle("/v1/aa/create-sponsored", api.CreateSponsored())
 	mux.Handle("/v1/aa/send-sponsored", api.SendSponsored())
 

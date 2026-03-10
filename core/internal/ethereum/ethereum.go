@@ -461,27 +461,39 @@ func CreateOrGetSmartAccount(ctx context.Context, db *database.DB, network strin
 		}
 	}
 
-	// Sponsored-only: smart-account creation must be sponsored; never fall back to direct tx creation.
-	if !readiness.CanUseSponsoredCreate {
-		return "", "", errors.New("sponsored smart-account creation is unavailable")
-	}
-
 	privateKey, err := crypto.ToECDSA(owner.PrivateKey)
 	if err != nil {
 		return "", "", err
 	}
 
-	if userOpHash, createErr := createSmartAccountViaUserOperation(ctx, db, client, network, networkConfig, deployment, owner, ownerAddress, predicted, privateKey); createErr == nil {
+	// Prefer sponsored creation when available
+	if readiness.CanUseSponsoredCreate {
+		if userOpHash, createErr := createSmartAccountViaUserOperation(ctx, db, client, network, networkConfig, deployment, owner, ownerAddress, predicted, privateKey); createErr == nil {
+			if upsertErr := db.UpsertSmartAccount(ctx, owner.Address, network, predicted.Hex()); upsertErr != nil {
+				return "", "", upsertErr
+			}
+			_ = userOpHash
+			return owner.Address, predicted.Hex(), nil
+		} else if !readiness.HasSufficientOwnerBalance {
+			// If sponsored path failed and owner has no gas, surface the error and do not fall back.
+			return "", "", createErr
+		}
+	}
+
+	// Fallback: direct factory tx only when owner has sufficient native gas.
+	if !readiness.HasSufficientOwnerBalance {
+		return "", "", errors.New("smart-account creation unavailable: owner has insufficient gas and sponsored creation is unavailable or failing")
+	}
+
+	if txHash, err := createSmartAccountDirect(ctx, db, client, network, networkConfig, deployment, owner, ownerAddress, predicted, privateKey); err == nil {
 		if upsertErr := db.UpsertSmartAccount(ctx, owner.Address, network, predicted.Hex()); upsertErr != nil {
 			return "", "", upsertErr
 		}
-		_ = userOpHash
+		_ = txHash
 		return owner.Address, predicted.Hex(), nil
 	} else {
-		return "", "", createErr
+		return "", "", err
 	}
-
-	// Unreachable.
 }
 
 func CheckSmartAccountCreationReadiness(ctx context.Context, db *database.DB, network string) (SmartAccountCreationReadiness, error) {
@@ -1254,6 +1266,53 @@ func createSmartAccountViaUserOperation(
 		privateKey,
 		bundler,
 	)
+}
+
+func createSmartAccountDirect(
+	ctx context.Context,
+	db *database.DB,
+	client *ethclient.Client,
+	network string,
+	networkConfig networkDetails,
+	deployment config.Deployment,
+	sender database.WalletSecret,
+	ownerAddress common.Address,
+	predicted common.Address,
+	privateKey *ecdsa.PrivateKey,
+) (string, error) {
+	if db == nil {
+		return "", errors.New("database is required")
+	}
+
+	chainID, err := clientChainID(ctx, client)
+	if err != nil {
+		return "", err
+	}
+
+	transactor, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
+	if err != nil {
+		return "", err
+	}
+	transactor.Context = ctx
+
+	factoryAddress := common.HexToAddress(deployment.FactoryAddress)
+	factory, err := NewFactory(factoryAddress, client)
+	if err != nil {
+		return "", err
+	}
+
+	var tx *types.Transaction
+	if common.IsHexAddress(strings.TrimSpace(deployment.EntryPointAddress)) {
+		entry := common.HexToAddress(deployment.EntryPointAddress)
+		tx, err = factory.CreateAccountWithEntryPoint(transactor, ownerAddress, entry)
+	} else {
+		tx, err = factory.CreateAccount(transactor, ownerAddress)
+	}
+	if err != nil {
+		return "", err
+	}
+
+	return tx.Hash().Hex(), nil
 }
 
 func submitSmartAccountCreateUserOperation(

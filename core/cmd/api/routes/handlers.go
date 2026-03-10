@@ -8,14 +8,18 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/mindsgn-studio/pocket-money-app/core/cmd/api/middleware"
 	"github.com/mindsgn-studio/pocket-money-app/core/cmd/api/types"
 	"github.com/mindsgn-studio/pocket-money-app/core/internal/config"
@@ -41,6 +45,104 @@ func (a *API) Health() http.HandlerFunc {
 			Version:   "v1",
 			Timestamp: time.Now().UTC(),
 		})
+	}
+}
+
+// simple in-memory funding counter per (network, owner) to avoid accidental abuse in dev
+var ownerFundCounts = struct {
+	mu     sync.Mutex
+	counts map[string]int
+}{counts: make(map[string]int)}
+
+func (a *API) PrepareOwner() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			writeError(w, r, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed", false)
+			return
+		}
+
+		started := time.Now()
+		var req types.PrepareOwnerRequest
+		if err := decodeJSON(r, &req); err != nil {
+			writeError(w, r, http.StatusBadRequest, "invalid_request", err.Error(), false)
+			return
+		}
+
+		network := normalizeNetwork(req.Network)
+		ownerAddress := strings.TrimSpace(req.OwnerAddress)
+		if network == "" || ownerAddress == "" {
+			writeError(w, r, http.StatusBadRequest, "invalid_request", "network and ownerAddress are required", false)
+			return
+		}
+		if !common.IsHexAddress(ownerAddress) {
+			writeError(w, r, http.StatusBadRequest, "invalid_request", "invalid ownerAddress", false)
+			return
+		}
+
+		networkConfig := coreeth.GetNetwork(network)
+		if len(networkConfig.RPC) == 0 {
+			writeError(w, r, http.StatusBadRequest, "invalid_request", "unsupported network", false)
+			return
+		}
+
+		client, err := ethclient.DialContext(r.Context(), networkConfig.RPC[0])
+		if err != nil {
+			writeMappedError(w, r, err)
+			return
+		}
+		defer client.Close()
+
+		owner := common.HexToAddress(ownerAddress)
+		minGas := config.GetOwnerCreationMinGasWei(network)
+
+		balance, err := client.BalanceAt(r.Context(), owner, nil)
+		if err != nil {
+			writeMappedError(w, r, err)
+			return
+		}
+
+		resp := types.PrepareOwnerResponse{
+			Network:           network,
+			OwnerAddress:      ownerAddress,
+			OwnerBalanceWei:   balance.String(),
+			RequiredMinGasWei: minGas.String(),
+		}
+
+		if balance.Cmp(minGas) >= 0 {
+			resp.Status = "already_funded"
+			resp.Funded = false
+			writeSuccess(w, r, resp, map[string]int{"total": int(time.Since(started).Milliseconds())})
+			return
+		}
+
+		// Basic in-memory limit: at most 2 funding operations per (network, owner) per process lifetime.
+		key := fmt.Sprintf("%s|%s", network, strings.ToLower(ownerAddress))
+		ownerFundCounts.mu.Lock()
+		count := ownerFundCounts.counts[key]
+		if count >= 2 {
+			ownerFundCounts.mu.Unlock()
+			writeError(w, r, http.StatusTooManyRequests, "faucet_limit_reached", "owner has reached funding limit", true)
+			return
+		}
+		ownerFundCounts.counts[key] = count + 1
+		ownerFundCounts.mu.Unlock()
+
+		txHash, fundErr := fundOwner(r.Context(), client, network, owner, minGas)
+		if fundErr != nil {
+			writeMappedError(w, r, fundErr)
+			return
+		}
+
+		// Re-read balance best-effort
+		if newBalance, err := client.BalanceAt(r.Context(), owner, nil); err == nil {
+			resp.OwnerBalanceWei = newBalance.String()
+		}
+
+		resp.Status = "funded"
+		resp.Funded = true
+		resp.TxHash = txHash
+
+		writeSuccess(w, r, resp, map[string]int{"total": int(time.Since(started).Milliseconds())})
 	}
 }
 
@@ -259,9 +361,30 @@ func (a *API) SendSponsored() http.HandlerFunc {
 			}
 		}
 
+		// #region agent log
+		debugLogAA("H1", "handlers.go:SendSponsored:before_send", "about to send userOp", map[string]any{
+			"network":          network,
+			"entryPoint":       entryPointAddress,
+			"sender":           op.Sender.Hex(),
+			"nonce":            op.Nonce.String(),
+			"callGasLimit":     op.CallGasLimit.String(),
+			"verificationGas":  op.VerificationGasLimit.String(),
+			"preVerificationG": op.PreVerificationGas.String(),
+			"hasPaymasterData": len(op.PaymasterAndData) > 0,
+			"paymasterDataLen": len(op.PaymasterAndData),
+		})
+		// #endregion
+
 		bundler := coreeth.NewBundlerClient(deployment.BundlerURL)
 		userOpHash, err := bundler.SendUserOperation(r.Context(), op, entryPointAddress)
 		if err != nil {
+			// #region agent log
+			debugLogAA("H1", "handlers.go:SendSponsored:on_error", "bundler sendUserOperation failed", map[string]any{
+				"network":    network,
+				"entryPoint": entryPointAddress,
+				"error":      err.Error(),
+			})
+			// #endregion
 			writeMappedError(w, r, err)
 			return
 		}
@@ -275,6 +398,30 @@ func (a *API) SendSponsored() http.HandlerFunc {
 		writeSuccess(w, r, response, map[string]int{"total": int(time.Since(started).Milliseconds())})
 	}
 }
+
+// #region agent log
+func debugLogAA(hypothesisID, location, message string, data map[string]any) {
+	entry := map[string]any{
+		"sessionId":    "4f6b84",
+		"runId":        "pre-fix-aa23",
+		"hypothesisId": hypothesisID,
+		"location":     location,
+		"message":      message,
+		"data":         data,
+		"timestamp":    time.Now().UnixMilli(),
+	}
+
+	f, err := os.OpenFile("/Users/sibongiseni/projects/pocket-money-app/.cursor/debug-4f6b84.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	if err := json.NewEncoder(f).Encode(entry); err != nil {
+		return
+	}
+}
+// #endregion
 
 func buildReadiness(ctx context.Context, network, ownerAddress string) (coreeth.SmartAccountCreationReadiness, error) {
 	result := coreeth.SmartAccountCreationReadiness{
@@ -610,4 +757,76 @@ func writeJSON(w http.ResponseWriter, status int, payload any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(payload)
+}
+
+func fundOwner(ctx context.Context, client *ethclient.Client, network string, owner common.Address, minGas *big.Int) (string, error) {
+	trimmed := strings.TrimSpace(strings.ToLower(network))
+	var pkEnvName string
+	switch trimmed {
+	case "ethereum-sepolia":
+		pkEnvName = "POCKET_FUNDER_PRIVATE_KEY_SEPOLIA"
+	default:
+		pkEnvName = "POCKET_FUNDER_PRIVATE_KEY"
+	}
+
+	privateKeyHex := strings.TrimSpace(os.Getenv(pkEnvName))
+	if privateKeyHex == "" {
+		// fallback to generic if network-specific is missing
+		privateKeyHex = strings.TrimSpace(os.Getenv("POCKET_FUNDER_PRIVATE_KEY"))
+	}
+	if privateKeyHex == "" {
+		return "", errors.New("funder private key is not configured")
+	}
+
+	trimmedPK := strings.TrimPrefix(strings.TrimSpace(privateKeyHex), "0x")
+	if trimmedPK == "" {
+		return "", errors.New("invalid funder private key")
+	}
+
+	privateKey, err := crypto.HexToECDSA(trimmedPK)
+	if err != nil {
+		return "", errors.New("invalid funder private key")
+	}
+
+	chainID, err := client.ChainID(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	funderAddr := crypto.PubkeyToAddress(privateKey.PublicKey)
+
+	// Determine funding amount
+	amount := new(big.Int).Set(minGas)
+	amountEnvName := "POCKET_FUND_OWNER_AMOUNT_WEI_SEPOLIA"
+	if trimmed != "ethereum-sepolia" {
+		amountEnvName = "POCKET_FUND_OWNER_AMOUNT_WEI"
+	}
+	if raw := strings.TrimSpace(os.Getenv(amountEnvName)); raw != "" {
+		if v, ok := new(big.Int).SetString(raw, 10); ok && v.Sign() > 0 {
+			amount = v
+		}
+	}
+
+	nonce, err := client.PendingNonceAt(ctx, funderAddr)
+	if err != nil {
+		return "", err
+	}
+	gasPrice, err := client.SuggestGasPrice(ctx)
+	if err != nil {
+		return "", err
+	}
+
+	// Simple transfer tx
+	tx := ethtypes.NewTransaction(nonce, owner, amount, 21000, gasPrice, nil)
+	signer := ethtypes.LatestSignerForChainID(chainID)
+	signedTx, err := ethtypes.SignTx(tx, signer, privateKey)
+	if err != nil {
+		return "", err
+	}
+
+	if err := client.SendTransaction(ctx, signedTx); err != nil {
+		return "", err
+	}
+
+	return signedTx.Hash().Hex(), nil
 }

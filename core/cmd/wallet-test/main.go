@@ -109,6 +109,16 @@ type backendSendSponsoredResponse struct {
 	Status            string `json:"status"`
 }
 
+type backendPrepareOwnerResponse struct {
+	Network           string `json:"network"`
+	OwnerAddress      string `json:"ownerAddress"`
+	Status            string `json:"status"`
+	Funded            bool   `json:"funded"`
+	TxHash            string `json:"txHash,omitempty"`
+	OwnerBalanceWei   string `json:"ownerBalanceWei"`
+	RequiredMinGasWei string `json:"requiredMinGasWei"`
+}
+
 func main() {
 	var (
 		flagMode          = flag.String("mode", string(modeLocal), "Mode: local|backend")
@@ -249,74 +259,45 @@ func runLocal(ctx context.Context, w *core.WalletCore, network string) error {
 }
 
 func runBackend(ctx context.Context, w *core.WalletCore, c *backendClient, network, ownerAddress string, pollAttempts int, pollEvery time.Duration) error {
-	readiness, err := c.readiness(ctx, network, ownerAddress)
+	// Step 1: ask backend to prepare/fund owner so direct creation can succeed.
+	prep, err := c.prepareOwner(ctx, network, ownerAddress)
 	if err != nil {
 		return err
 	}
-	printJSON("backendReadiness", readiness)
+	printJSON("backendPrepareOwner", prep)
 
-	if !readiness.CanUseSponsoredCreate {
-		return fmt.Errorf("backend reports sponsored creation unavailable: canUseSponsoredCreate=false warnings=%v reasons=%v", readiness.Warnings, readiness.FailureReasons)
-	}
-
-	prepared, err := c.createSponsored(ctx, network, ownerAddress)
+	// Step 2: use core to check creation readiness.
+	readinessJSON, err := w.GetSmartAccountCreationReadiness(network)
 	if err != nil {
 		return err
 	}
-	printJSON("backendCreateSponsored", prepared)
+	fmt.Printf("creationReadiness=%s\n", readinessJSON)
 
-	if strings.TrimSpace(prepared.EntryPointAddress) == "" {
-		return errors.New("backend response missing entryPointAddress")
-	}
-	rawPreparedOp, err := json.Marshal(prepared.UserOperation)
+	// Step 3: create smart account via core (which will prefer sponsored if available, else direct factory tx when owner has gas).
+	createdJSON, err := w.CreateSmartContractAccount(network)
 	if err != nil {
 		return err
 	}
+	fmt.Printf("createSmartContractAccount=%s\n", createdJSON)
 
-	signedRaw, err := w.SignUserOperationPayload(network, prepared.EntryPointAddress, string(rawPreparedOp))
+	// Step 4: verify account and on-chain code, similar to local mode.
+	gotJSON, err := w.GetSmartContractAccount(network)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("signedUserOp=%s\n", signedRaw)
+	fmt.Printf("getSmartContractAccount=%s\n", gotJSON)
 
-	var signed struct {
-		UserOperation userOperationPayload `json:"userOperation"`
-		UserOpHash    string               `json:"userOpHash"`
+	accountAddr := extractJSONField(createdJSON, "accountAddress")
+	if accountAddr == "" {
+		accountAddr = extractJSONField(gotJSON, "accountAddress")
 	}
-	if err := json.Unmarshal([]byte(signedRaw), &signed); err != nil {
-		return err
-	}
-	if strings.TrimSpace(signed.UserOperation.Signature) == "" {
-		return errors.New("signing produced empty signature")
-	}
-
-	submitted, err := c.sendSponsored(ctx, backendSendSponsoredRequest{
-		Network:       network,
-		EntryPoint:    prepared.EntryPointAddress,
-		UserOperation: signed.UserOperation,
-	})
-	if err != nil {
-		return err
-	}
-	printJSON("backendSendSponsored", submitted)
-
-	for attempt := 1; attempt <= pollAttempts; attempt++ {
-		time.Sleep(pollEvery)
-		poll, err := c.readiness(ctx, network, ownerAddress)
-		if err != nil {
-			return err
+	if accountAddr != "" {
+		if ok, err := checkHasCode(ctx, network, accountAddr); err == nil {
+			fmt.Printf("onchainHasCode=%t accountAddress=%s\n", ok, accountAddr)
 		}
-		if poll.SmartAccountExists && strings.TrimSpace(poll.SmartAccountAddress) != "" {
-			printJSON("backendReadinessFinal", poll)
-			if ok, err := checkHasCode(ctx, network, poll.SmartAccountAddress); err == nil {
-				fmt.Printf("onchainHasCode=%t accountAddress=%s\n", ok, poll.SmartAccountAddress)
-			}
-			return nil
-		}
-		fmt.Printf("poll=%d/%d smartAccountExists=%t smartAccountAddress=%s\n", attempt, pollAttempts, poll.SmartAccountExists, strings.TrimSpace(poll.SmartAccountAddress))
 	}
 
-	return fmt.Errorf("timed out waiting for smart account deployment after %d attempts", pollAttempts)
+	return nil
 }
 
 func validateDeploymentAndBundler(ctx context.Context, network string) error {
@@ -405,6 +386,12 @@ func (c *backendClient) createSponsored(ctx context.Context, network, owner stri
 func (c *backendClient) sendSponsored(ctx context.Context, req backendSendSponsoredRequest) (backendSendSponsoredResponse, error) {
 	var out backendSendSponsoredResponse
 	err := c.post(ctx, "/v1/aa/send-sponsored", req, &out)
+	return out, err
+}
+
+func (c *backendClient) prepareOwner(ctx context.Context, network, owner string) (backendPrepareOwnerResponse, error) {
+	var out backendPrepareOwnerResponse
+	err := c.post(ctx, "/v1/aa/prepare-owner", readinessRequest{Network: network, OwnerAddress: owner}, &out)
 	return out, err
 }
 

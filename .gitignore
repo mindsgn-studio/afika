@@ -37,3 +37,5 @@ coverage
 app/modules/pocket-module/android
 eas.json
 PocketCore.xcframework
+.vscode
+.cursor

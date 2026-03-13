@@ -6,12 +6,12 @@ export default function ActionCard() {
 
     return (
         <View  testID="action-container">
-        <TouchableOpacity style={styles.button}
-            onPress={() => {
-                router.push("/send")
-            }}>
-            <Text style={styles.title}>{"SEND"}</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.button}
+              onPress={() => {
+                  router.push("/send")
+              }}>
+              <Text style={styles.title}>{"SEND"}</Text>
+          </TouchableOpacity>
         </View>
     );
 }

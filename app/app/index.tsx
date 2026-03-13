@@ -2,7 +2,7 @@ import { StyleSheet, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
-import PocketCore from '@/modules/pocket-module';
+import { Screen } from '@/@src/components/primatives/screen';
 
 export default function App() {
   const router = useRouter();
@@ -21,7 +21,9 @@ export default function App() {
   },[]);
   
   return (
-    <ActivityIndicator style={styles.container} />
+    <Screen>
+      <ActivityIndicator style={styles.container} />
+    </Screen>
   );
 }
 

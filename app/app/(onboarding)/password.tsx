@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   Pressable,
+  ActivityIndicator
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
@@ -12,6 +13,8 @@ import PocketCore from '@/modules/pocket-module';
 import { Directory, Paths } from 'expo-file-system';
 import useWallet from '@/@src/store/wallet';
 import { pocketBackend } from '@/@src/lib/api/pocketBackend';
+import { Screen } from '@/@src/components/primatives/screen';
+import { Title } from '@/@src/components/primatives/title';
 
 const PIN_LENGTH = 5;
 const DEFAULT_NETWORK: 'ethereum-mainnet' | 'ethereum-sepolia' =
@@ -38,13 +41,12 @@ export default function PasswordScreen() {
     try {
       setStatus('Unlocking wallet...');
       const dataDir = new Directory(Paths.document);
-      // initWalletSecure manages key material via iOS Keychain — no password arg needed
       await PocketCore.initWalletSecure(dataDir.uri);
       const walletAddress = await PocketCore.openOrCreateWallet('Main Wallet');
       
       try {
         await pocketBackend.saveWallet(walletAddress, DEFAULT_NETWORK)
-        const response = await pocketBackend.listTransactions(walletAddress)
+        // await pocketBackend.listTransactions(walletAddress)
       } catch {
       }
 
@@ -69,6 +71,9 @@ export default function PasswordScreen() {
       } else {
         setStatus('Incorrect PIN. Try again.');
         setConfirmationPin([]);
+        setTimeout(() => {
+          setStatus("")
+        }, 2000)
       }
     }
   }, [confirmationPin]);
@@ -94,14 +99,39 @@ export default function PasswordScreen() {
     </Pressable>
   );
 
+
+  if (status==="Unlocking wallet..." ){
+    return(
+      <Screen style={[{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center"
+      }]}>
+        <ActivityIndicator />
+        <Title>{status}</Title>
+      </Screen>
+    )
+  } 
+
+  if (status==="Incorrect PIN. Try again."){
+    return(
+      <Screen style={[{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center"
+      }]}>
+        <Title>{status}</Title>
+      </Screen>
+    )
+  }
+
   return (
-    <View style={styles.container} testID="unlock-pin-screen">
+    <Screen style={[styles.container]} testID="unlock-pin-screen">
       <View style={styles.numberContainer}>
-        <Text style={styles.title}>Enter PIN</Text>
+        <Title>ENTER PIN</Title>
         <View style={styles.dotsRow}>
           {Array.from({ length: PIN_LENGTH }).map((_, i) => renderDot(i))}
         </View>
-        {status ? <Text style={styles.status}>{status}</Text> : null}
       </View>
 
       <View style={styles.keypad}>
@@ -118,26 +148,26 @@ export default function PasswordScreen() {
           <Text style={styles.keyText}>⌫</Text>
         </Pressable>
       </View>
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#0B0B0E',
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingTop: 60,
   },
   numberContainer:{
-    height: 120,
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center"
   },
   title: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 28,
     marginBottom: 32,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   dotsRow: {
     flexDirection: 'row',
@@ -145,17 +175,17 @@ const styles = StyleSheet.create({
     marginBottom: 48,
   },
   dot: {
-    width: 14,
-    height: 14,
+    width: 50,
+    height: 50,
     borderRadius: 7,
   },
   dotEmpty: {
-    borderWidth: 1.5,
-    borderColor: '#5A5A64',
+    borderWidth: 3,
+    borderColor: '#1F1F1F',
     backgroundColor: 'transparent',
   },
   dotFilled: {
-    backgroundColor: '#4F7FFF',
+    backgroundColor: '#1F1F1F',
   },
   keypad: {
     width: '80%',
@@ -163,18 +193,19 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     rowGap: 18,
+    paddingBottom: 40,
   },
   key: {
     width: '30%',
-    height: 10,
+    height: 50,
     aspectRatio: 1,
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#15151A',
+    backgroundColor: '#1F1F1F',
   },
   keyPressed: {
-    backgroundColor: '#1F1F26',
+    backgroundColor: '#89808F',
   },
   keyText: {
     color: '#fff',
@@ -187,7 +218,8 @@ const styles = StyleSheet.create({
   status: {
     marginTop: 24,
     color: '#B5B5BE',
-    fontSize: 12,
+    fontWeight: "bold",
+    fontSize: 28,
     width: '80%',
     textAlign: 'center',
   },

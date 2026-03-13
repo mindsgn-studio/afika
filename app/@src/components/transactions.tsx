@@ -16,6 +16,7 @@ export default function TransactionList() {
       try {
         const response = await pocketBackend.listTransactions(walletAddress);
         const { transactions } = response
+        //@ts-expect-error unkown type error
         const transactionList = transactions as WalletTransaction[];
         setTransactions(transactionList)
       } catch {
@@ -34,10 +35,11 @@ export default function TransactionList() {
     <View testID="transaction-list">
       <FlashList
         data={usdcTransactions}
+        //@ts-expect-error unknown error
         estimatedItemSize={90}
         keyExtractor={(item) => item.hash}
-        ListEmptyComponent={ <EmptyTransactionCard /> }
-        ListHeaderComponent={<TransactionHeader />}
+        ListEmptyComponent={<EmptyTransactionCard /> }
+        ListHeaderComponent={transactions.length == 0? null: <TransactionHeader />}
         renderItem={({ item }) => <TransactionCard tx={item} />}
       />
     </View>

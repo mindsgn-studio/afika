@@ -55,9 +55,7 @@ export default function PinScreen() {
       
       try {
         await pocketBackend.saveWallet(walletAddress, network)
-        const response = await pocketBackend.listTransactions(walletAddress)
       } catch (error) {
-
       }
   
       await savePin(confirmedPin);

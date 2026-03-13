@@ -2,6 +2,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { formatCurrency, convertUSD } from '@/@src/lib/locale/currency';
 import { useFxRate } from '@/@src/lib/locale/useFxRate';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { colors } from '../theme/colors';
 
 function shortenAddress(addr: any) {
   if (!addr) return '';
@@ -60,10 +61,9 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     borderRadius: 20,
-    backgroundColor: '#161B27',
+    backgroundColor: colors.cardBackground,
     padding: 20,
     gap: 6,
-    borderWidth: 1,
     // borderColor: '#2A3143',
     marginBottom: 16,
     justifyContent: "space-between"
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   primaryBalance: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#F1F5F9',
+    color: colors.textPrimary,
   },
   secondaryBalance: {
     fontSize: 15,

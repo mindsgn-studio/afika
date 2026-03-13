@@ -1,17 +1,18 @@
 import { StyleSheet, TouchableOpacity, View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Button } from '@/@src/components/primatives/button';
 
 export default function ActionCard() {
     const router = useRouter();
 
     return (
-        <View  testID="action-container">
-        <TouchableOpacity style={styles.button}
-            onPress={() => {
+        <View testID="action-container">
+          <Button
+              label="SEND"
+              onPress={() => {
                 router.push("/send")
-            }}>
-            <Text style={styles.title}>{"SEND"}</Text>
-        </TouchableOpacity>
+              }}
+          />
         </View>
     );
 }

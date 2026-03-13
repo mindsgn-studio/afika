@@ -5,6 +5,8 @@ import PocketCore from '@/modules/pocket-module';
 import { ensureWalletCoreReady, DEFAULT_NETWORK } from '@/@src/lib/core/walletCore';
 import { formatCurrency, convertUSD } from '@/@src/lib/locale/currency';
 import { useFxRate } from '@/@src/lib/locale/useFxRate';
+import { Card } from './primatives/card';
+import { Balance } from './primatives/balance';
 
 export default function WalletCard() {
   const { walletAddress } = useWallet();
@@ -57,46 +59,24 @@ export default function WalletCard() {
   }, [usdcBalance, locale, currency, rate]);
 
   return (
-    <View style={styles.card} testID="wallet-card">
+    <Card testID="wallet-card">
       <View>
-         <Text style={styles.secondaryBalance}>
+          <Text style={styles.secondaryBalance}>
             {"Your Balance"}
           </Text>
-          <Text style={styles.primaryBalance}>
+          <Balance>
             {displayBalance || formatCurrency(0, locale, currency)}
-          </Text>
+          </Balance>
       </View>
       <View>
         <TouchableOpacity>
-          <Text style={styles.secondaryBalance}>
-            see
-          </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: 20,
-    backgroundColor: '#161B27',
-    padding: 20,
-    gap: 6,
-    height: 150,
-    borderWidth: 1,
-    // borderColor: '#2A3143',
-    marginBottom: 16,
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between"
-  },
-  primaryBalance: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#F1F5F9',
-    letterSpacing: -0.5,
-  },
   secondaryBalance: {
     fontSize: 15,
     color: '#94A3B8',

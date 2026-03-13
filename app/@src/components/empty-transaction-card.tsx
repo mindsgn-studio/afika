@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { Title } from './primatives/title';
+import { Body } from './primatives/body';
 
 export default function EmptyTransactionCard() {
   return (
     <View style={styles.card} testID="wallet-card">
-      <Text style={styles.title}>
+      <Title>
         No Transactions Yet
-      </Text>
-      <Text style={styles.body}>
+      </Title>
+      <Body>
         Your transactions will appear here once you start sending or receiving money.
-      </Text>
+      </Body>
     </View>
   );
 }
@@ -20,7 +22,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     gap: 6,
-    borderWidth: 1,
     marginBottom: 16,
   },
   header: {

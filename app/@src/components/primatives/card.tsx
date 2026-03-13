@@ -14,8 +14,6 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 6,
     height: 150,
-    borderWidth: 1,
-    // borderColor: '#2A3143',
     marginBottom: 16,
     display: "flex",
     flexDirection: "row",

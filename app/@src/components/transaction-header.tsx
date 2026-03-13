@@ -1,17 +1,17 @@
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { formatCurrency, convertUSD } from '@/@src/lib/locale/currency';
-import { useFxRate } from '@/@src/lib/locale/useFxRate';
-import Ionicons from '@expo/vector-icons/Ionicons';
-
+import { StyleSheet, View } from 'react-native';
+import { Title } from './primatives/title';
+import { SubButton } from './primatives/sub-button';
 
 export default function TransactionHeader() {
   
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>{"TRANSACTIONS"}</Text>
-      <TouchableOpacity testID='button-see-all-transactions'>
-        <Text style={styles.title}>{"SEE ALL"}</Text>
-      </TouchableOpacity>
+      <Title>{"TRANSACTIONS"}</Title>
+      <SubButton 
+        onPress={() => {}}
+        label='SEE ALL'
+        testID='button-see-all-transactions'
+      />
     </View>
   );
 }
@@ -22,6 +22,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginVertical: 20,
+    alignItems: "center"
   },
   title: {
     color: "white", 

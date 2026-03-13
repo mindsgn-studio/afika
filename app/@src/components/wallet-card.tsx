@@ -70,7 +70,6 @@ export default function WalletCard() {
       </View>
       <View>
         <TouchableOpacity>
-          
         </TouchableOpacity>
       </View>
     </Card>
@@ -78,15 +77,6 @@ export default function WalletCard() {
 }
 
 const styles = StyleSheet.create({
-  card: {
-  
-  },
-  primaryBalance: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#F1F5F9',
-    letterSpacing: -0.5,
-  },
   secondaryBalance: {
     fontSize: 15,
     color: '#94A3B8',

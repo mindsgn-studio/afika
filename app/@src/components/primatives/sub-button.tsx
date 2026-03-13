@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, TextProps } from 'react-native';
 import { colors } from '@/@src/theme/colors';
 import { typography } from '@/@src/theme/typography';
 
-export const Button: React.FC<{ label: string; onPress: () => void; testID?: string }> = ({
+export const SubButton: React.FC<{ label: string; onPress: () => void; testID?: string }> = ({
   label,
   onPress,
   testID,
@@ -16,16 +16,14 @@ export const Button: React.FC<{ label: string; onPress: () => void; testID?: str
 
 const styles = StyleSheet.create({
   button: {
-    width: 200,
     marginTop: 8,
     borderRadius: 999,
-    backgroundColor: colors.buttonBackground,
     paddingVertical: 12,
     alignItems: 'center',
   },
   buttonText: {
-    color: colors.ButtonTitle,
-    ...typography.button,
+    color: colors.textPrimary,
+    ...typography.body,
     fontWeight: '700',
   },
 });

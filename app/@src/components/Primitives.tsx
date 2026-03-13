@@ -73,5 +73,17 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     ...typography.body,
   },
+  button: {
+    marginTop: 8,
+    borderRadius: 999,
+    backgroundColor: colors.primary,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: colors.textPrimary,
+    ...typography.body,
+    fontWeight: '700',
+  },
 });
 

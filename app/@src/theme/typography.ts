@@ -4,6 +4,11 @@ export const typography = {
     fontSize: 28,
     fontWeight: '800' as const,
   },
+  button: {
+    fontFamily: 'System',
+    fontSize: 28,
+    fontWeight: '800' as const,
+  },
   balance: {
     fontFamily: 'System',
     fontSize: 32,

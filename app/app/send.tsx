@@ -1,20 +1,20 @@
-import { useState } from "react";
+import { use, useState } from "react";
 import { View, StyleSheet } from "react-native";
-
 import MethodSelector from "@/@src/components/selector";
 import AmountInput from "@/@src/components/amount-input";
 import RecipientInput from "@/@src/components/recipient-input";
 import ReviewCard from "@/@src/components/review-card";
+import { sendUSDC } from "@/@src/lib/ethereum/sendUSDC";
 
 import { SendState, SendMethod } from "@/@src/types/send";
 import { nextState, prevState } from "@/@src/store/send";
-
 import { Button } from "@/@src/components/primatives/button";
 import { Title } from "@/@src/components/Primitives";
+import useWallet from "@/@src/store/wallet";
 
 export default function SendFlow() {
   const [state, setState] = useState<SendState>("method");
-
+  const  {network} = useWallet();
   const [method, setMethod] = useState<SendMethod | null>(null);
   const [amount, setAmount] = useState("");
   const [usdAmount, setUsdAmount] = useState("");
@@ -25,6 +25,8 @@ export default function SendFlow() {
 
   const send = async () => {
     setState("sending");
+
+    console.log(network)
 
     try {
       setState("sent");

@@ -22,6 +22,11 @@ function mapBalanceDoc(data: any): TokenBalance {
 
 function mapTxDoc(data: any): WalletTransaction {
   const hash = String(data.txHash || data.hash || '');
+  const timestampMs = Number(data.timestampMs || data.timestamp || 0);
+  const normalizedTimestamp = timestampMs > 0 && timestampMs < 1_000_000_000_000
+    ? timestampMs * 1000
+    : timestampMs;
+  const feeNative = String(data.feeNative || data.feeBase || data.feeEth || data.feeETH || '');
   return {
     hash,
     fromAddress: String(data.fromAddress || ''),
@@ -30,14 +35,16 @@ function mapTxDoc(data: any): WalletTransaction {
     tokenAddress: data.tokenAddress ? String(data.tokenAddress) : undefined,
     tokenSymbol: String(data.tokenSymbol || ''),
     amount: String(data.amount || '0'),
-    feeEth: String(data.feeEth || data.feeETH || ''),
+    feeNative,
+    feeEth: feeNative,
     feeUsd: data.feeUsd ? String(data.feeUsd) : (data.feeUSD ? String(data.feeUSD) : undefined),
     usdAmount: data.usdAmount ? String(data.usdAmount) : undefined,
     network: String(data.network || ''),
     mode: 'backend',
     direction: (data.direction === 'debit' ? 'debit' : 'credit'),
     state: String(data.state || ''),
-    timestamp: Number(data.timestamp || 0),
+    timestampMs: normalizedTimestamp,
+    timestamp: normalizedTimestamp,
   };
 }
 
@@ -147,6 +154,7 @@ export function useFirebaseSync() {
             tokenAddress: tx.tokenAddress ?? '',
             tokenSymbol: tx.tokenSymbol,
             amount: tx.amount,
+            feeNative: tx.feeNative ?? tx.feeEth,
             feeEth: tx.feeEth,
             feeUsd: tx.feeUsd ?? '',
             usdAmount: tx.usdAmount ?? '',
@@ -154,7 +162,8 @@ export function useFirebaseSync() {
             direction: tx.direction,
             state: tx.state,
             blockNumber: 0,
-            timestamp: tx.timestamp,
+            timestampMs: tx.timestampMs ?? tx.timestamp,
+            timestamp: tx.timestampMs ?? tx.timestamp,
           }))));
         } catch {
           // ignore local save errors

@@ -118,7 +118,7 @@ export default function Home() {
           tokenAddress: USDC_ADDRESS[DEFAULT_NETWORK],
           amount: usdcAmount,
           network: DEFAULT_NETWORK,
-          timestamp: Math.floor(Date.now() / 1000),
+          timestampMs: Date.now(),
         });
       }
       setStatus(`Transfer submitted: ${txHash}`);

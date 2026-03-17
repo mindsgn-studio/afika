@@ -14,20 +14,24 @@ export default function WalletCard() {
   const [displayBalance, setDisplayBalance] = useState('');
   const backendStatus = useBackendStatus(walletAddress);
 
-  const usdcValue = useMemo(() => {
-    const usdc = balances.find((b) => b.symbol === 'USDC');
-    if (!usdc) return 0;
-    const raw = usdc.usdValue || usdc.balance || '0';
-    return Number(raw);
-  }, [balances]);
+  /*
+    const usdcValue = useMemo(() => {
+      const usdc = balances.find((b) => b.symbol === 'USDC');
+      if (!usdc) return 0;
+      const raw = usdc.usdValue || usdc.balance || '0';
+      return Number(raw);
+    }, [balances]);
+  */
 
-  useEffect(() => {
-    setUsdcBalance(usdcValue);
-    const usdString = usdcValue.toString();
-    const converted = convertUSD(usdString, rate);
-    const value = converted ?? usdcValue;
-    setDisplayBalance(formatCurrency(value, locale, currency));
-  }, [usdcValue, locale, currency, rate]);
+  /*
+    useEffect(() => {
+      setUsdcBalance(usdcValue);
+      const usdString = usdcValue.toString();
+      const converted = convertUSD(usdString, rate);
+      const value = converted ?? usdcValue;
+      setDisplayBalance(formatCurrency(value, locale, currency));
+    }, [usdcValue, locale, currency, rate]);
+  */
 
   return (
     <Card testID="wallet-card">

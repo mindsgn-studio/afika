@@ -16,8 +16,6 @@ import (
 	_ "github.com/mutecomm/go-sqlcipher/v4"
 )
 
-// SecureKeyStore must be implemented by the platform layer (iOS Keychain /
-// Android Keystore) to supply a durable master key and KDF salt.
 type SecureKeyStore interface {
 	GetOrCreateMasterKey(ctx context.Context) ([]byte, error)
 	GetOrCreateKDFSalt(ctx context.Context) ([]byte, error)
@@ -48,6 +46,7 @@ type TransactionRecord struct {
 	TxHash        string
 	FromAddress   string
 	ToAddress     string
+	Description   string
 	TokenAddress  string
 	TokenSymbol   string
 	Amount        string
@@ -237,12 +236,12 @@ func (d *DB) InsertTransaction(ctx context.Context, tx TransactionRecord) error 
 	_, err := d.sql.ExecContext(ctx, `
 		INSERT OR IGNORE INTO transactions (
 			uuid, wallet_address, tx_hash, from_address, to_address,
-			token_address, token_symbol, amount, fee_eth, fee_usd, usd_amount,
+			description, token_address, token_symbol, amount, fee_eth, fee_usd, usd_amount,
 			network, tx_mode, state, block_number, timestamp, created_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		tx.UUID, strings.ToLower(tx.WalletAddress), tx.TxHash,
 		strings.ToLower(tx.FromAddress), strings.ToLower(tx.ToAddress),
-		strings.ToLower(tx.TokenAddress), tx.TokenSymbol, tx.Amount,
+		tx.Description, strings.ToLower(tx.TokenAddress), tx.TokenSymbol, tx.Amount,
 		tx.FeeETH, tx.FeeUSD, tx.USDAmount, tx.Network, tx.TxMode, tx.State,
 		tx.BlockNumber, tx.Timestamp, tx.CreatedAt)
 	return err
@@ -260,7 +259,7 @@ func (d *DB) UpdateTransactionState(ctx context.Context, txHash string, state st
 
 func (d *DB) ListTransactions(ctx context.Context, walletAddress string, token string, limit int, offset int) ([]TransactionRecord, error) {
 	query := `SELECT uuid, wallet_address, tx_hash, from_address, to_address,
-		token_address, token_symbol, amount, fee_eth, fee_usd, usd_amount,
+		description, token_address, token_symbol, amount, fee_eth, fee_usd, usd_amount,
 		network, tx_mode, state, block_number, timestamp, created_at
 		FROM transactions WHERE wallet_address = ?`
 	args := []any{strings.ToLower(walletAddress)}
@@ -281,7 +280,7 @@ func (d *DB) ListTransactions(ctx context.Context, walletAddress string, token s
 func (d *DB) ListAllTransactions(ctx context.Context, walletAddress string, limit int, offset int) ([]TransactionRecord, error) {
 	rows, err := d.sql.QueryContext(ctx, `
 		SELECT uuid, wallet_address, tx_hash, from_address, to_address,
-			token_address, token_symbol, amount, fee_eth, fee_usd, usd_amount,
+			description, token_address, token_symbol, amount, fee_eth, fee_usd, usd_amount,
 			network, tx_mode, state, block_number, timestamp, created_at
 		FROM transactions WHERE wallet_address = ?
 		ORDER BY timestamp DESC LIMIT ? OFFSET ?`,
@@ -299,7 +298,7 @@ func scanTransactionRows(rows *sql.Rows) ([]TransactionRecord, error) {
 		var t TransactionRecord
 		if err := rows.Scan(
 			&t.UUID, &t.WalletAddress, &t.TxHash, &t.FromAddress, &t.ToAddress,
-			&t.TokenAddress, &t.TokenSymbol, &t.Amount, &t.FeeETH, &t.FeeUSD,
+			&t.Description, &t.TokenAddress, &t.TokenSymbol, &t.Amount, &t.FeeETH, &t.FeeUSD,
 			&t.USDAmount, &t.Network, &t.TxMode, &t.State, &t.BlockNumber,
 			&t.Timestamp, &t.CreatedAt,
 		); err != nil {
@@ -534,6 +533,7 @@ func createSchema(ctx context.Context, db *sql.DB) error {
 		tx_hash        TEXT NOT NULL UNIQUE,
 		from_address   TEXT NOT NULL DEFAULT '',
 		to_address     TEXT NOT NULL DEFAULT '',
+		description    TEXT NOT NULL DEFAULT '',
 		token_address  TEXT NOT NULL DEFAULT '',
 		token_symbol   TEXT NOT NULL DEFAULT '',
 		amount         TEXT NOT NULL DEFAULT '0',
@@ -582,6 +582,9 @@ func createSchema(ctx context.Context, db *sql.DB) error {
 		return err
 	}
 	if err := addColumnIfMissing(ctx, db, "transactions", "usd_amount", "TEXT", "''"); err != nil {
+		return err
+	}
+	if err := addColumnIfMissing(ctx, db, "transactions", "description", "TEXT", "''"); err != nil {
 		return err
 	}
 	return nil

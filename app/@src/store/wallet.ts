@@ -9,6 +9,7 @@ export type WalletTransaction = {
   tokenAddress?: string;
   tokenSymbol: string;
   amount: string;
+  feeNative?: string;
   feeEth: string;
   feeUsd?: string;
   usdAmount?: string;
@@ -16,6 +17,7 @@ export type WalletTransaction = {
   mode: string;
   direction: 'credit' | 'debit';
   state: string;
+  timestampMs?: number;
   timestamp: number;
 };
 

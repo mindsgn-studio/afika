@@ -2,6 +2,7 @@
 
 import { sendUSDC } from "@/@src/lib/ethereum/sendUSDC";
 import { pocketBackend } from "@/@src/lib/api/pocketBackend";
+import type { NetworkKey } from "@/@src/lib/core/walletCore";
 
 export async function executeSend({
   network,
@@ -10,7 +11,7 @@ export async function executeSend({
   walletAddress,
   tokenAddress,
 }: {
-  network: string;
+  network: NetworkKey;
   destination: string;
   amountUsd: string;
   walletAddress: string;
@@ -27,7 +28,7 @@ export async function executeSend({
       tokenAddress,
       amount: amountUsd,
       network,
-      timestamp: Math.floor(Date.now() / 1000),
+      timestampMs: Date.now(),
     });
   }
 

@@ -77,6 +77,11 @@ export type BackendWallet = {
   address: string;
   network: string;
   createdAt: number;
+  phoneNumber?: string;
+  isVerified?: boolean;
+  userLevel?: 'level0' | 'level1';
+  phoneLinkedAt?: number;
+  gasGiftSent?: boolean;
 };
 
 export type BackendTokenBalance = {
@@ -130,11 +135,20 @@ export const pocketBackend = {
   },
 
   /** Register a wallet address for balance and transaction tracking on the backend. */
-  async saveWallet(address: string, network: string) {
-    return callBackend<{ address: string; network: string }>(URLS.walletsSave, {
+  async saveWallet(address: string, network: string, options?: { phoneNumber?: string; isVerified?: boolean }) {
+    return callBackend<BackendWallet>(URLS.walletsSave, {
       method: 'POST',
-      body: { address, network },
+      body: {
+        address,
+        network,
+        ...(options?.phoneNumber ? { phoneNumber: options.phoneNumber } : {}),
+        ...(typeof options?.isVerified === 'boolean' ? { isVerified: options.isVerified } : {}),
+      },
     });
+  },
+
+  async linkPhoneNumber(address: string, network: string, phoneNumber: string) {
+    return this.saveWallet(address, network, { phoneNumber, isVerified: true });
   },
 
   /** List all tracked wallet addresses. */

@@ -12,6 +12,7 @@
     "check:env": "node ./scripts/check-env.js"
   },
   "dependencies": {
+    "@react-native-picker/picker": "2.11.4",
     "@shopify/flash-list": "2.0.2",
     "ethers": "^6.16.0",
     "expo": "~55.0.3",

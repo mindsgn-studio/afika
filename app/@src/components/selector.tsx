@@ -5,10 +5,10 @@ import Tag from "@/@src/components/tag";
 import { SendMethod } from "@/@src/types/send";
 
 const methods: SendMethod[] = [
+  "phone",
   "bank",
   "ethereum",
   "bitcoin",
-  "phone",
   "email",
 ];
 
@@ -35,7 +35,6 @@ export default function MethodSelector({
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     display: "flex",
     flexDirection: "row",
     flexWrap: "wrap",

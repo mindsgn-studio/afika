@@ -15,7 +15,7 @@ import useWallet from "@/@src/store/wallet";
 export default function SendFlow() {
   const [state, setState] = useState<SendState>("method");
   const  {network} = useWallet();
-  const [method, setMethod] = useState<SendMethod | null>(null);
+  const [method, setMethod] = useState<SendMethod | null>("phone");
   const [amount, setAmount] = useState("");
   const [usdAmount, setUsdAmount] = useState("");
   const [destination, setDestination] = useState("");
@@ -39,11 +39,10 @@ export default function SendFlow() {
     <View style={styles.container}>
       {state === "method" && (
         <>
-          <Title>How will you send money?</Title>
-
-          <MethodSelector
-            value={method}
-            onChange={(m) => setMethod(m)}
+          <RecipientInput
+            method={method}
+            value={destination}
+            onChange={setDestination}
           />
 
           <Button
@@ -61,22 +60,6 @@ export default function SendFlow() {
             amount={amount}
             currency="R"
             onChange={setAmount}
-          />
-
-          <Button
-            label="Next"
-            onPress={next}
-          />
-        </>
-      )}
-
-      {state === "recipient" && method && (
-        <>
-          <Title>Recipient</Title>
-          <RecipientInput
-            method={method}
-            value={destination}
-            onChange={setDestination}
           />
 
           <Button

@@ -1,5 +1,3 @@
-// components/send/AmountInput.tsx
-
 import { View, Text, StyleSheet } from "react-native";
 import AmountKeypad from "@/@src/components/amount-keypad";
 

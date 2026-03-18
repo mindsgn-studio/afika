@@ -10,7 +10,7 @@ export default function App() {
   const getSecureKey = async () => {
     let result = await SecureStore.getItemAsync("onboarded");
     if (result) {
-      router.replace('/(onboarding)/password');
+    router.replace('/(onboarding)/password');
     } else {
       router.replace('/(onboarding)/create');
     }

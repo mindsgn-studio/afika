@@ -7,6 +7,8 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import {useRouter} from 'expo-router';
+import { Screen } from '@/@src/components/primatives/screen';
+import { Title } from '@/@src/components/primatives/title';
 
 const PIN_LENGTH = 5;
 
@@ -70,56 +72,49 @@ export default function PinScreen() {
   };
 
   return (
-    <View style={styles.container} testID="create-pin-screen">
-      <View style={styles.numberContainer}>
-        <Text style={styles.title}>Create New PIN</Text>
-          <View style={styles.dotsRow}>
-          {Array.from({ length: PIN_LENGTH }).map((_, i) =>
-            renderDot(i)
-          )}
-        </View>
-      </View>
-      
-      <View style={styles.keypad}>
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) =>
-          renderButton(String(n), () => onPressNumber(String(n)))
-        )}
-
-        <View style={styles.keyPlaceholder} />
-
-        {renderButton('0', () => onPressNumber('0'))}
-
-        <Pressable
-          testID="create-pin-delete"
-          onPress={onDelete}
-          style={({ pressed }) => [
-            styles.key,
-            pressed && styles.keyPressed,
-          ]}
-        >
-          <Text style={styles.keyText}>⌫</Text>
-        </Pressable>
-      </View>
-    </View>
+    <Screen style={[styles.container]} testID="unlock-pin-screen">
+         <View style={styles.numberContainer}>
+           <Title>CREATE NEW PIN</Title>
+           <View style={styles.dotsRow}>
+             {Array.from({ length: PIN_LENGTH }).map((_, i) => renderDot(i))}
+           </View>
+         </View>
+   
+         <View style={styles.keypad}>
+           {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) =>
+             renderButton(String(n), () => onPressNumber(String(n)))
+           )}
+           <View style={styles.keyPlaceholder} />
+           {renderButton('0', () => onPressNumber('0'))}
+           <Pressable
+             testID="unlock-pin-delete"
+             onPress={onDelete}
+             style={({ pressed }) => [styles.key, pressed && styles.keyPressed]}
+           >
+             <Text style={styles.keyText}>⌫</Text>
+           </Pressable>
+         </View>
+       </Screen>
   );
 }
 
+
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#0B0B0E',
     alignItems: 'center',
     justifyContent: 'flex-start',
     paddingTop: 60,
   },
   numberContainer:{
-    height: 120,
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center"
   },
   title: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 28,
     marginBottom: 32,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   dotsRow: {
     flexDirection: 'row',
@@ -127,50 +122,52 @@ const styles = StyleSheet.create({
     marginBottom: 48,
   },
   dot: {
-    width: 14,
-    height: 14,
+    width: 50,
+    height: 50,
     borderRadius: 7,
   },
   dotEmpty: {
-    borderWidth: 1.5,
-    borderColor: '#5A5A64',
+    borderWidth: 3,
+    borderColor: '#1F1F1F',
     backgroundColor: 'transparent',
   },
-
-  // filled circle (placeholder color when digit is entered)
   dotFilled: {
-    backgroundColor: '#4F7FFF',
+    backgroundColor: '#1F1F1F',
   },
-
   keypad: {
     width: '80%',
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     rowGap: 18,
+    paddingBottom: 40,
   },
-
   key: {
     width: '30%',
-    height: 10,
+    height: 50,
     aspectRatio: 1,
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#15151A',
+    backgroundColor: '#1F1F1F',
   },
-
   keyPressed: {
-    backgroundColor: '#1F1F26',
+    backgroundColor: '#89808F',
   },
-
   keyText: {
     color: '#fff',
     fontSize: 26,
     fontWeight: '600',
   },
-
   keyPlaceholder: {
     width: '30%',
+  },
+  status: {
+    marginTop: 24,
+    color: '#B5B5BE',
+    fontWeight: "bold",
+    fontSize: 28,
+    width: '80%',
+    textAlign: 'center',
   },
 });

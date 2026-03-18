@@ -41,7 +41,7 @@ function buildHeaders() {
 
 async function callBackend<T>(
   url: string,
-  options?: { method?: string; body?: Record<string, unknown> },
+  options?: { method?: string; body?: Record<string, unknown>; headers?: Record<string, string> },
 ): Promise<T> {
   if (!url) {
     throw new Error('backend_not_configured');
@@ -54,7 +54,10 @@ async function callBackend<T>(
     const method = options?.method ?? (options?.body ? 'POST' : 'GET');
     const response = await fetch(url, {
       method,
-      headers: buildHeaders(),
+      headers: {
+        ...buildHeaders(),
+        ...(options?.headers ?? {}),
+      },
       body: options?.body ? JSON.stringify(options.body) : undefined,
       signal: controller.signal,
     });
@@ -147,8 +150,17 @@ export const pocketBackend = {
     });
   },
 
-  async linkPhoneNumber(address: string, network: string, phoneNumber: string) {
-    return this.saveWallet(address, network, { phoneNumber, isVerified: true });
+  async linkPhoneNumber(address: string, network: string, phoneNumber: string, firebaseIdToken?: string) {
+    return callBackend<BackendWallet>(URLS.walletsSave, {
+      method: 'POST',
+      body: {
+        address,
+        network,
+        phoneNumber,
+        isVerified: true,
+      },
+      headers: firebaseIdToken ? { Authorization: `Bearer ${firebaseIdToken}` } : {},
+    });
   },
 
   /** List all tracked wallet addresses. */

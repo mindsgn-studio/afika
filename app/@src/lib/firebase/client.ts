@@ -1,4 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app';
+import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator, Firestore } from 'firebase/firestore';
 
 const firebaseConfig = {
@@ -11,13 +12,21 @@ const firebaseConfig = {
 };
 
 let firestoreDb: Firestore | null = null;
+let firebaseAuth: Auth | null = null;
+
+function getFirebaseApp() {
+	if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId) {
+		return null;
+	}
+	return getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+}
 
 export function getFirestoreDb(): Firestore | null {
   if (firestoreDb) return firestoreDb;
-  if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId) {
+  const app = getFirebaseApp();
+  if (!app) {
     return null;
   }
-  const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
   const db = getFirestore(app);
   // const emulatorHost = (process.env.EXPO_PUBLIC_FIREBASE_EMULATOR_HOST || '').trim();
   // const emulatorPort = Number(process.env.EXPO_PUBLIC_FIREBASE_EMULATOR_PORT || '8080');
@@ -26,6 +35,14 @@ export function getFirestoreDb(): Firestore | null {
   //}
   firestoreDb = db;
   return firestoreDb;
+}
+
+export function getFirebaseAuthClient(): Auth | null {
+  if (firebaseAuth) return firebaseAuth;
+  const app = getFirebaseApp();
+  if (!app) return null;
+  firebaseAuth = getAuth(app);
+  return firebaseAuth;
 }
 
 export function isFirestoreConfigured(): boolean {

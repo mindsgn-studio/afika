@@ -45,13 +45,13 @@ export default function PasswordScreen() {
       const walletAddress = await PocketCore.openOrCreateWallet('Main Wallet');
       
       try {
-        await pocketBackend.saveWallet(walletAddress, DEFAULT_NETWORK)
-        await pocketBackend.listTransactions(walletAddress)
-        console.log("", "Successfully connected to backend with wallet:", walletAddress)
+        // await pocketBackend.saveWallet(walletAddress, DEFAULT_NETWORK)
+        // const response = await pocketBackend.getBalances(walletAddress, DEFAULT_NETWORK)
+        // console.log(response)
+        // await pocketBackend.listTransactions(walletAddress)
+        // console.log("", "Successfully connected to backend with wallet:", walletAddress)
       } catch {
       }
-
-
 
       setWalletAddress(walletAddress);
       setNetwork(DEFAULT_NETWORK);

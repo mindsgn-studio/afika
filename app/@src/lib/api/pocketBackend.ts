@@ -82,7 +82,10 @@ export type BackendWallet = {
 export type BackendTokenBalance = {
   tokenSymbol: string;
   tokenAddress: string;
+  amount?: string;
   balance: string;
+  usdAmount?: string;
+  zarAmount?: string;
   usdValue: string;
   network: string;
   fetchedAt: number;
@@ -100,7 +103,9 @@ export type BackendTransaction = {
   feeETH?: string;
   feeBase?: string;
   feeUsd?: string;
+  feeZar?: string;
   usdAmount?: string;
+  zarAmount?: string;
   network: string;
   direction: 'debit' | 'credit';
   state: string;

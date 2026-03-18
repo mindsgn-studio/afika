@@ -19,11 +19,11 @@ export function getFirestoreDb(): Firestore | null {
   }
   const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
   const db = getFirestore(app);
-  const emulatorHost = (process.env.EXPO_PUBLIC_FIREBASE_EMULATOR_HOST || '').trim();
-  const emulatorPort = Number(process.env.EXPO_PUBLIC_FIREBASE_EMULATOR_PORT || '8080');
-  if (emulatorHost) {
-    connectFirestoreEmulator(db, emulatorHost, emulatorPort);
-  }
+  // const emulatorHost = (process.env.EXPO_PUBLIC_FIREBASE_EMULATOR_HOST || '').trim();
+  // const emulatorPort = Number(process.env.EXPO_PUBLIC_FIREBASE_EMULATOR_PORT || '8080');
+  // if (emulatorHost) {
+  //  connectFirestoreEmulator(db, emulatorHost, emulatorPort);
+  //}
   firestoreDb = db;
   return firestoreDb;
 }

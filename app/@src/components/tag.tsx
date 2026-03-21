@@ -1,6 +1,7 @@
 // components/tag.tsx
 
-import { Pressable, Text, StyleSheet } from "react-native";
+import { Text, StyleSheet } from "react-native";
+import { HapticPressable } from "./primatives/haptic-pressable";
 
 export default function Tag({
   label,
@@ -12,7 +13,7 @@ export default function Tag({
   onPress?: () => void;
 }) {
   return (
-    <Pressable
+    <HapticPressable
       onPress={onPress}
       style={[
         styles.tag,
@@ -27,7 +28,7 @@ export default function Tag({
       >
         {label}
       </Text>
-    </Pressable>
+    </HapticPressable>
   );
 }
 

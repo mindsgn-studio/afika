@@ -3,12 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  Pressable,
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import {useRouter} from 'expo-router';
 import { Screen } from '@/@src/components/primatives/screen';
 import { Title } from '@/@src/components/primatives/title';
+import { HapticPressable } from '@/@src/components/primatives/haptic-pressable';
 
 const PIN_LENGTH = 5;
 
@@ -18,15 +17,11 @@ export default function PinScreen() {
 
   const onPressNumber = async (value: string) => {
     if (pin.length >= PIN_LENGTH) return;
-
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setPin((p) => [...p, value]);
   };
 
   const onDelete = async () => {
     if (pin.length === 0) return;
-
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setPin((p) => p.slice(0, -1));
   };
 
@@ -57,7 +52,7 @@ export default function PinScreen() {
 
   const renderButton = (label: string, onPress: () => void) => {
     return (
-      <Pressable
+      <HapticPressable
         key={label}
         testID={`create-pin-key-${label}`}
         onPress={onPress}
@@ -67,7 +62,7 @@ export default function PinScreen() {
         ]}
       >
         <Text style={styles.keyText}>{label}</Text>
-      </Pressable>
+      </HapticPressable>
     );
   };
 
@@ -86,13 +81,13 @@ export default function PinScreen() {
            )}
            <View style={styles.keyPlaceholder} />
            {renderButton('0', () => onPressNumber('0'))}
-           <Pressable
+           <HapticPressable
              testID="unlock-pin-delete"
              onPress={onDelete}
              style={({ pressed }) => [styles.key, pressed && styles.keyPressed]}
            >
              <Text style={styles.keyText}>⌫</Text>
-           </Pressable>
+           </HapticPressable>
          </View>
        </Screen>
   );

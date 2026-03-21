@@ -6,19 +6,24 @@ export default function ActionCard() {
     const router = useRouter();
 
     return (
-        <View testID="action-container">
-          <Button
-              label="SEND"
-              testID="action-send"
-              onPress={() => {
-                router.push("/send")
-              }}
-          />
-        </View>
+      <View testID="action-container" style={styles.container}>
+        <Button
+          label="SEND"
+          testID="action-send"
+          onPress={() => {
+            router.push("/send")
+          }}
+        />
+        <View />
+      </View>
     );
 }
 
 const styles = StyleSheet.create({
+  container:{
+    display: "flex",
+    flexDirection: "row"
+  },
   button: {
     borderRadius: 20,
     backgroundColor: '#161B27',

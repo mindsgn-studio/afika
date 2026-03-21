@@ -5,11 +5,11 @@ import Tag from "@/@src/components/tag";
 import { SendMethod } from "@/@src/types/send";
 
 const methods: SendMethod[] = [
-  "phone",
-  "bank",
+  // "phone",
+  // "bank",
   "ethereum",
-  "bitcoin",
-  "email",
+  // "bitcoin",
+  // "email",
 ];
 
 export default function MethodSelector({

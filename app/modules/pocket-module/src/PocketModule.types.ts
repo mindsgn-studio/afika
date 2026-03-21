@@ -1,6 +1,17 @@
 export type PocketNetwork = 'ethereum-mainnet' | 'ethereum-sepolia' | string;
 export type TokenIdentifier = 'native' | 'usdc' | string;
 
+export type Recipient = {
+  uuid: string;
+  name: string;
+  phone: string;
+  walletAddress: string;
+  email: string;
+  country: string;
+  createdAt: number;
+  updatedAt: number;
+};
+
 export type PocketApi = {
   // Lifecycle
   initWallet(dataDir: string, masterKeyB64: string, kdfSaltB64: string): Promise<void>;
@@ -41,6 +52,14 @@ export type PocketApi = {
   // Watched addresses
   addWatchedAddress(address: string, label: string): Promise<void>;
   listWatchedAddresses(): Promise<string>;
+
+  // Recipients
+  saveRecipient(jsonPayload: string): Promise<string>;
+  getRecipient(id: string): Promise<string>;
+  getAllRecipients(): Promise<string>;
+  searchRecipientsByName(name: string): Promise<string>;
+  searchRecipientsByPhone(phone: string): Promise<string>;
+  updateRecipient(jsonPayload: string): Promise<string>;
 
   // Token transfers
   sendToken(networkName: string, tokenIdentifier: string, recipient: string, amount: string): Promise<string>;

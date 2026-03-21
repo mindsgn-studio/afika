@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, View, ViewProps } from 'react-native';
+import { StyleSheet, View, ViewProps } from 'react-native';
 import { colors } from '@/@src/theme/colors';
 
 export const Screen: React.FC<ViewProps> = ({ style, children, ...rest }) => (
@@ -16,4 +16,3 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
 });
-

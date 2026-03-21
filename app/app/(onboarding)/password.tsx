@@ -3,10 +3,8 @@ import {
   View,
   Text,
   StyleSheet,
-  Pressable,
   ActivityIndicator
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
 import { router } from 'expo-router';
 import PocketCore from '@/modules/pocket-module';
@@ -15,6 +13,7 @@ import useWallet from '@/@src/store/wallet';
 import { pocketBackend } from '@/@src/lib/api/pocketBackend';
 import { Screen } from '@/@src/components/primatives/screen';
 import { Title } from '@/@src/components/primatives/title';
+import { HapticPressable } from '@/@src/components/primatives/haptic-pressable';
 
 const PIN_LENGTH = 5;
 const DEFAULT_NETWORK: 'ethereum-mainnet' | 'ethereum-sepolia' =
@@ -27,13 +26,11 @@ export default function PasswordScreen() {
 
   const onPressNumber = async (value: string) => {
     if (confirmationPin.length >= PIN_LENGTH) return;
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setConfirmationPin((p) => [...p, value]);
   };
 
   const onDelete = async () => {
     if (confirmationPin.length === 0) return;
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setConfirmationPin((p) => p.slice(0, -1));
   };
 
@@ -45,10 +42,7 @@ export default function PasswordScreen() {
       const walletAddress = await PocketCore.openOrCreateWallet('Main Wallet');
       
       try {
-        // await pocketBackend.saveWallet(walletAddress, DEFAULT_NETWORK)
-        // const response = await pocketBackend.getBalances(walletAddress, DEFAULT_NETWORK)
-        // await pocketBackend.listTransactions(walletAddress)
-        console.log("", "Successfully connected to backend with wallet:", walletAddress)
+        console.log("Successfully connected to backend with wallet:", walletAddress)
       } catch {
       }
 
@@ -90,14 +84,14 @@ export default function PasswordScreen() {
   };
 
   const renderButton = (label: string, onPress: () => void) => (
-    <Pressable
+    <HapticPressable
       key={label}
       testID={`unlock-pin-key-${label}`}
       onPress={onPress}
       style={({ pressed }) => [styles.key, pressed && styles.keyPressed]}
     >
       <Text style={styles.keyText}>{label}</Text>
-    </Pressable>
+    </HapticPressable>
   );
 
 
@@ -141,13 +135,13 @@ export default function PasswordScreen() {
         )}
         <View style={styles.keyPlaceholder} />
         {renderButton('0', () => onPressNumber('0'))}
-        <Pressable
+        <HapticPressable
           testID="unlock-pin-delete"
           onPress={onDelete}
           style={({ pressed }) => [styles.key, pressed && styles.keyPressed]}
         >
           <Text style={styles.keyText}>⌫</Text>
-        </Pressable>
+        </HapticPressable>
       </View>
     </Screen>
   );

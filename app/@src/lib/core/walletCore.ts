@@ -3,6 +3,7 @@ import { Directory, Paths } from 'expo-file-system';
 
 export type NetworkKey =
   | 'eth-mainnet'
+  | 'ethereum-sepolia'
   | 'base-mainnet'
   | 'gnosis-mainnet'
   | 'eth-sepolia'
@@ -20,6 +21,10 @@ const NETWORK_CONFIG: Record<NetworkKey, NetworkConfig> = {
     chainId: 1,
   },
   'eth-sepolia': {
+    rpcUrl: process.env.EXPO_PUBLIC_ALCHEMY_RPC_URL_SEPOLIA ?? '',
+    chainId: 11155111,
+  },
+   'ethereum-sepolia': {
     rpcUrl: process.env.EXPO_PUBLIC_ALCHEMY_RPC_URL_SEPOLIA ?? '',
     chainId: 11155111,
   },

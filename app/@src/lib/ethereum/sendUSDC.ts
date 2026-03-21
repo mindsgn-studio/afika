@@ -15,12 +15,14 @@ const USDC_ADDRESS: Record<NetworkKey, string> = {
   'base-sepolia': '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
   'gnosis-mainnet': '0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83',
   'gnosis-chiado': '',
+  'ethereum-sepolia': '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238'
 };
 
 function getRpcURL(networkName: NetworkKey): string {
   const envByNetwork: Record<NetworkKey, string> = {
     'eth-mainnet': process.env.EXPO_PUBLIC_ALCHEMY_RPC_URL_MAINNET ?? '',
     'eth-sepolia': process.env.EXPO_PUBLIC_ALCHEMY_RPC_URL_SEPOLIA ?? '',
+    'ethereum-sepolia': process.env.EXPO_PUBLIC_ALCHEMY_RPC_URL_SEPOLIA ?? '',
     'base-mainnet': process.env.EXPO_PUBLIC_ALCHEMY_RPC_URL_BASE_MAINNET ?? '',
     'base-sepolia': process.env.EXPO_PUBLIC_ALCHEMY_RPC_URL_BASE_SEPOLIA ?? '',
     'gnosis-mainnet': process.env.EXPO_PUBLIC_ALCHEMY_RPC_URL_GNOSIS_MAINNET ?? '',
@@ -72,9 +74,8 @@ export async function sendUSDC(networkName: NetworkKey, recipient: string, amoun
   const contract = new Contract(usdcAddress, ERC20_ABI, wallet);
 
   const tx = await contract.transfer(recipient, amountUnits);
-  // Only return after confirmation so announce writes represent confirmed txs.
   const receipt = await tx.wait(1);
-  if (!receipt || receipt.status !== 1n) {
+  if (!receipt || receipt.status !== 1) {
     throw new Error(`transaction failed: ${tx.hash}`);
   }
   return tx.hash as string;

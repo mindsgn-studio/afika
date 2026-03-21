@@ -79,6 +79,18 @@ type WatchedAddress struct {
 	CreatedAt int64
 }
 
+type Recipient struct {
+	UUID            string
+	Name            string
+	Phone           string
+	PhoneNormalized string
+	WalletAddress   string
+	Email           string
+	Country         string
+	CreatedAt       int64
+	UpdatedAt       int64
+}
+
 type FXRate struct {
 	Pair      string
 	Rate      string
@@ -468,6 +480,148 @@ func (d *DB) ListWatchedAddresses(ctx context.Context) ([]WatchedAddress, error)
 }
 
 // ---------------------------------------------------------------------------
+// Recipients
+// ---------------------------------------------------------------------------
+
+func (d *DB) InsertRecipient(ctx context.Context, r Recipient) (Recipient, error) {
+	if d == nil || d.sql == nil {
+		return Recipient{}, errors.New("database not open")
+	}
+	now := time.Now().UnixMilli()
+	if r.UUID == "" {
+		r.UUID = newID()
+	}
+	if r.CreatedAt == 0 {
+		r.CreatedAt = now
+	}
+	r.UpdatedAt = now
+	_, err := d.sql.ExecContext(ctx, `
+		INSERT INTO recipients (
+			uuid, name, phone, phone_normalized, wallet_address, email, country, created_at, updated_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		r.UUID,
+		strings.TrimSpace(r.Name),
+		strings.TrimSpace(r.Phone),
+		normalizePhone(r.Phone),
+		strings.TrimSpace(r.WalletAddress),
+		strings.TrimSpace(r.Email),
+		strings.TrimSpace(r.Country),
+		r.CreatedAt,
+		r.UpdatedAt,
+	)
+	return r, err
+}
+
+func (d *DB) UpdateRecipient(ctx context.Context, r Recipient) (Recipient, error) {
+	if d == nil || d.sql == nil {
+		return Recipient{}, errors.New("database not open")
+	}
+	if strings.TrimSpace(r.UUID) == "" {
+		return Recipient{}, errors.New("recipient uuid is required")
+	}
+	r.UpdatedAt = time.Now().UnixMilli()
+	_, err := d.sql.ExecContext(ctx, `
+		UPDATE recipients
+		SET name = ?, phone = ?, phone_normalized = ?, wallet_address = ?, email = ?, country = ?, updated_at = ?
+		WHERE uuid = ?`,
+		strings.TrimSpace(r.Name),
+		strings.TrimSpace(r.Phone),
+		normalizePhone(r.Phone),
+		strings.TrimSpace(r.WalletAddress),
+		strings.TrimSpace(r.Email),
+		strings.TrimSpace(r.Country),
+		r.UpdatedAt,
+		r.UUID,
+	)
+	return r, err
+}
+
+func (d *DB) GetRecipientByID(ctx context.Context, id string) (*Recipient, error) {
+	if d == nil || d.sql == nil {
+		return nil, errors.New("database not open")
+	}
+	var r Recipient
+	err := d.sql.QueryRowContext(ctx, `
+		SELECT uuid, name, phone, wallet_address, email, country, created_at, updated_at
+		FROM recipients WHERE uuid = ? LIMIT 1`, strings.TrimSpace(id)).
+		Scan(&r.UUID, &r.Name, &r.Phone, &r.WalletAddress, &r.Email, &r.Country, &r.CreatedAt, &r.UpdatedAt)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &r, nil
+}
+
+func (d *DB) ListAllRecipients(ctx context.Context) ([]Recipient, error) {
+	if d == nil || d.sql == nil {
+		return nil, errors.New("database not open")
+	}
+	rows, err := d.sql.QueryContext(ctx, `
+		SELECT uuid, name, phone, wallet_address, email, country, created_at, updated_at
+		FROM recipients
+		ORDER BY updated_at DESC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanRecipientRows(rows)
+}
+
+func (d *DB) SearchRecipientsByName(ctx context.Context, name string) ([]Recipient, error) {
+	if d == nil || d.sql == nil {
+		return nil, errors.New("database not open")
+	}
+	pattern := "%" + strings.ToLower(strings.TrimSpace(name)) + "%"
+	rows, err := d.sql.QueryContext(ctx, `
+		SELECT uuid, name, phone, wallet_address, email, country, created_at, updated_at
+		FROM recipients
+		WHERE lower(name) LIKE ?
+		ORDER BY updated_at DESC
+		LIMIT 25`, pattern)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanRecipientRows(rows)
+}
+
+func (d *DB) SearchRecipientsByPhone(ctx context.Context, phone string) ([]Recipient, error) {
+	if d == nil || d.sql == nil {
+		return nil, errors.New("database not open")
+	}
+	normalized := normalizePhone(phone)
+	if normalized == "" {
+		return []Recipient{}, nil
+	}
+	pattern := "%" + normalized + "%"
+	rows, err := d.sql.QueryContext(ctx, `
+		SELECT uuid, name, phone, wallet_address, email, country, created_at, updated_at
+		FROM recipients
+		WHERE phone_normalized LIKE ?
+		ORDER BY updated_at DESC
+		LIMIT 25`, pattern)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanRecipientRows(rows)
+}
+
+func scanRecipientRows(rows *sql.Rows) ([]Recipient, error) {
+	var out []Recipient
+	for rows.Next() {
+		var r Recipient
+		if err := rows.Scan(&r.UUID, &r.Name, &r.Phone, &r.WalletAddress, &r.Email, &r.Country, &r.CreatedAt, &r.UpdatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}
+
+// ---------------------------------------------------------------------------
 // FX rate methods
 // ---------------------------------------------------------------------------
 
@@ -574,6 +728,21 @@ func createSchema(ctx context.Context, db *sql.DB) error {
 		rate       TEXT NOT NULL,
 		fetched_at INTEGER NOT NULL
 	);
+
+	CREATE TABLE IF NOT EXISTS recipients (
+		uuid           TEXT PRIMARY KEY,
+		name           TEXT NOT NULL DEFAULT '',
+		phone          TEXT NOT NULL DEFAULT '',
+		phone_normalized TEXT NOT NULL DEFAULT '',
+		wallet_address TEXT NOT NULL DEFAULT '',
+		email          TEXT NOT NULL DEFAULT '',
+		country        TEXT NOT NULL DEFAULT '',
+		created_at     INTEGER NOT NULL,
+		updated_at     INTEGER NOT NULL
+	);
+	CREATE INDEX IF NOT EXISTS idx_recipients_name  ON recipients(name);
+	CREATE INDEX IF NOT EXISTS idx_recipients_phone ON recipients(phone);
+	CREATE INDEX IF NOT EXISTS idx_recipients_phone_norm ON recipients(phone_normalized);
 	`
 	if _, err := db.ExecContext(ctx, ddl); err != nil {
 		return err
@@ -585,6 +754,9 @@ func createSchema(ctx context.Context, db *sql.DB) error {
 		return err
 	}
 	if err := addColumnIfMissing(ctx, db, "transactions", "description", "TEXT", "''"); err != nil {
+		return err
+	}
+	if err := addColumnIfMissing(ctx, db, "recipients", "phone_normalized", "TEXT", "''"); err != nil {
 		return err
 	}
 	return nil
@@ -652,4 +824,19 @@ func zero(b []byte) {
 	for i := range b {
 		b[i] = 0
 	}
+}
+
+func normalizePhone(phone string) string {
+	trimmed := strings.TrimSpace(phone)
+	if trimmed == "" {
+		return ""
+	}
+	out := make([]byte, 0, len(trimmed))
+	for i := 0; i < len(trimmed); i++ {
+		c := trimmed[i]
+		if c >= '0' && c <= '9' {
+			out = append(out, c)
+		}
+	}
+	return string(out)
 }

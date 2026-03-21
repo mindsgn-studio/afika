@@ -94,6 +94,18 @@ type FXRate struct {
 	FetchedAt int64  `json:"fetchedAt"`
 }
 
+// Recipient is a gomobile-friendly recipient record.
+type Recipient struct {
+	UUID          string `json:"uuid"`
+	Name          string `json:"name"`
+	Phone         string `json:"phone"`
+	WalletAddress string `json:"walletAddress"`
+	Email         string `json:"email"`
+	Country       string `json:"country"`
+	CreatedAt     int64  `json:"createdAt"`
+	UpdatedAt     int64  `json:"updatedAt"`
+}
+
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
@@ -678,6 +690,227 @@ func (w *WalletCore) ListWatchedAddresses() (string, error) {
 		return "", sanitizeError(err)
 	}
 	encoded, err := json.Marshal(addrs)
+	if err != nil {
+		return "", sanitizeError(err)
+	}
+	return string(encoded), nil
+}
+
+// ---------------------------------------------------------------------------
+// Recipients
+// ---------------------------------------------------------------------------
+
+// SaveRecipient inserts a recipient record from JSON and returns saved recipient as JSON.
+func (w *WalletCore) SaveRecipient(jsonPayload string) (string, error) {
+	db, err := w.getDB()
+	if err != nil {
+		return "", sanitizeError(err)
+	}
+	var r Recipient
+	if err := json.Unmarshal([]byte(jsonPayload), &r); err != nil {
+		return "", sanitizeError(err)
+	}
+	if strings.TrimSpace(r.Name) == "" {
+		return "", sanitizeError(errors.New("name is required"))
+	}
+	saved, err := db.InsertRecipient(context.Background(), database.Recipient{
+		UUID:          r.UUID,
+		Name:          r.Name,
+		Phone:         r.Phone,
+		WalletAddress: r.WalletAddress,
+		Email:         r.Email,
+		Country:       r.Country,
+		CreatedAt:     r.CreatedAt,
+		UpdatedAt:     r.UpdatedAt,
+	})
+	if err != nil {
+		return "", sanitizeError(err)
+	}
+	encoded, err := json.Marshal(Recipient{
+		UUID:          saved.UUID,
+		Name:          saved.Name,
+		Phone:         saved.Phone,
+		WalletAddress: saved.WalletAddress,
+		Email:         saved.Email,
+		Country:       saved.Country,
+		CreatedAt:     saved.CreatedAt,
+		UpdatedAt:     saved.UpdatedAt,
+	})
+	if err != nil {
+		return "", sanitizeError(err)
+	}
+	return string(encoded), nil
+}
+
+// GetRecipient returns a recipient by ID as JSON (or "" if not found).
+func (w *WalletCore) GetRecipient(id string) (string, error) {
+	db, err := w.getDB()
+	if err != nil {
+		return "", sanitizeError(err)
+	}
+	if strings.TrimSpace(id) == "" {
+		return "", sanitizeError(errors.New("recipient id is required"))
+	}
+	item, err := db.GetRecipientByID(context.Background(), id)
+	if err != nil {
+		return "", sanitizeError(err)
+	}
+	if item == nil {
+		return "", nil
+	}
+	encoded, err := json.Marshal(Recipient{
+		UUID:          item.UUID,
+		Name:          item.Name,
+		Phone:         item.Phone,
+		WalletAddress: item.WalletAddress,
+		Email:         item.Email,
+		Country:       item.Country,
+		CreatedAt:     item.CreatedAt,
+		UpdatedAt:     item.UpdatedAt,
+	})
+	if err != nil {
+		return "", sanitizeError(err)
+	}
+	return string(encoded), nil
+}
+
+// GetAllRecipients returns all recipients as JSON.
+func (w *WalletCore) GetAllRecipients() (string, error) {
+	db, err := w.getDB()
+	if err != nil {
+		return "", sanitizeError(err)
+	}
+	items, err := db.ListAllRecipients(context.Background())
+	if err != nil {
+		return "", sanitizeError(err)
+	}
+	out := make([]Recipient, 0, len(items))
+	for _, item := range items {
+		out = append(out, Recipient{
+			UUID:          item.UUID,
+			Name:          item.Name,
+			Phone:         item.Phone,
+			WalletAddress: item.WalletAddress,
+			Email:         item.Email,
+			Country:       item.Country,
+			CreatedAt:     item.CreatedAt,
+			UpdatedAt:     item.UpdatedAt,
+		})
+	}
+	encoded, err := json.Marshal(out)
+	if err != nil {
+		return "", sanitizeError(err)
+	}
+	return string(encoded), nil
+}
+
+// SearchRecipientsByName returns recipients whose name matches (case-insensitive contains).
+func (w *WalletCore) SearchRecipientsByName(name string) (string, error) {
+	db, err := w.getDB()
+	if err != nil {
+		return "", sanitizeError(err)
+	}
+	if strings.TrimSpace(name) == "" {
+		encoded, _ := json.Marshal([]Recipient{})
+		return string(encoded), nil
+	}
+	items, err := db.SearchRecipientsByName(context.Background(), name)
+	if err != nil {
+		return "", sanitizeError(err)
+	}
+	out := make([]Recipient, 0, len(items))
+	for _, item := range items {
+		out = append(out, Recipient{
+			UUID:          item.UUID,
+			Name:          item.Name,
+			Phone:         item.Phone,
+			WalletAddress: item.WalletAddress,
+			Email:         item.Email,
+			Country:       item.Country,
+			CreatedAt:     item.CreatedAt,
+			UpdatedAt:     item.UpdatedAt,
+		})
+	}
+	encoded, err := json.Marshal(out)
+	if err != nil {
+		return "", sanitizeError(err)
+	}
+	return string(encoded), nil
+}
+
+// SearchRecipientsByPhone returns recipients whose phone matches (contains).
+func (w *WalletCore) SearchRecipientsByPhone(phone string) (string, error) {
+	db, err := w.getDB()
+	if err != nil {
+		return "", sanitizeError(err)
+	}
+	if strings.TrimSpace(phone) == "" {
+		encoded, _ := json.Marshal([]Recipient{})
+		return string(encoded), nil
+	}
+	items, err := db.SearchRecipientsByPhone(context.Background(), phone)
+	if err != nil {
+		return "", sanitizeError(err)
+	}
+	out := make([]Recipient, 0, len(items))
+	for _, item := range items {
+		out = append(out, Recipient{
+			UUID:          item.UUID,
+			Name:          item.Name,
+			Phone:         item.Phone,
+			WalletAddress: item.WalletAddress,
+			Email:         item.Email,
+			Country:       item.Country,
+			CreatedAt:     item.CreatedAt,
+			UpdatedAt:     item.UpdatedAt,
+		})
+	}
+	encoded, err := json.Marshal(out)
+	if err != nil {
+		return "", sanitizeError(err)
+	}
+	return string(encoded), nil
+}
+
+// UpdateRecipient updates a recipient record from JSON and returns updated recipient as JSON.
+func (w *WalletCore) UpdateRecipient(jsonPayload string) (string, error) {
+	db, err := w.getDB()
+	if err != nil {
+		return "", sanitizeError(err)
+	}
+	var r Recipient
+	if err := json.Unmarshal([]byte(jsonPayload), &r); err != nil {
+		return "", sanitizeError(err)
+	}
+	if strings.TrimSpace(r.UUID) == "" {
+		return "", sanitizeError(errors.New("recipient uuid is required"))
+	}
+	if strings.TrimSpace(r.Name) == "" {
+		return "", sanitizeError(errors.New("name is required"))
+	}
+	updated, err := db.UpdateRecipient(context.Background(), database.Recipient{
+		UUID:          r.UUID,
+		Name:          r.Name,
+		Phone:         r.Phone,
+		WalletAddress: r.WalletAddress,
+		Email:         r.Email,
+		Country:       r.Country,
+		CreatedAt:     r.CreatedAt,
+		UpdatedAt:     r.UpdatedAt,
+	})
+	if err != nil {
+		return "", sanitizeError(err)
+	}
+	encoded, err := json.Marshal(Recipient{
+		UUID:          updated.UUID,
+		Name:          updated.Name,
+		Phone:         updated.Phone,
+		WalletAddress: updated.WalletAddress,
+		Email:         updated.Email,
+		Country:       updated.Country,
+		CreatedAt:     updated.CreatedAt,
+		UpdatedAt:     updated.UpdatedAt,
+	})
 	if err != nil {
 		return "", sanitizeError(err)
 	}

@@ -178,6 +178,44 @@ public final class PocketModule: Module {
       }
     }
 
+    // ---- Recipients --------------------------------------------------------
+
+    AsyncFunction("saveRecipient") { (jsonPayload: String) throws -> String in
+      try self.callString { core, err in
+        core.saveRecipient(jsonPayload, error: &err)
+      }
+    }
+
+    AsyncFunction("getRecipient") { (id: String) throws -> String in
+      try self.callString { core, err in
+        core.getRecipient(id, error: &err)
+      }
+    }
+
+    AsyncFunction("getAllRecipients") { () throws -> String in
+      try self.callString { core, err in
+        core.getAllRecipients(&err)
+      }
+    }
+
+    AsyncFunction("searchRecipientsByName") { (name: String) throws -> String in
+      try self.callString { core, err in
+        core.searchRecipients(byName: name, error: &err)
+      }
+    }
+
+    AsyncFunction("searchRecipientsByPhone") { (phone: String) throws -> String in
+      try self.callString { core, err in
+        core.searchRecipients(byPhone: phone, error: &err)
+      }
+    }
+
+    AsyncFunction("updateRecipient") { (jsonPayload: String) throws -> String in
+      try self.callString { core, err in
+        core.updateRecipient(jsonPayload, error: &err)
+      }
+    }
+
     // ---- Sending ------------------------------------------------------------
 
     AsyncFunction("sendToken") { (networkName: String, tokenIdentifier: String, recipient: String, amount: String) throws -> String in

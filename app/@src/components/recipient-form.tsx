@@ -2,8 +2,9 @@ import { View, StyleSheet } from "react-native";
 import { Title }  from "@/@src/components/primatives/title"
 import { Button }  from "@/@src/components/primatives/button"
 import { TextInput,  } from "react-native";
-import MethodSelector from "./selector";
-import { SendMethod } from "../types/send";
+import MethodSelector from "@/@src/components/selector";
+import { SendMethod } from "@/@src/types/send";
+import { useState } from "react";
 
 export default function RecipientForm({
   method,
@@ -12,10 +13,16 @@ export default function RecipientForm({
   method: SendMethod,
   setMethod: (method: SendMethod) => void
 }) {
-  
+  const [name, setName] = useState<string>("")
+  const [address, setAddress] = useState<string>("")
+  const [saving, setSaving] = useState<boolean>(false)
+
   const saveRecipeint = async() => {
+    setSaving(true)
     try{
     } catch {
+    } finally{
+      setSaving(false)
     }
   }
 
@@ -29,14 +36,20 @@ export default function RecipientForm({
       <TextInput
         testID="recipient-name-input"
         style={styles.input}
+        value={name}
         placeholder="Name"
+        onChange={(text: string) => {setName(text)}}
       />
       <TextInput
-        testID="recipient-phone-input"
+        testID="recipient-name-input"
         style={styles.input}
+        value={address}
+        placeholder="0x012E..."
+        onChange={(text: string) => {setAddress(text)}}
       />
-      <Button 
+      <Button
         label={"Add"}
+        progress={saving}
         onPress={saveRecipeint}
       />
     </View>
@@ -44,7 +57,6 @@ export default function RecipientForm({
 }
 
 const styles = StyleSheet.create({
-  
   input: {
     borderWidth: 1,
     borderRadius: 12,

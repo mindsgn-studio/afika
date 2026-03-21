@@ -10,6 +10,22 @@ import { WalletTransaction } from '../store/wallet';
 export default function TransactionList() {
   const { transactions } = useWallet();
 
+  useEffect(() => {
+    const bootstrap = async () => {
+      try {
+        const response = await pocketBackend.listTransactions(walletAddress);
+        const { transactions } = response
+        //@ts-expect-error unkown type error
+        const transactionList = transactions as WalletTransaction[];
+        setTransactions(transactionList)
+      } catch {
+        //get local sql
+      }
+    };
+
+    bootstrap();
+  }, [walletAddress, setTransactions]);
+  
   const usdcTransactions = useMemo(() => {
     return transactions.filter((tx: any) => tx.tokenSymbol === "USDC");
   }, [transactions]);

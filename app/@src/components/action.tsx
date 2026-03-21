@@ -6,16 +6,14 @@ export default function ActionCard() {
     const router = useRouter();
 
     return (
-      <View testID="action-container" style={styles.container}>
-        <Button
-          label="SEND"
-          testID="action-send"
-          onPress={() => {
-            router.push("/send")
-          }}
-        />
-        <View />
-      </View>
+        <View testID="action-container">
+          <Button
+              label="SEND"
+              onPress={() => {
+                router.push("/send")
+              }}
+          />
+        </View>
     );
 }
 

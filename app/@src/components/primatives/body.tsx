@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, TextProps } from 'react-native';
 import { colors } from '@/@src/theme/colors';
 import { typography } from '@/@src/theme/typography';
 
@@ -13,3 +13,4 @@ const styles = StyleSheet.create({
       ...typography.body,
   },
 });
+

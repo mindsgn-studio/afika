@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, TextProps } from 'react-native';
 import { colors } from '@/@src/theme/colors';
 import { typography } from '@/@src/theme/typography';
 
@@ -9,9 +9,9 @@ export const Balance: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 const styles = StyleSheet.create({
   title: {
-      color: colors.balance,
-      ...typography.balance,
-      marginVertical: 10,
+      color: colors.textPrimary,
+      ...typography.title,
+      marginVertical: 20,
   },
 });
 

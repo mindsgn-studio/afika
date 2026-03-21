@@ -5,7 +5,6 @@ import { formatCurrency, convertUSD } from '@/@src/lib/locale/currency';
 import { useFxRate } from '@/@src/lib/locale/useFxRate';
 import { Card } from './primatives/card';
 import { Balance } from './primatives/balance';
-import { useBackendStatus } from '@/@src/lib/api/useBackendStatus';
 
 export default function WalletCard() {
   const { walletAddress, balances } = useWallet();
@@ -36,16 +35,13 @@ export default function WalletCard() {
           <Text style={styles.secondaryBalance}>
             {"Your Balance"}
           </Text>
-          {
-            /*
-              <Text style={styles.status}>
-                {backendStatus.status === 'online' && !backendStatus.fromCache ? 'Online' : 'Offline'}
-              </Text>
-            */
-          }
           <Balance>
             {displayBalance || formatCurrency(0, locale, currency)}
           </Balance>
+      </View>
+      <View>
+        <TouchableOpacity>
+        </TouchableOpacity>
       </View>
     </Card>
   );

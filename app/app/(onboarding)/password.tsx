@@ -3,6 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
+  Pressable,
   ActivityIndicator
 } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
@@ -13,7 +14,6 @@ import useWallet from '@/@src/store/wallet';
 import { pocketBackend } from '@/@src/lib/api/pocketBackend';
 import { Screen } from '@/@src/components/primatives/screen';
 import { Title } from '@/@src/components/primatives/title';
-import { HapticPressable } from '@/@src/components/primatives/haptic-pressable';
 
 const PIN_LENGTH = 5;
 const DEFAULT_NETWORK: 'ethereum-mainnet' | 'ethereum-sepolia' =
@@ -42,7 +42,8 @@ export default function PasswordScreen() {
       const walletAddress = await PocketCore.openOrCreateWallet('Main Wallet');
       
       try {
-        console.log("Successfully connected to backend with wallet:", walletAddress)
+        await pocketBackend.saveWallet(walletAddress, DEFAULT_NETWORK)
+        // await pocketBackend.listTransactions(walletAddress)
       } catch {
       }
 

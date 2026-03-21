@@ -1,4 +1,5 @@
-import { StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { Title } from './primatives/title';
 import { Body } from './primatives/body';
 

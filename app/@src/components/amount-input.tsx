@@ -1,13 +1,12 @@
 import { View, Text, StyleSheet } from "react-native";
 import AmountKeypad from "@/@src/components/amount-keypad";
-import Avatar from "./avatar";
-import { Body } from "./primatives/body";
-import useWallet from "../store/wallet";
-import { useFxRate } from "../lib/locale/useFxRate";
+import Avatar from "@/@src/components/avatar";
+import { Body } from "@/@src/components/primatives/body";
+import useWallet from "@/@src/store/wallet";
+import { useFxRate } from "@/@src/lib/locale/useFxRate";
 import { useState } from "react";
 import { formatCurrency, convertUSD } from '@/@src/lib/locale/currency';
 import { useMemo, useEffect } from "react";
-import { toNumber } from "ethers";
 import SwipeButton from "@/@src/components/swipeButton";
 import {
   useSharedValue,
@@ -113,11 +112,13 @@ export default function AmountInput({
         </View>
       </View>
       <AmountKeypad 
-        onPress={handleKey} />
+        onPress={handleKey} 
+      />
       <SwipeButton
         panGesture={panGesture}
         trackStyle={trackStyle}
-        animatedStyle={sliderAnimatedStyle} />
+        animatedStyle={sliderAnimatedStyle} 
+      />
     </View>
   );
 }

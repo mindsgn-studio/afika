@@ -73,7 +73,6 @@ export function useFirebaseSync() {
   const { walletAddress, network, setBalances, setTransactions } = useWallet();
   const networkName = network || DEFAULT_NETWORK;
   const seenTxHashes = useRef<Set<string>>(new Set());
-
   useEffect(() => {
     if (!walletAddress) return;
     seenTxHashes.current = new Set();
@@ -89,6 +88,7 @@ export function useFirebaseSync() {
         // Seed balances from local DB
         const cachedBalancesJson = await PocketCore.getLatestBalances(networkName);
         const cachedBalances = JSON.parse(cachedBalancesJson) as Array<any>;
+        
         if (Array.isArray(cachedBalances)) {
           const mapped = cachedBalances.map(mapBalanceDoc);
           setBalances(mapped);

@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { View, StyleSheet, ActivityIndicator, Dimensions } from "react-native";
 import AmountInput from "@/@src/components/amount-input";
 import RecipientInput from "@/@src/components/recipient-input";
+import { useFxRate } from '@/@src/lib/locale/useFxRate';
 
 import { SendState, SendMethod } from "@/@src/types/send";
 import { nextState, prevState } from "@/@src/store/send";
@@ -10,12 +11,14 @@ import PocketCore, { Recipient } from "@/modules/pocket-module";
 import { ensureWalletCoreReady } from "@/@src/lib/core/walletCore";
 import { sendUSDC } from "@/@src/lib/ethereum/sendUSDC";
 import useWallet from "@/@src/store/wallet";
-import BottomSheet, { BottomSheetRefProps } from "@/@src/components/bottomSheet";
-import { TextInput } from "react-native";
+import BottomSheet, { BottomSheetRefProps } from "@/@src/components/bottom-sheet";
 import { Title } from "@/@src/components/primatives/title";
 import { useRouter } from "expo-router";
+import RecipientForm from "@/@src/components/recipient-form";
+import { convertLocalAmountToUsd } from "@/@src/lib/locale/currency";
 
 export default function SendFlow() {
+  const { rate, currency } = useFxRate();
   const router = useRouter()
   const { network } = useWallet();
   const [state, setState] = useState<SendState>("method");
@@ -28,7 +31,6 @@ export default function SendFlow() {
   const [recipientPhone, setRecipientPhone] = useState("");
   const [recipientId, setRecipientId] = useState<string | null>(null);
   const ref = useRef<BottomSheetRefProps>(null);
-
   const onPress = () => {
     ref.current?.scrollTo(-400); 
   };
@@ -71,8 +73,15 @@ export default function SendFlow() {
     try {
       setState("sending")
       await saveRecipient();
+     
+      const isUsd = currency === 'USD';
+      const usdcAmount = isUsd ? amount : convertLocalAmountToUsd(amount, rate);
+      if (!usdcAmount) {
+        return;
+      }
+
       //@ts-expect-error
-      await sendUSDC(network, recipientAddress, amount);
+      await sendUSDC(network, recipientAddress, usdcAmount);
       setState("sent")
     } catch (error) {
       console.log(error)
@@ -110,19 +119,9 @@ export default function SendFlow() {
             next={next}
           />
           <BottomSheet ref={ref}>
-            <Title>Add Reciptient</Title>
-            <TextInput
-              testID="recipient-name-input"
-              style={styles.input}
-              placeholder="Name"
-            />
-            <TextInput
-              testID="recipient-phone-input"
-              style={styles.input}
-            />
-            <Button 
-              label={"Add Recipient"}
-              onPress={saveRecipient}
+            <RecipientForm
+              method={method}
+              setMethod={setMethod} 
             />
           </BottomSheet>
         </View>
@@ -139,12 +138,17 @@ export default function SendFlow() {
         />
       )}
 
-       {state === "sending" && (
+      {state === "sending" && (
         <ActivityIndicator />
       )}
 
       {state === "error" && (
-        <View style={{flex:1}}>
+        <View style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center"
+          }}
+        >
           <Title>ERROR</Title>
         </View>
       )}
@@ -178,12 +182,5 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     justifyContent: "center",
     alignItems: "center"
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-    marginBottom: 10,
   },
 });

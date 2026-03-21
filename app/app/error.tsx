@@ -7,7 +7,7 @@ export default function ErrorScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { message } =  params;
-
+  
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Something broke 😬</Text>

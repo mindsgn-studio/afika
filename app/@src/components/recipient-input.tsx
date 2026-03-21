@@ -83,7 +83,9 @@ export default function RecipientInput({
     <View style={styles.container}>
       <View style={styles.header}>
         <View></View>
-        <TouchableOpacity onPress={onPress}>
+        <TouchableOpacity 
+          onPress={onPress}
+        >
           <Title>+</Title>
         </TouchableOpacity>
       </View>

@@ -29,7 +29,7 @@ export default function WalletCard() {
   
 
   return (
-    <Card testID="wallet-card">
+    <Card testID="wallet-card" style={styles.container}>
       <View>
           <Text style={styles.secondaryBalance}>
             {"Your Balance"}
@@ -38,22 +38,22 @@ export default function WalletCard() {
             {displayBalance || formatCurrency(0, locale, currency)}
           </Balance>
       </View>
-      <View>
-        <TouchableOpacity>
-        </TouchableOpacity>
-      </View>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
+  container:{
+    backgroundColor: "#FFF",
+    height: 180,
+    borderRadius: 20,
+  },
   secondaryBalance: {
     fontSize: 15,
     color: '#94A3B8',
     fontWeight: '700',
   },
   status: {
-    marginTop: 4,
     fontSize: 12,
     color: '#64748B',
     fontWeight: '500',

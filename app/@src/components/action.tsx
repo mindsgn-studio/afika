@@ -4,23 +4,26 @@ import { Button } from '@/@src/components/primatives/button';
 
 export default function ActionCard() {
     const router = useRouter();
-
     return (
-        <View testID="action-container">
-          <Button
-              label="SEND"
-              onPress={() => {
-                router.push("/send")
-              }}
-          />
-        </View>
+      <View 
+        style={styles.container}
+        testID="action-container">
+        <Button
+          label="SEND"
+          onPress={() => {
+            router.push("/send")
+          }}
+        />
+        <View />
+      </View>
     );
 }
 
 const styles = StyleSheet.create({
   container:{
     display: "flex",
-    flexDirection: "row"
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   button: {
     borderRadius: 20,

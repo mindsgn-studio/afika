@@ -3,7 +3,6 @@ import { View, StyleSheet, ActivityIndicator, Dimensions } from "react-native";
 import AmountInput from "@/@src/components/amount-input";
 import RecipientInput from "@/@src/components/recipient-input";
 import { useFxRate } from '@/@src/lib/locale/useFxRate';
-
 import { SendState, SendMethod } from "@/@src/types/send";
 import { nextState, prevState } from "@/@src/store/send";
 import { Button } from "@/@src/components/primatives/button";
@@ -18,6 +17,10 @@ import RecipientForm from "@/@src/components/recipient-form";
 import { convertLocalAmountToUsd } from "@/@src/lib/locale/currency";
 
 export default function SendFlow() {
+  const [recipientName, setRecipientName] = useState("");
+  const [recipientAddress, setRecipientAddress] = useState("");
+  const [recipientPhone, setRecipientPhone] = useState("");
+  const [recipientId, setRecipientId] = useState<string | null>(null);
   const { rate, currency } = useFxRate();
   const router = useRouter()
   const { network } = useWallet();
@@ -26,53 +29,17 @@ export default function SendFlow() {
   const [amount, setAmount] = useState("");
   const [usdAmount, setUsdAmount] = useState("");
   const [destination, setDestination] = useState("");
-  const [recipientName, setRecipientName] = useState("");
-  const [recipientAddress, setRecipientAddress] = useState("");
-  const [recipientPhone, setRecipientPhone] = useState("");
-  const [recipientId, setRecipientId] = useState<string | null>(null);
   const ref = useRef<BottomSheetRefProps>(null);
   const onPress = () => {
-    ref.current?.scrollTo(-400); 
+    router.replace("/recepient")
   };
 
   const next = () => setState(nextState(state));
   const back = () => setState(prevState(state));
 
-  const saveRecipient = async () => {
-    await ensureWalletCoreReady();
-
-    const payload: Recipient = {
-      uuid: recipientId ?? "",
-      name: recipientName.trim(),
-      phone: recipientPhone.trim(),
-      walletAddress: recipientAddress,
-      email: "",
-      country: "",
-      createdAt: 0,
-      updatedAt: 0,
-    };
-
-    if (!payload.name) {
-      throw new Error("Name is required");
-    }
-
-    if (recipientId) {
-      const updated = await PocketCore.updateRecipient(JSON.stringify(payload));
-      const parsed = JSON.parse(updated || "{}") as Recipient;
-      if (parsed?.uuid) setRecipientId(parsed.uuid);
-    } else {
-      const saved = await PocketCore.saveRecipient(JSON.stringify(payload));
-      const parsed = JSON.parse(saved || "{}") as Recipient;
-      if (parsed?.uuid) setRecipientId(parsed.uuid);
-    }
-
-    setDestination(recipientName);
-  };
-
   const nextFromRecipient = async () => {
     try {
       setState("sending")
-      await saveRecipient();
      
       const isUsd = currency === 'USD';
       const usdcAmount = isUsd ? amount : convertLocalAmountToUsd(amount, rate);
@@ -118,12 +85,6 @@ export default function SendFlow() {
             }}
             next={next}
           />
-          <BottomSheet ref={ref}>
-            <RecipientForm
-              method={method}
-              setMethod={setMethod} 
-            />
-          </BottomSheet>
         </View>
       )}
 

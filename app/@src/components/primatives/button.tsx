@@ -10,7 +10,7 @@ export const Button: React.FC<{
   testID?: string;
   progress?: boolean;
   backgroundColor?: string;
-  color: string;
+  color?: string;
 }> = ({
   label,
   onPress,

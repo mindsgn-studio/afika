@@ -10,10 +10,11 @@ import PocketCore from "@/modules/pocket-module";
 import { Directory, Paths } from 'expo-file-system';
 import useWallet from '@/@src/store/wallet';
 import { savePin, markOnboarded } from '@/@src/lib/security/sensitiveAuth';
-import { pocketBackend } from '@/@src/lib/api/pocketBackend';
 import { Screen } from '@/@src/components/primatives/screen';
 import { Title } from '@/@src/components/primatives/title';
 import { HapticPressable } from '@/@src/components/primatives/haptic-pressable';
+import upsertWallet, {UpsertData} from '@/@src/lib/firebase/upsert-wallet';
+import { serverTimestamp } from 'firebase/firestore';
 
 const PIN_LENGTH = 5;
 
@@ -50,13 +51,22 @@ export default function PinScreen() {
       const walletAddress = await PocketCore.openOrCreateWallet('Main Wallet');
       setWalletAddress(walletAddress);
 
-      setNetwork(process.env.EXPO_PUBLIC_APP_ENV === 'production' ? 'ethereum-mainnet' : 'ethereum-sepolia');
+      const DEFAULT_NETWORK = process.env.EXPO_PUBLIC_APP_ENV === 'production' ? 'base-mainnet' : 'base-sepolia'
+      setNetwork(DEFAULT_NETWORK);
       
       try {
-        await pocketBackend.saveWallet(walletAddress, network)
-      } catch (error) {
-      }
-  
+        const data: UpsertData = {
+          address:  walletAddress,
+          network: DEFAULT_NETWORK,
+          createdAt:  serverTimestamp(),
+          PhoneNumber:  null,
+          IsVerified: false,
+          UserLevel:  0,
+          PhoneLinkedAt:  null,
+        }
+        await upsertWallet(walletAddress, data);
+
+      } catch{}
       await savePin(confirmedPin);
       await markOnboarded();
 

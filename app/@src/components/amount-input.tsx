@@ -35,9 +35,9 @@ export default function AmountInput({
 }) {
   const { walletAddress, balances,  } = useWallet();
   const { currency: localeCurrency,  } = useFxRate()
-  const [displayBalance, setDisplayBalance, ] = useState('');
+  const [ displayBalance, setDisplayBalance, ] = useState('');
   const { locale, rate } = useFxRate();
-  const [usdcBalance, setUsdcBalance] = useState(0);
+  const [ usdcBalance, setUsdcBalance] = useState(0);
   const translateX = useSharedValue(0);
   
   const usdcValue = useMemo(() => {
@@ -58,7 +58,6 @@ export default function AmountInput({
 
   const panGesture = Gesture.Pan()
     .onUpdate((e) => {
-      // if (todayCompleted || isResting) return;
       translateX.value = Math.max(0, Math.min(e.translationX, SWIPE_THRESHOLD));
     })
     .onEnd(() => {
@@ -99,7 +98,7 @@ export default function AmountInput({
           <Body>Seni</Body>
         </View>
       </View>
-
+        
       <Text style={styles.amount}>
         {currency} {amount || "0"}
       </Text>

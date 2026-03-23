@@ -71,8 +71,10 @@ export function mergeIncomingTransactions(existing: WalletTransaction[], added: 
 
 export function useFirebaseSync() {
   const { walletAddress, network, setBalances, setTransactions } = useWallet();
+  
   const networkName = network || DEFAULT_NETWORK;
   const seenTxHashes = useRef<Set<string>>(new Set());
+
   useEffect(() => {
     if (!walletAddress) return;
     seenTxHashes.current = new Set();
@@ -161,7 +163,7 @@ export function useFirebaseSync() {
 
         const current = useWallet.getState().transactions;
         setTransactions(mergeIncomingTransactions(current, newOnes));
-
+        
         try {
           await PocketCore.upsertTransactions(JSON.stringify(newOnes.map((tx) => ({
             walletAddress: walletAddress.toLowerCase(),

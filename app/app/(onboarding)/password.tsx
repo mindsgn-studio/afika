@@ -11,14 +11,15 @@ import { router } from 'expo-router';
 import PocketCore from '@/modules/pocket-module';
 import { Directory, Paths } from 'expo-file-system';
 import useWallet from '@/@src/store/wallet';
-import { pocketBackend } from '@/@src/lib/api/pocketBackend';
 import { Screen } from '@/@src/components/primatives/screen';
 import { Title } from '@/@src/components/primatives/title';
 import { HapticPressable } from '@/@src/components/primatives/haptic-pressable';
+import upsertWallet, { UpsertData } from '@/@src/lib/firebase/upsert-wallet';
+import { serverTimestamp } from 'firebase/firestore';
 
 const PIN_LENGTH = 5;
-const DEFAULT_NETWORK: 'ethereum-mainnet' | 'ethereum-sepolia' =
-  process.env.EXPO_PUBLIC_APP_ENV === 'production' ? 'ethereum-mainnet' : 'ethereum-sepolia';
+const DEFAULT_NETWORK: 'base-mainnet' | 'base-sepolia' =
+  process.env.EXPO_PUBLIC_APP_ENV === 'production' ? 'base-mainnet' : 'base-sepolia';
 
 export default function PasswordScreen() {
   const { setWalletAddress, setNetwork, clearWalletState } = useWallet();
@@ -41,10 +42,15 @@ export default function PasswordScreen() {
       const dataDir = new Directory(Paths.document);
       await PocketCore.initWalletSecure(dataDir.uri);
       const walletAddress = await PocketCore.openOrCreateWallet('Main Wallet');
-      
-      try {
-        await pocketBackend.saveWallet(walletAddress, DEFAULT_NETWORK)
-        // await pocketBackend.listTransactions(walletAddress)
+
+      try{
+        const data: UpsertData = {
+          address:  walletAddress,
+          network: DEFAULT_NETWORK,
+          updatedAt:  serverTimestamp(),
+        }
+
+        await upsertWallet(walletAddress, data);
       } catch {
       }
 

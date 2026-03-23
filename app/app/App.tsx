@@ -4,7 +4,7 @@ import PocketCore from '@/modules/pocket-module';
 import { Directory, Paths } from 'expo-file-system';
 import { PrimaryButton } from '@/@src/components/Primitives';
 
-const DEFAULT_NETWORK: 'ethereum-mainnet' | 'ethereum-sepolia' = process.env.EXPO_PUBLIC_APP_ENV === 'production' ? 'ethereum-mainnet' : 'ethereum-sepolia';
+const DEFAULT_NETWORK: 'base-mainnet' | 'base-sepolia' = process.env.EXPO_PUBLIC_APP_ENV === 'production' ? 'base-mainnet' : 'base-sepolia';
 
 export default function App() {
   const [walletAddress, setWalletAddress] = useState('')

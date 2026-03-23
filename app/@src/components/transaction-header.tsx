@@ -6,11 +6,7 @@ export default function TransactionHeader() {
   return (
     <View style={styles.card}>
       <Title>{"TRANSACTIONS"}</Title>
-      <SubButton 
-        onPress={() => {}}
-        label='SEE ALL'
-        testID='button-see-all-transactions'
-      />
+      <View />
     </View>
   );
 }

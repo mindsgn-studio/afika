@@ -6,7 +6,7 @@ import { formatCurrency, convertUSD } from '@/@src/lib/locale/currency';
 import { useFxRate } from '@/@src/lib/locale/useFxRate';
 import { HapticPressable } from '@/@src/components/primatives/haptic-pressable';
 
-const DEFAULT_NETWORK: 'ethereum-mainnet' | 'ethereum-sepolia' = process.env.EXPO_PUBLIC_APP_ENV === 'production' ? 'ethereum-mainnet' : 'ethereum-sepolia';
+const DEFAULT_NETWORK: 'base-mainnet' | 'base-sepolia' = process.env.EXPO_PUBLIC_APP_ENV === 'production' ? 'base-mainnet' : 'base-sepolia';
 
 type TxItem = {
   hash: string;

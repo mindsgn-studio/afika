@@ -4,6 +4,8 @@ import { Directory, Paths } from 'expo-file-system';
 export type NetworkKey =
   | 'eth-mainnet'
   | 'ethereum-sepolia'
+  | 'eth-sepolia'
+  | 'ethereum-mainnet'
   | 'base-mainnet'
   | 'gnosis-mainnet'
   | 'eth-sepolia'
@@ -16,6 +18,10 @@ type NetworkConfig = {
 };
 
 const NETWORK_CONFIG: Record<NetworkKey, NetworkConfig> = {
+  'ethereum-mainnet': {
+    rpcUrl: process.env.EXPO_PUBLIC_ALCHEMY_RPC_URL_MAINNET ?? '',
+    chainId: 1,
+  },
   'eth-mainnet': {
     rpcUrl: process.env.EXPO_PUBLIC_ALCHEMY_RPC_URL_MAINNET ?? '',
     chainId: 1,
@@ -47,11 +53,13 @@ const NETWORK_CONFIG: Record<NetworkKey, NetworkConfig> = {
 };
 
 export const DEFAULT_NETWORK: NetworkKey =
-  process.env.EXPO_PUBLIC_APP_ENV === 'production' ? 'eth-mainnet' : 'eth-sepolia';
+  process.env.EXPO_PUBLIC_APP_ENV === 'production' ? 'base-mainnet' : 'base-sepolia';
 
 export const USDC_ADDRESS: Record<NetworkKey, string> = {
   'eth-mainnet': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
   'eth-sepolia': '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
+  'ethereum-mainnet': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+  'ethereum-sepolia': '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
   'base-mainnet': '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
   'base-sepolia': '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
   'gnosis-mainnet': '0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83',

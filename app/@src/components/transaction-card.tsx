@@ -64,7 +64,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     borderRadius: 20,
-    backgroundColor: colors.cardBackground,
+    backgroundColor: '#FFFFFF',
     padding: 20,
     gap: 6,
     // borderColor: '#2A3143',

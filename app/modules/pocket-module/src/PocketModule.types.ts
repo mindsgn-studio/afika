@@ -1,4 +1,4 @@
-export type PocketNetwork = 'ethereum-mainnet' | 'ethereum-sepolia' | string;
+export type PocketNetwork = 'base-mainnet' | 'base-sepolia' | string;
 export type TokenIdentifier = 'native' | 'usdc' | string;
 
 export type Recipient = {

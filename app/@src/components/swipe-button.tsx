@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   },
   track: {
     height: 70,
-    backgroundColor: "#1a1a1a",
+    backgroundColor: "#1f1f1f",
     borderRadius: 35,
     justifyContent: "center",
     alignItems: "center",

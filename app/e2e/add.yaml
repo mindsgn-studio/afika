@@ -1,7 +1,7 @@
 appId: mindsgn.studio.pockt
 ---
 - launchApp
-- startRecording: unlock 
+- startRecording: add-contact 
 - waitForAnimationToEnd:
     timeout: 2000
 - tapOn: "1" 

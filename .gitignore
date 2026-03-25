@@ -20,7 +20,6 @@ yarn-error.*
 .env*.local
 *.tsbuildinfo
 package-lock.json
-frontend
 build
 _app/*
 .DS_store

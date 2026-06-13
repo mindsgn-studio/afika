@@ -2,6 +2,14 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors } from '@/theme/colors';
 import * as Haptics from "expo-haptics"
+<<<<<<< HEAD
+
+function shortenAddress(addr: any) {
+  if (!addr) return '';
+  return addr.slice(0, 6) + '...' + addr.slice(-4);
+}
+=======
+>>>>>>> 027395c94bd11b65accd657b1de20fec82b24362
 
 function formatDate(timestamp: any) {
   if (!timestamp) {
@@ -28,7 +36,10 @@ export default function TransactionCard({ tx }: { tx: any}) {
   return (
     <TouchableOpacity 
       style={styles.card}
+<<<<<<< HEAD
+=======
       onPress={() => {}}
+>>>>>>> 027395c94bd11b65accd657b1de20fec82b24362
       onPressIn={() => [
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy)  
       ]}

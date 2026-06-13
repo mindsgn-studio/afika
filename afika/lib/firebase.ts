@@ -8,7 +8,7 @@ import {
   query,
   where,
   serverTimestamp,
-} from '@react-native-firebase/firestore';
+} from "@react-native-firebase/firestore";
 
 export interface UpsertData {
   address?: string;
@@ -21,15 +21,12 @@ export interface UpsertData {
   PhoneLinkedAt?: any | null;
 }
 
-export async function upsertWallet(
-  walletAddress: string,
-  data: UpsertData
-) {
-  if (!walletAddress) return; 
+export async function upsertWallet(walletAddress: string, data: UpsertData) {
+  if (!walletAddress) return;
 
   try {
     const db = getFirestore();
-    const docRef = doc(db, 'wallets', walletAddress.toLowerCase());
+    const docRef = doc(db, "wallets", walletAddress.toLowerCase());
     const document = await getDoc(docRef);
     if (document.exists()) return;
 
@@ -41,40 +38,46 @@ export async function upsertWallet(
         updatedAt: serverTimestamp(),
         createdAt: data.createdAt ?? serverTimestamp(),
       },
-      { merge: true }
+      { merge: true },
     );
   } catch (error) {
-    console.log('upsertWallet error:', error);
+    console.log("upsertWallet error:", error);
   }
 }
 
-export async function getWallet(
-    address: string,
-) {
+export async function getWallet(address: string) {
   try {
     const db = getFirestore();
-    const balancesRef = collection(db, 'wallets', address.toLocaleLowerCase(), 'balances');
+    const balancesRef = collection(
+      db,
+      "wallets",
+      address.toLocaleLowerCase(),
+      "balances",
+    );
     const data = await getDocs(balancesRef);
     return data;
   } catch (error) {
-    console.log('upsertWallet error:', error);
-    return  null
+    console.log("upsertWallet error:", error);
+    return null;
   } finally {
   }
 }
 
-export async function getTransaction(
-    address: string,
-) {
+export async function getTransaction(address: string) {
   try {
     const db = getFirestore();
-    const txRef = collection(db, 'wallets', address.toLocaleLowerCase(), 'transactions');
-    const q = query(txRef, where('tokenSymbol', '==', 'USDC'));
+    const txRef = collection(
+      db,
+      "wallets",
+      address.toLocaleLowerCase(),
+      "transactions",
+    );
+    const q = query(txRef, where("tokenSymbol", "==", "USDC"));
     const data = await getDocs(q);
     return data;
   } catch (error) {
-    console.log('upsertWallet error:', error);
-    return  null
+    console.log("upsertWallet error:", error);
+    return null;
   } finally {
   }
 }

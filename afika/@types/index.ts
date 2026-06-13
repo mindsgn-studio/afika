@@ -1,11 +1,6 @@
 // types/send.ts
 
-export type SendMethod =
-  | "bank"
-  | "ethereum"
-  | "bitcoin"
-  | "phone"
-  | "email";
+export type SendMethod = "bank" | "ethereum" | "bitcoin" | "phone" | "email";
 
 export type SendState =
   | "method"

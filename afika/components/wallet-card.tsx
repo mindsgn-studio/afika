@@ -13,6 +13,10 @@ import { GrainyGradient } from "@/shared/ui/organisms/grainy-gradient";
 
 const DEFAULT_NETWORK: string = "base-mainnet";
 
+function onWalletError(error: unknown) {
+  console.log(error);
+}
+
 export default function WalletCard() {
   const { address, smartAdress } = useWallet();
   const [balance, setBalance] = useState<number>(0);
@@ -24,10 +28,6 @@ export default function WalletCard() {
         setBalance(parseFloat(wallet.data().usdAmount));
       }
     });
-  };
-
-  const onError = (error: any) => {
-    console.log(error);
   };
 
   const upsertAndListen = async () => {
@@ -65,7 +65,7 @@ export default function WalletCard() {
         .collection("wallets")
         .doc(smartAdress ? smartAdress.toLowerCase() : address.toLowerCase())
         .collection("balances")
-        .onSnapshot(onResult, onError);
+        .onSnapshot(onResult, onWalletError);
     }
   };
 

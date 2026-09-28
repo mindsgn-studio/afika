@@ -2,19 +2,17 @@
   "expo": {
     "name": "AFIKA",
     "slug": "afika",
-    "version": "0.2.31",
+    "version": "0.2.38",
     "scheme": "afika",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "usesAppleSignIn": true,
-      "withoutAdIdSupport": true,
-      "googleAppMeasurementOnDeviceConversion": true,
       "supportsTablet": false,
       "bundleIdentifier": "mindsgn.studio.pockt",
       "appleTeamId": "B3U8UM2966",
-      "buildNumber": "42",
+      "buildNumber": "43",
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
@@ -50,6 +48,7 @@
         {
           "ios": {
             "useFrameworks": "static",
+            "enableSceneSupport": true,
             "forceStaticLinking": [
               "RNFBAnalytics",
               "RNFBApp",
@@ -64,7 +63,9 @@
           }
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-status-bar",
+      "expo-font"
     ],
     "extra": {
       "router": {},

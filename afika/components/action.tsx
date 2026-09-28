@@ -26,14 +26,17 @@ export default function ActionCard() {
             }}
           />
         </View>
-        <Button
-          label="TOP UP"
-          color="white"
-          width={Dimensions.get("screen").width - 30}
-          onPress={() => {
-            router.navigate("/top-up");
-          }}
-        />
+        {/*
+
+          <Button
+            label="TOP UP"
+            color="white"
+            width={Dimensions.get("screen").width - 30}
+            onPress={() => {
+              router.navigate("/top-up");
+            }}
+          />
+          */}
       </View>
     </Animated.View>
   );

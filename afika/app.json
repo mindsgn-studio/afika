@@ -2,7 +2,7 @@
   "expo": {
     "name": "AFIKA",
     "slug": "afika",
-    "version": "0.2.32",
+    "version": "0.2.38",
     "scheme": "afika",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

@@ -66,14 +66,6 @@
       "expo-sqlite",
       "expo-status-bar",
       "expo-font"
-    ],
-    "extra": {
-      "router": {},
-      "privyAppId": "cmpgv7my000lk0ck0lqou8t1p",
-      "privyClientId": "client-WY6ZYS17vucWpizQijQ7wqqTxhxyeGWGfWXwV1pwzrhbi",
-      "eas": {
-        "projectId": "595f11ae-2cb9-48f8-b628-6ef59937e3e2"
-      }
-    }
+    ]
   }
 }

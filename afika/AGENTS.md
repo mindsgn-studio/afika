@@ -5,9 +5,12 @@ Expo 57 + expo-router app for Afika.
 ## Design
 
 - Tokens live in `theme/colors.ts`, `theme/fonts.ts`, `theme/typography.ts`.
-- Do not add raw hex in new screens. Import `colors` and `fonts`.
+- Do not add raw hex, `black`, or `white`. Import `colors` and `fonts` from `@/theme`.
 - Fonts: Outfit 400 / 500 / 600, loaded in `app/_layout.tsx`.
+- Before creating a component, look through `components/shared/` and `components/ui/`. Those folders are the reusable pieces. Use or extend an existing component when it already fits.
+- Shared: `components/shared/` (`Screen`, `Card`, `Title`, `Body`, `BodyText`, `Balance`, `Button`, `SubButton`, `HapticPressable`).
 - Shared UI: `components/ui/` (`StockLogo`, `PriceChart`, `HeroHeader`, `Sheet`, `StatCard`, `HoldingRow`, `RangePills`, `PillButton`, `IconButton`).
+- Colors in `components/shared/` and `components/ui/` come from `theme/colors.ts` only.
 - Visual reference: `/_/stocks`.
 
 ## Routes

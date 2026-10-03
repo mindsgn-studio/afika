@@ -24,66 +24,6 @@ function onWalletError(error: unknown) {
 }
 
 export default function HeroHeader({ balance, children, onAddMoney }: Props) {
-  const { address, smartAdress } = useWallet();
-  // const [balance, setBalance] = useState<number>(0);
-  const { wallets } = useEmbeddedEthereumWallet();
-  const [ amount, setBalance] = useState<number>(0);
-
-  const onResult = (data: QuerySnapshot) => {
-    data?.forEach((wallet) => {
-      if (wallet.data().tokenSymbol === "USDC") {
-        setBalance(parseFloat(wallet.data().usdAmount || wallet.data().amount));
-      }
-    });
-  };
-
-
-  const upsertAndListen = async () => {
-
-    if (smartAdress === null) {
-      return;
-    }
-
-    try {
-      const walletAddress = smartAdress
-        ? smartAdress.toLowerCase()
-        : null;
-
-      if (walletAddress === null) {
-        return;
-      }
-
-      const data: UpsertData = {
-        address: walletAddress,
-        network: DEFAULT_NETWORK,
-      };
-      // await upsertWallet(walletAddress, data);
-
-      //const walletData = await getWallet(smartAdress?  smartAdress.toLowerCase() : address.toLowerCase())
-
-      //walletData?.forEach((wallet)=>{
-      //  if(wallet.data().tokenSymbol === "USDC"){
-      //    setBalance(parseFloat(wallet.data().usdAmount))
-      //  }
-      // })
-    } catch (error) {
-    } finally {
-      //const db = getFirestore("afika-db");
-      //const unsub = onSnapshot(
-      //  collection(db, "wallets", (smartAdress || address).toLowerCase(), "balances"),
-      //  onResult,
-      //  onWalletError,
-      //);
-    }
-  };
-
-  useEffect(() => {
-
-    if (wallets.length >= 1) {
-      upsertAndListen();
-    }
-  }, [wallets]);
-
   return (
     <SafeAreaView edges={["top"]} style={styles.hero} testID="hero-header">
       <View style={styles.topBar}>
@@ -110,8 +50,8 @@ const styles = StyleSheet.create({
   hero: { backgroundColor: colors.ink, paddingHorizontal: 20, paddingBottom: 24 },
   topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingTop: 8 },
   currency: { flexDirection: "row", alignItems: "center", gap: 8 },
-  flag: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.paper, overflow: "hidden", borderWidth: 1, borderColor: "#444" },
-  flagCanton: { width: 11, height: 11, backgroundColor: "#3C3B6E" },
+  flag: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.paper, overflow: "hidden", borderWidth: 1, borderColor: colors.muted },
+  flagCanton: { width: 11, height: 11, backgroundColor: colors.ink },
   currencyText: { fontFamily: fonts.medium, fontSize: 15, color: colors.paper },
   topIcons: { flexDirection: "row", gap: 20, alignItems: "center" },
   balanceWrap: { alignItems: "center", marginTop: 44, gap: 14 },
@@ -122,7 +62,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 6,
     borderWidth: 1,
-    borderColor: "#444",
+    borderColor: colors.muted,
     backgroundColor: colors.inkSoft,
     borderRadius: 20,
     paddingVertical: 7,

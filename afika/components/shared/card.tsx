@@ -13,7 +13,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 48,
     paddingHorizontal: 16,
-    backgroundColor: colors.background,
+    backgroundColor: colors.paper,
   },
 });
 

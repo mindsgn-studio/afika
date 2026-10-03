@@ -17,6 +17,8 @@ import {
   Outfit_600SemiBold,
 } from "@expo-google-fonts/outfit";
 import { colors } from "@/theme";
+import "@/lib/i18n";
+
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({

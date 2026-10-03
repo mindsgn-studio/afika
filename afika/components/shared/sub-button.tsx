@@ -22,7 +22,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: {
-    color: colors.textPrimary,
+    color: colors.ink,
     ...typography.body,
     fontWeight: '700',
   },

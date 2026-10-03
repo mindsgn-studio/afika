@@ -76,8 +76,8 @@ export default function PriceChart({ data, height = 190 }: Props) {
                   const y = ((max - v) / span) * height;
                   return <Line key={v} x1={0} x2={width} y1={y} y2={y} stroke={colors.line} strokeWidth={1} />;
                 })}
-                <Line x1={0} x2={width} y1={cur.y} y2={cur.y} stroke="#C9CBD0" strokeDasharray="3 3" />
-                <Line x1={cur.x} x2={cur.x} y1={0} y2={height} stroke="#C9CBD0" strokeDasharray="3 3" />
+                <Line x1={0} x2={width} y1={cur.y} y2={cur.y} stroke={colors.muted} strokeDasharray="3 3" />
+                <Line x1={cur.x} x2={cur.x} y1={0} y2={height} stroke={colors.muted} strokeDasharray="3 3" />
                 <Path d={path} stroke={colors.limeLine} strokeWidth={3} fill="none" strokeLinecap="round" strokeLinejoin="round" />
                 <Circle cx={cur.x} cy={cur.y} r={6} fill={colors.paper} stroke={colors.ink} strokeWidth={2} />
               </Svg>
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    shadowColor: "#000",
+    shadowColor: colors.ink,
     shadowOpacity: 0.12,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },

@@ -125,67 +125,55 @@ export default function Portfolio() {
   return (
     <View style={styles.screen} testID="portfolio-screen">
       <HeroHeader balance={total} onAddMoney={() => router.push("/top-up")}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quick}>
-          <Pressable style={styles.quickItem} onPress={() => router.push("/explore")} testID="quick-add">
-            <View style={styles.addCircle}>
-              <Feather name="plus" size={26} color={colors.lime} />
-            </View>
-            <Text style={styles.quickLabel}> </Text>
-          </Pressable>
-          {quick.map((stock) => (
-            <Pressable
-              key={stock.address}
-              style={styles.quickItem}
-              onPress={() => router.push(`/stock/${stock.address}`)}
-              testID={`quick-${stock.symbol}`}
-            >
-              <StockLogo name={stock.name} iconUrl={stock.iconUrl} size={64} ring={colors.lime} />
-              <Text style={styles.quickLabel}>{stock.symbol}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+
       </HeroHeader>
 
-      <Sheet>
-        <View style={styles.statRow}>
-          <StatCard value={summary.dayPnl} label="Per day" />
-          <StatCard value={summary.allTimePnl} label="All time" />
-        </View>
-        <View style={styles.sectionHead}>
-          <Text style={styles.sectionTitle}>Today</Text>
-          <Pressable onPress={() => router.push("/explore")}>
-            <Text style={styles.seeAll}>see all</Text>
-          </Pressable>
-        </View>
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
-          {holdings.filter((h) => h.qty > 0).length === 0 ? (
-            <Text style={styles.empty}>Buy your first stock from Explore.</Text>
-          ) : (
-            holdings
-              .filter((h) => h.qty > 0)
-              .map((holding) => {
-                const stock = byAddress[holding.stockAddress];
-                const price = stock?.price || holding.avgCost;
-                const totalValue = holding.qty * price;
-                const pnl = totalValue - holding.costBasis;
-                const pnlPct = holding.costBasis ? Number(((pnl / holding.costBasis) * 100).toFixed(2)) : 0;
-                return (
-                  <HoldingRow
-                    key={holding.stockAddress}
-                    name={stock?.name || holding.symbol || "Stock"}
-                    iconUrl={stock?.iconUrl}
-                    qty={holding.qty}
-                    avg={holding.avgCost}
-                    total={totalValue}
-                    pnl={pnl}
-                    pnlPct={pnlPct}
-                    onPress={() => router.push(`/stock/${holding.stockAddress}`)}
-                  />
-                );
-              })
-          )}
-        </ScrollView>
-      </Sheet>
+      {
+
+        /*
+        <Sheet>
+          <View style={styles.statRow}>
+            <StatCard value={summary.dayPnl} label="Per day" />
+            <StatCard value={summary.allTimePnl} label="All time" />
+          </View>
+          <View style={styles.sectionHead}>
+            <Text style={styles.sectionTitle}>Today</Text>
+            <Pressable onPress={() => router.push("/explore")}>
+              <Text style={styles.seeAll}>see all</Text>
+            </Pressable>
+          </View>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
+            {holdings.filter((h) => h.qty > 0).length === 0 ? (
+              <Text style={styles.empty}>Buy your first stock from Explore.</Text>
+            ) : (
+              holdings
+                .filter((h) => h.qty > 0)
+                .map((holding) => {
+                  const stock = byAddress[holding.stockAddress];
+                  const price = stock?.price || holding.avgCost;
+                  const totalValue = holding.qty * price;
+                  const pnl = totalValue - holding.costBasis;
+                  const pnlPct = holding.costBasis ? Number(((pnl / holding.costBasis) * 100).toFixed(2)) : 0;
+                  return (
+                    <HoldingRow
+                      key={holding.stockAddress}
+                      name={stock?.name || holding.symbol || "Stock"}
+                      iconUrl={stock?.iconUrl}
+                      qty={holding.qty}
+                      avg={holding.avgCost}
+                      total={totalValue}
+                      pnl={pnl}
+                      pnlPct={pnlPct}
+                      onPress={() => router.push(`/stock/${holding.stockAddress}`)}
+                    />
+                  );
+                })
+            )}
+          </ScrollView>
+        </Sheet>
+        */
+      }
+
     </View>
   );
 }

@@ -1,0 +1,6 @@
+appId: mindsgn.studio.pockt
+---
+- launchApp
+- assertVisible:
+    id: "account-screen"
+- assertVisible: "Preferences"

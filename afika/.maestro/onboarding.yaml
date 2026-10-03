@@ -1,0 +1,9 @@
+appId: mindsgn.studio.pockt
+---
+- launchApp
+- assertVisible:
+    id: "onboarding-screen"
+- tapOn:
+    id: "get-started"
+- assertVisible:
+    id: "sign-in-screen"

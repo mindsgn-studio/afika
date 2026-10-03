@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Dimensions,
   Platform,
   Pressable,
   ScrollView,
@@ -12,8 +11,9 @@ import {
   View,
 } from "react-native";
 import { usePrivy } from "@privy-io/expo";
-import { Button } from "@/components/shared/button";
+import PillButton from "@/components/ui/PillButton";
 import { useRouter, useFocusEffect } from "expo-router";
+import { colors, fonts } from "@/theme";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
@@ -207,7 +207,7 @@ export default function Settings() {
   );
 
   return (
-    <ScrollView contentContainerStyle={styles.content}>
+    <ScrollView contentContainerStyle={styles.content} testID="account-screen">
       <View style={styles.section}>
         <Text style={styles.title}>Preferences</Text>
         <Text style={styles.subtitle}>
@@ -258,7 +258,7 @@ export default function Settings() {
                   >
                     {savingThisOption ? (
                       <ActivityIndicator
-                        color={selected ? "#fff" : "#111827"}
+                        color={selected ? colors.lime : colors.ink}
                       />
                     ) : (
                       <Text
@@ -278,46 +278,31 @@ export default function Settings() {
         </>
       )}
 
-      <Button
+      <PillButton
         onPress={logoutWallet}
-        label="SIGN OUT"
-        width={Dimensions.get("screen").width - 20}
-        progress={progress}
-        backgroundColor="red"
+        label="Sign out"
+        loading={progress}
+        testID="sign-out"
       />
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  content: {
-    padding: 20,
-    paddingTop: 48,
-    gap: 16,
-  },
-  section: {
-    gap: 6,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#111827",
-  },
-  subtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#6B7280",
-  },
+  content: { padding: 20, paddingTop: 48, gap: 16, backgroundColor: colors.paper },
+  section: { gap: 6 },
+  title: { fontFamily: fonts.medium, fontSize: 28, color: colors.ink },
+  subtitle: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.muted },
   loadingCard: {
     minHeight: 120,
     borderRadius: 20,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.canvas,
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
   },
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.canvas,
     borderRadius: 20,
     padding: 18,
     flexDirection: "row",
@@ -325,51 +310,23 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 16,
   },
-  cardColumn: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 18,
-    gap: 14,
-  },
-  rowCopy: {
-    flex: 1,
-    gap: 4,
-  },
-  rowTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  rowDescription: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: "#6B7280",
-  },
-  currencyRow: {
-    flexDirection: "row",
-    gap: 12,
-  },
+  cardColumn: { backgroundColor: colors.canvas, borderRadius: 20, padding: 18, gap: 14 },
+  rowCopy: { flex: 1, gap: 4 },
+  rowTitle: { fontFamily: fonts.medium, fontSize: 16, color: colors.ink },
+  rowDescription: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18, color: colors.muted },
+  currencyRow: { flexDirection: "row", gap: 12 },
   currencyOption: {
     minWidth: 96,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: "#D1D5DB",
+    borderColor: colors.line,
     paddingVertical: 12,
     paddingHorizontal: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F9FAFB",
+    backgroundColor: colors.paper,
   },
-  currencyOptionSelected: {
-    backgroundColor: "#111827",
-    borderColor: "#111827",
-  },
-  currencyLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  currencyLabelSelected: {
-    color: "#FFFFFF",
-  },
+  currencyOptionSelected: { backgroundColor: colors.ink, borderColor: colors.ink },
+  currencyLabel: { fontFamily: fonts.medium, fontSize: 14, color: colors.ink },
+  currencyLabelSelected: { color: colors.lime },
 });

@@ -1,0 +1,15 @@
+appId: mindsgn.studio.pockt
+---
+- launchApp
+- tapOn:
+    id: "stock-row-AAPL"
+- tapOn:
+    id: "buy-now"
+- assertVisible:
+    id: "trade-screen"
+- tapOn:
+    id: "trade-amount"
+- inputText: "10"
+- assertVisible:
+    id: "trade-review"
+# Live submission requires E2E_LIVE=1 and funded wallet.

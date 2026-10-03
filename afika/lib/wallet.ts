@@ -2,7 +2,7 @@ export function getActiveWalletAddress(wallet: {
   smartAdress?: string | null;
   address?: string | null;
 }) {
-  return (wallet.smartAdress ?? wallet.address ?? "").trim().toLowerCase();
+  return (wallet.smartAdress ?? "").trim().toLowerCase();
 }
 
 export function shortenAddress(address?: string | null, start = 6, end = 4) {

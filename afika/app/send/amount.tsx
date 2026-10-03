@@ -4,7 +4,6 @@ import {
   View,
   Text,
   StyleSheet,
-  ActivityIndicator,
   Alert,
 } from "react-native";
 import { encodeFunctionData, erc20Abi } from "viem";
@@ -16,7 +15,6 @@ import { parseTokenAmount, sanitizeDecimalInput } from "@/lib/amount";
 import {
   buildPendingTransactionId,
   createPendingTransaction,
-  finalizeTransaction,
   updateTransaction,
 } from "@/lib/transactions";
 import { shortenAddress, getActiveWalletAddress } from "@/lib/wallet";
@@ -140,26 +138,6 @@ export default function SendAmountScreen() {
       });
 
       const txHash = receipt?.receipt?.transactionHash;
-      const finalDocId = txHash
-        ? await finalizeTransaction(
-            activeWalletAddress,
-            pendingDocId,
-            txHash,
-            "debit",
-            {
-              state: "confirmed",
-              txHash,
-              userOperationHash,
-            },
-          )
-        : pendingDocId;
-
-      if (!txHash) {
-        await updateTransaction(activeWalletAddress, finalDocId, {
-          state: "confirmed",
-          userOperationHash,
-        });
-      }
 
       router.replace({
         pathname: "/transaction/complete",
@@ -198,7 +176,7 @@ export default function SendAmountScreen() {
   const amountError = amount ? validateAmount() : null;
 
   return (
-    <KeyboardAvoidingView style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} testID="send-amount-screen">
       {/*
         <View style={styles.header}>
           <Text style={styles.title}>Send USDC</Text>
@@ -226,7 +204,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#F5F7FA",
+    backgroundColor: "#F4F5F7",
   },
   header: {
     marginBottom: 12,

@@ -1,33 +1,34 @@
+import { fonts } from "./fonts";
+
 export const typography = {
   title: {
-    fontFamily: 'System',
+    fontFamily: fonts.semibold,
     fontSize: 28,
-    fontWeight: '800' as const,
+    fontWeight: "600" as const,
   },
   button: {
-    fontFamily: 'System',
-    fontSize: 28,
-    fontWeight: '800' as const,
+    fontFamily: fonts.medium,
+    fontSize: 16,
+    fontWeight: "500" as const,
   },
   balance: {
-    fontFamily: 'System',
-    fontSize: 32,
-    fontWeight: '800' as const,
+    fontFamily: fonts.medium,
+    fontSize: 48,
+    fontWeight: "500" as const,
   },
   subtitle: {
-    fontFamily: 'System',
+    fontFamily: fonts.medium,
     fontSize: 18,
-    fontWeight: '700' as const,
+    fontWeight: "500" as const,
   },
   body: {
-    fontFamily: 'System',
+    fontFamily: fonts.regular,
     fontSize: 14,
-    fontWeight: '400' as const,
+    fontWeight: "400" as const,
   },
   caption: {
-    fontFamily: 'System',
+    fontFamily: fonts.regular,
     fontSize: 12,
-    fontWeight: '400' as const,
+    fontWeight: "400" as const,
   },
 };
-

@@ -1,7 +1,8 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Button } from "@/components/shared/button";
+import PillButton from "@/components/ui/PillButton";
+import { colors, fonts } from "@/theme";
 
 export default function TransactionErrorScreen() {
   const { title, message, retryPath } = useLocalSearchParams<{
@@ -11,14 +12,14 @@ export default function TransactionErrorScreen() {
   }>();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="tx-error-screen">
       <View style={styles.card}>
         <Text style={styles.eyebrow}>Error</Text>
         <Text style={styles.title}>{title || "Transaction failed"}</Text>
         <Text style={styles.message}>
           {message || "Something went wrong while processing your transaction."}
         </Text>
-        <Button
+        <PillButton
           label="Try Again"
           onPress={() => {
             if (retryPath) {
@@ -27,43 +28,17 @@ export default function TransactionErrorScreen() {
             }
             router.back();
           }}
-          width={220}
         />
-        <Button label="Back Home" onPress={() => router.replace("/")} width={220} backgroundColor="#EEF4FF" color="#1D4878" />
+        <PillButton label="Back Home" variant="outline" onPress={() => router.replace("/")} />
       </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F5F7FA",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 24,
-  },
-  card: {
-    width: "100%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 28,
-    padding: 24,
-    gap: 18,
-  },
-  eyebrow: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#B91C1C",
-    textTransform: "uppercase",
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: "800",
-    color: "#111111",
-  },
-  message: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#666666",
-  },
+  container: { flex: 1, backgroundColor: colors.canvas, alignItems: "center", justifyContent: "center", padding: 24 },
+  card: { width: "100%", backgroundColor: colors.paper, borderRadius: 28, padding: 24, gap: 18 },
+  eyebrow: { fontFamily: fonts.medium, fontSize: 14, color: colors.red, textTransform: "uppercase" },
+  title: { fontFamily: fonts.medium, fontSize: 30, color: colors.ink },
+  message: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 24, color: colors.muted },
 });

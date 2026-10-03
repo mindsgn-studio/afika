@@ -1,3 +1,5 @@
 {
-  "outDir": "/shared/ui"
+  "$schema": "https://reacticx.com/schema/component.config.json",
+  "outDir": "shared/ui",
+  "aliases": { "components": "@/components/ui" }
 }

@@ -1,0 +1,11 @@
+appId: mindsgn.studio.pockt
+---
+- launchApp
+- tapOn:
+    id: "stock-row-AAPL"
+- tapOn:
+    id: "buy-now"
+- tapOn:
+    id: "toggle-side"
+- assertVisible:
+    id: "trade-review"

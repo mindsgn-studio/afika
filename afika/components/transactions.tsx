@@ -5,7 +5,8 @@ import TransactionCard from "@/components/transaction-card";
 import TransactionHeader from "@/components/transaction-header";
 import { useState, useEffect } from "react";
 import { useWallet } from "@/store/wallet";
-import firestore from "@react-native-firebase/firestore";
+import { collection, onSnapshot, query, where, orderBy, limit, doc } from "@react-native-firebase/firestore";
+import { getFirestore } from "@/lib/firestore";
 import { getActiveWalletAddress } from "@/lib/wallet";
 import type { AppTransactionRecord } from "@/lib/transactions";
 
@@ -48,11 +49,12 @@ export default function TransactionList() {
     }
 
     try {
-      return firestore()
-        .collection("wallets")
-        .doc(activeWalletAddress)
-        .collection("transactions")
-        .onSnapshot(onResult, onTransactionError);
+      const db = getFirestore("afika-db");
+      return onSnapshot(
+        collection(db, "wallets", activeWalletAddress, "transactions"),
+        onResult,
+        onTransactionError,
+      );
     } catch (error) {
       console.log(error);
     } finally {

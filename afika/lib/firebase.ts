@@ -11,15 +11,19 @@ import {
   deleteDoc,
 } from "@react-native-firebase/firestore";
 
+import { walletIdentityFields } from "@/lib/wallet-identity";
+
+export {
+  DEFAULT_WALLET_NETWORK,
+  normalizeWalletAddress,
+  walletIdentityFields,
+} from "@/lib/wallet-identity";
+
 export interface UpsertData {
   address?: string;
   network?: string;
   createdAt?: any;
   updatedAt?: any;
-  PhoneNumber?: string | null;
-  IsVerified?: boolean;
-  UserLevel?: number;
-  PhoneLinkedAt?: any | null;
 }
 
 export type PreferredCurrency = "USD" | "ZAR";
@@ -37,28 +41,83 @@ export interface PushNotificationDetails {
   devicePushTokenType?: string | null;
 }
 
-export async function upsertWallet(walletAddress: string, data: UpsertData) {
-  if (!walletAddress) return;
+const UPSERT_RETRYABLE = new Set([
+  "firestore/unavailable",
+  "firestore/deadline-exceeded",
+]);
+const UPSERT_ATTEMPTS = 3;
 
-  try {
-    const db = getFirestore();
-    const docRef = doc(db, "wallets", walletAddress.toLowerCase());
-    const document = await getDoc(docRef);
-    if (document.exists()) return;
+let upsertInFlightAddress: string | null = null;
+let upsertInFlight: Promise<void> | null = null;
+let upsertCompletedAddress: string | null = null;
 
-    await setDoc(
-      docRef,
-      {
-        ...data,
-        address: data.address ?? walletAddress,
-        updatedAt: serverTimestamp(),
-        createdAt: data.createdAt ?? serverTimestamp(),
-      },
-      { merge: true },
-    );
-  } catch (error) {
-    console.log("upsertWallet error:", error);
+function firestoreErrorCode(error: unknown) {
+  if (error && typeof error === "object" && "code" in error) {
+    return String((error as { code?: string }).code);
   }
+  return "";
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function createWalletIdentity(address: string, network: string) {
+  try {
+    await setDoc(doc(getFirestore("afika-db"), "wallets", address), {
+      address,
+      network,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    if (firestoreErrorCode(error) === "firestore/already-exists") {
+      return;
+    }
+    throw error;
+  }
+}
+
+export async function upsertWallet(walletAddress: string, data?: UpsertData) {
+  const { address, network } = walletIdentityFields(walletAddress, data);
+  if (!address) {
+    return;
+  }
+  if (upsertCompletedAddress === address) {
+    return;
+  }
+  if (upsertInFlight && upsertInFlightAddress === address) {
+    return upsertInFlight;
+  }
+
+  upsertInFlightAddress = address;
+  upsertInFlight = (async () => {
+    try {
+      for (let attempt = 0; attempt < UPSERT_ATTEMPTS; attempt++) {
+        try {
+          await createWalletIdentity(address, network);
+          upsertCompletedAddress = address;
+          return;
+
+        } catch (error) {
+          console.log(error);
+          const retryable = UPSERT_RETRYABLE.has(firestoreErrorCode(error));
+          if (!retryable || attempt === UPSERT_ATTEMPTS - 1) {
+            console.log("upsertWallet error:", error);
+            return;
+          }
+          await wait(300 * 2 ** attempt);
+        }
+      }
+    } finally {
+      if (upsertInFlightAddress === address) {
+        upsertInFlightAddress = null;
+        upsertInFlight = null;
+      }
+    }
+  })();
+
+  return upsertInFlight;
 }
 
 export async function getWallet(address: string) {

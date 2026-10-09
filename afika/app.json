@@ -8,6 +8,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "icon": "./assets/afika.icon",
       "usesAppleSignIn": true,
       "supportsTablet": false,
       "bundleIdentifier": "mindsgn.studio.pockt",
@@ -40,7 +41,6 @@
       "expo-web-browser",
       "expo-localization",
       "@react-native-firebase/app",
-      "@react-native-firebase/auth",
       "@react-native-firebase/crashlytics",
       "@react-native-firebase/analytics",
       [
@@ -70,7 +70,14 @@
       "expo-sqlite",
       "expo-status-bar",
       "expo-font",
-      "expo-background-task"
+      "expo-background-task",
+      [
+        "react-native-continued-task",
+        {
+          "identifierPrefixes": ["com.foo.MyApp.export"],
+          "enableGPU": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

@@ -1,5 +1,2 @@
-const colors = {
-    primary: "#000",
-}
-
-export {colors}
+export { colors } from "@/theme/colors";
+export { fonts } from "@/theme/fonts";

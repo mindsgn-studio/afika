@@ -1,3 +1,4 @@
+_*
 .expo
 dist/
 web-build/
@@ -42,4 +43,7 @@ assets
 android
 ios
 _app_
+<<<<<<< HEAD
+=======
 app
+>>>>>>> ee883e55a2070a71c51c815bdd23c44d96084d72

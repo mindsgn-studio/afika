@@ -2,24 +2,27 @@
   "expo": {
     "name": "AFIKA",
     "slug": "afika",
+<<<<<<< HEAD
     "version": "0.2.32",
+=======
+    "version": "0.2.38",
+>>>>>>> 37e3460ddfcdfd21438948859c8573abb3fc768e
     "scheme": "afika",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
+      "icon": "./assets/afika.icon",
       "usesAppleSignIn": true,
-      "withoutAdIdSupport": true,
-      "googleAppMeasurementOnDeviceConversion": true,
       "supportsTablet": false,
       "bundleIdentifier": "mindsgn.studio.pockt",
       "appleTeamId": "B3U8UM2966",
       "buildNumber": "43",
       "infoPlist": {
         "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": true,
-          "ITSAppUsesNonExemptEncryption": false
-        }
+          "NSAllowsArbitraryLoads": false
+        },
+        "ITSAppUsesNonExemptEncryption": false
       },
       "googleServicesFile": "../../GoogleService-Info.plist"
     },
@@ -42,14 +45,18 @@
       "expo-web-browser",
       "expo-localization",
       "@react-native-firebase/app",
-      "@react-native-firebase/auth",
       "@react-native-firebase/crashlytics",
       "@react-native-firebase/analytics",
       [
         "expo-build-properties",
         {
+          "android": {
+            "minSdkVersion": 26,
+            "extraProguardRules": "-dontwarn com.gemalto.jp2.**\n-dontwarn com.tom_roush.pdfbox.filter.JPXFilter"
+          },
           "ios": {
             "useFrameworks": "static",
+            "enableSceneSupport": true,
             "forceStaticLinking": [
               "RNFBAnalytics",
               "RNFBApp",
@@ -64,12 +71,35 @@
           }
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-status-bar",
+      "expo-font",
+      "expo-background-task",
+      [
+        "react-native-continued-task",
+        {
+          "identifierPrefixes": [
+            "com.foo.MyApp.export"
+          ],
+          "enableGPU": false
+        }
+      ],
+      "./plugins/withGrpcSwiftModuleFix.js",
+      [
+        "expo-image",
+        {
+          "disableLibdav1d": true
+        }
+      ]
     ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
     "extra": {
       "router": {},
-      "privyAppId": "cmpgv7my000lk0ck0lqou8t1p",
-      "privyClientId": "client-WY6ZYS17vucWpizQijQ7wqqTxhxyeGWGfWXwV1pwzrhbi",
+      "privyAppId": "cmuqob0zx011s0cjqgmza7ovk",
+      "privyClientId": "client-WY6dzubtPqBKGnPj2TUbUok8KRXN626SLDxiq31kbrbm3",
       "eas": {
         "projectId": "595f11ae-2cb9-48f8-b628-6ef59937e3e2"
       }

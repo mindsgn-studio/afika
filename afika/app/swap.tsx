@@ -11,7 +11,7 @@ import {
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEmbeddedEthereumWallet } from "@privy-io/expo";
-import { encodeFunctionData, erc20Abi, maxUint256 } from "viem";
+import { encodeFunctionData, erc20Abi } from "viem";
 import { router } from "expo-router";
 import { BASE_TOKEN_METADATA, type TokenMetadata } from "@/constants/tokens";
 import { useWalletBalances } from "@/hooks/use-wallet-balances";
@@ -21,11 +21,11 @@ import { fetchSwapQuote, type ZeroExQuote } from "@/lib/swap";
 import {
   buildPendingTransactionId,
   createPendingTransaction,
-  finalizeTransaction,
   updateTransaction,
 } from "@/lib/transactions";
 import { getActiveWalletAddress } from "@/lib/wallet";
 import { useWallet } from "@/store/wallet";
+import { colors, fonts } from "@/theme";
 
 type ReviewState = {
   quote: ZeroExQuote;
@@ -160,7 +160,7 @@ export default function SwapScreen() {
     const approvalCallData = encodeFunctionData({
       abi: erc20Abi,
       functionName: "approve",
-      args: [spender as `0x${string}`, maxUint256],
+      args: [spender as `0x${string}`, requiredAllowance],
     });
 
     const approvalUserOpHash = await kernelClient.sendUserOperation({
@@ -256,20 +256,6 @@ export default function SwapScreen() {
       });
 
       const txHash = receipt?.receipt?.transactionHash;
-      const finalDocId = txHash
-        ? await finalizeTransaction(activeWalletAddress, pendingDocId, txHash, "debit", {
-            state: "confirmed",
-            txHash,
-            userOperationHash,
-          })
-        : pendingDocId;
-
-      if (!txHash) {
-        await updateTransaction(activeWalletAddress, finalDocId, {
-          state: "confirmed",
-          userOperationHash,
-        });
-      }
 
       router.replace({
         pathname: "/transaction/complete",
@@ -314,7 +300,7 @@ export default function SwapScreen() {
       : "0";
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} testID="swap-screen">
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.content}>
         <Text style={styles.title}>Swap</Text>
         <Text style={styles.subtitle}>Trade one token for another</Text>
@@ -395,7 +381,7 @@ export default function SwapScreen() {
           disabled={loadingQuote || submitting || kernelLoading || balancesLoading}
         >
           {loadingQuote || submitting ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={colors.lime} />
           ) : (
             <Text style={styles.swapButtonText}>{buttonLabel}</Text>
           )}
@@ -452,140 +438,41 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F5F7FA",
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  title: {
-    fontSize: 34,
-    fontWeight: "800",
-    color: "#111",
-  },
-  subtitle: {
-    marginTop: 6,
-    marginBottom: 24,
-    fontSize: 16,
-    color: "#666",
-  },
-  card: {
-    backgroundColor: "#FFF",
-    borderRadius: 24,
-    padding: 18,
-    marginBottom: 12,
-  },
-  label: {
-    fontSize: 14,
-    color: "#777",
-    marginBottom: 14,
-  },
-  balance: {
-    marginTop: 10,
-    fontSize: 13,
-    color: "#777",
-  },
-  input: {
-    marginTop: 20,
-    fontSize: 36,
-    fontWeight: "700",
-    color: "#111",
-  },
-  receiveAmount: {
-    marginTop: 20,
-    fontSize: 36,
-    fontWeight: "700",
-    color: "#111",
-  },
+  container: { flex: 1, backgroundColor: colors.paper },
+  content: { padding: 20, paddingBottom: 40 },
+  title: { fontFamily: fonts.medium, fontSize: 34, color: colors.ink },
+  subtitle: { marginTop: 6, marginBottom: 24, fontFamily: fonts.regular, fontSize: 16, color: colors.muted },
+  card: { backgroundColor: colors.canvas, borderRadius: 24, padding: 18, marginBottom: 12 },
+  label: { fontFamily: fonts.regular, fontSize: 14, color: colors.muted, marginBottom: 14 },
+  balance: { marginTop: 10, fontFamily: fonts.regular, fontSize: 13, color: colors.muted },
+  input: { marginTop: 20, fontFamily: fonts.medium, fontSize: 36, color: colors.ink },
+  receiveAmount: { marginTop: 20, fontFamily: fonts.medium, fontSize: 36, color: colors.ink },
   switchButton: {
     alignSelf: "center",
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: "#1D4878",
+    backgroundColor: colors.ink,
     alignItems: "center",
     justifyContent: "center",
     marginVertical: -2,
     zIndex: 10,
   },
-  switchText: {
-    color: "#FFF",
-    fontSize: 28,
-    fontWeight: "800",
-  },
-  infoCard: {
-    backgroundColor: "#FFF",
-    borderRadius: 20,
-    padding: 18,
-    marginTop: 8,
-    marginBottom: 12,
-  },
-  infoRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 8,
-    gap: 12,
-  },
-  infoLabel: {
-    color: "#777",
-    fontSize: 14,
-  },
-  infoValue: {
-    flex: 1,
-    textAlign: "right",
-    color: "#111",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  swapButton: {
-    backgroundColor: "#1D4878",
-    paddingVertical: 18,
-    borderRadius: 24,
-    alignItems: "center",
-  },
-  swapButtonText: {
-    color: "#FFF",
-    fontSize: 17,
-    fontWeight: "800",
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
-  buttonPressed: {
-    opacity: 0.85,
-  },
-  tokenPicker: {
-    flexDirection: "row",
-  },
-  pill: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 999,
-    backgroundColor: "#EEF4FF",
-    marginRight: 10,
-  },
-  pillActive: {
-    backgroundColor: "#1D4878",
-  },
-  pillPressed: {
-    opacity: 0.85,
-  },
-  pillText: {
-    color: "#1D4878",
-    fontWeight: "700",
-  },
-  pillTextActive: {
-    color: "#FFFFFF",
-  },
-  emptyText: {
-    color: "#777",
-    fontSize: 14,
-  },
-  errorText: {
-    marginBottom: 12,
-    color: "#B91C1C",
-    fontSize: 14,
-  },
+  switchText: { color: colors.lime, fontSize: 28, fontFamily: fonts.semibold },
+  infoCard: { backgroundColor: colors.canvas, borderRadius: 20, padding: 18, marginTop: 8, marginBottom: 12 },
+  infoRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, gap: 12 },
+  infoLabel: { color: colors.muted, fontFamily: fonts.regular, fontSize: 14 },
+  infoValue: { flex: 1, textAlign: "right", color: colors.ink, fontFamily: fonts.medium, fontSize: 14 },
+  swapButton: { backgroundColor: colors.ink, paddingVertical: 18, borderRadius: 24, alignItems: "center" },
+  swapButtonText: { color: colors.lime, fontFamily: fonts.medium, fontSize: 17 },
+  buttonDisabled: { opacity: 0.6 },
+  buttonPressed: { opacity: 0.85 },
+  tokenPicker: { flexDirection: "row" },
+  pill: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999, backgroundColor: colors.canvas, marginRight: 10 },
+  pillActive: { backgroundColor: colors.ink },
+  pillPressed: { opacity: 0.85 },
+  pillText: { color: colors.ink, fontFamily: fonts.medium },
+  pillTextActive: { color: colors.lime },
+  emptyText: { color: colors.muted, fontFamily: fonts.regular, fontSize: 14 },
+  errorText: { marginBottom: 12, color: colors.red, fontFamily: fonts.regular, fontSize: 14 },
 });

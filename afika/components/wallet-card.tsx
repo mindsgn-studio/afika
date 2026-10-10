@@ -3,12 +3,10 @@ import { Title } from "@/components/shared/title";
 import { useEmbeddedEthereumWallet } from "@privy-io/expo";
 import { UpsertData, upsertWallet } from "@/lib/firebase";
 import { useEffect, useState } from "react";
-import {
-  QuerySnapshot,
-  serverTimestamp,
-} from "@react-native-firebase/firestore";
+import { QuerySnapshot } from "@react-native-firebase/firestore";
 import { useWallet } from "@/store/wallet";
-import firestore from "@react-native-firebase/firestore";
+import { collection, onSnapshot, query, where, orderBy, limit, doc } from "@react-native-firebase/firestore";
+import { getFirestore } from "@/lib/firestore";
 import { GrainyGradient } from "@/shared/ui/organisms/grainy-gradient";
 
 const DEFAULT_NETWORK: string = "base-mainnet";
@@ -25,7 +23,7 @@ export default function WalletCard() {
   const onResult = (data: QuerySnapshot) => {
     data?.forEach((wallet) => {
       if (wallet.data().tokenSymbol === "USDC") {
-        setBalance(parseFloat(wallet.data().usdAmount));
+        setBalance(parseFloat(wallet.data().usdAmount || wallet.data().amount));
       }
     });
   };
@@ -36,21 +34,14 @@ export default function WalletCard() {
     }
 
     try {
+      const walletAddress = smartAdress
+        ? smartAdress.toLowerCase()
+        : address.toLowerCase();
       const data: UpsertData = {
-        address: smartAdress
-          ? smartAdress.toLowerCase()
-          : address.toLowerCase(),
+        address: walletAddress,
         network: DEFAULT_NETWORK,
-        createdAt: serverTimestamp(),
-        PhoneNumber: null,
-        IsVerified: false,
-        UserLevel: 0,
-        PhoneLinkedAt: null,
       };
-      await upsertWallet(
-        smartAdress ? smartAdress.toLowerCase() : address.toLowerCase(),
-        data,
-      );
+      //await upsertWallet(walletAddress, data);
 
       //const walletData = await getWallet(smartAdress?  smartAdress.toLowerCase() : address.toLowerCase())
 

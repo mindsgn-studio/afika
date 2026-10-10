@@ -11,7 +11,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import firestore from "@react-native-firebase/firestore";
+import { getFirestore, doc, onSnapshot } from "@react-native-firebase/firestore";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Button } from "@/components/shared/button";
 import { colors } from "@/theme/colors";
@@ -88,12 +88,9 @@ export default function TransactionDetailsScreen() {
       return;
     }
 
-    const unsubscribe = firestore()
-      .collection("wallets")
-      .doc(activeWalletAddress)
-      .collection("transactions")
-      .doc(id)
-      .onSnapshot(
+    const db = getFirestore();
+    const unsubscribe = onSnapshot(
+      doc(db, "wallets", activeWalletAddress, "transactions", id as string),
         (snapshot) => {
           if (snapshot.exists()) {
             setTransaction({

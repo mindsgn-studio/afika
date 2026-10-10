@@ -22,7 +22,7 @@ export default function ActionCard() {
             backgroundColor="none"
             color="#1f1f1f"
             onPress={() => {
-              router.navigate("/recieve");
+              router.navigate("/receive");
             }}
           />
         </View>

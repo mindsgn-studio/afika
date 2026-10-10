@@ -9,7 +9,7 @@ export const Balance: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
 const styles = StyleSheet.create({
   title: {
-      color: colors.textPrimary,
+      color: colors.ink,
       ...typography.title,
       marginVertical: 10,
   },

@@ -67,6 +67,7 @@
           }
         }
       ],
+<<<<<<< HEAD
       "expo-sqlite",
       "expo-status-bar",
       "expo-font",
@@ -87,6 +88,9 @@
           "disableLibdav1d": true
         }
       ]
+=======
+      "expo-sqlite"
+>>>>>>> 6f6d95b1 (update)
     ],
     "experiments": {
       "typedRoutes": true,

@@ -1,0 +1,53 @@
+appId: mindsgn.studio.pockt
+---
+- launchApp
+- assertVisible:
+    id: "portfolio-screen"
+- tapOn:
+    id: "send-tray-trigger"
+- assertVisible:
+    id: "send-recipient-input"
+
+# An invalid recipient keeps the user on the recipient step.
+- tapOn:
+    id: "send-recipient-input"
+- inputText: "not-an-address"
+- tapOn:
+    id: "send-recipient-next"
+- assertVisible:
+    id: "send-recipient-input"
+
+# A valid address advances to the amount step.
+- eraseText
+- inputText: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+- tapOn:
+    id: "send-recipient-next"
+- assertVisible:
+    id: "send-amount-input"
+
+# With no USDC available, an amount is rejected in place.
+- runFlow:
+    when:
+      visible: "Available 0 USDC"
+    commands:
+      - tapOn:
+          id: "send-amount-input"
+      - inputText: "1"
+      - tapOn:
+          id: "send-amount-next"
+      - assertVisible:
+          id: "send-amount-input"
+
+# With funds, a valid amount reaches the review step.
+# Live submission still requires E2E_LIVE=1 and a funded wallet.
+- runFlow:
+    when:
+      notVisible: "Available 0 USDC"
+    commands:
+      - tapOn:
+          id: "send-amount-input"
+      - inputText: "0.01"
+      - tapOn:
+          id: "send-amount-next"
+      - assertVisible:
+          id: "send-review"

@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { colors, fonts } from "@/theme";
-import { formatMoney } from "@/lib/money";
+import BalanceCard from "@/components/ui/BalanceCard";
 import { getFirestore, collection, onSnapshot, query, where, orderBy, limit, doc } from "@react-native-firebase/firestore";
 import { useWallet } from "@/store/wallet";
 import { useEffect, useState } from "react";
@@ -30,10 +30,7 @@ export default function HeroHeader({ balance, children, onAddMoney }: Props) {
       </View>
 
       <View style={styles.balanceWrap}>
-        <Text style={styles.balance} testID="portfolio-balance">
-          <Text style={styles.dollar}>$ </Text>
-          {formatMoney(balance)}
-        </Text>
+        <BalanceCard balance={balance} />
         <Pressable style={styles.addMoney} onPress={onAddMoney} testID="add-money">
           <View style={styles.plusDot}>
             <Feather name="plus" size={12} color={colors.ink} />
@@ -55,8 +52,6 @@ const styles = StyleSheet.create({
   currencyText: { fontFamily: fonts.medium, fontSize: 15, color: colors.paper },
   topIcons: { flexDirection: "row", gap: 20, alignItems: "center" },
   balanceWrap: { alignItems: "center", marginTop: 44, gap: 14 },
-  balance: { fontFamily: fonts.medium, fontSize: 48, color: colors.paper, letterSpacing: -1 },
-  dollar: { fontSize: 22, color: colors.lime },
   addMoney: {
     flexDirection: "row",
     alignItems: "center",

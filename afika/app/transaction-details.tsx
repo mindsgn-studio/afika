@@ -11,12 +11,15 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { getFirestore, doc, onSnapshot } from "@react-native-firebase/firestore";
+import { doc, onSnapshot } from "@react-native-firebase/firestore";
+import { getFirestore } from "@/lib/firestore";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Button } from "@/components/shared/button";
 import { colors } from "@/theme/colors";
 import { useWallet } from "@/store/wallet";
 import { getActiveWalletAddress, shortenAddress } from "@/lib/wallet";
+import { formatTransactionAmount } from "@/lib/money";
+import { useCurrency } from "@/hooks/use-currency";
 import type { AppTransactionRecord } from "@/lib/transactions";
 
 type TransactionDetailsRecord = AppTransactionRecord & {
@@ -78,6 +81,7 @@ export default function TransactionDetailsScreen() {
   }>();
   const wallet = useWallet();
   const activeWalletAddress = getActiveWalletAddress(wallet);
+  const { effectiveCurrency: currency, rate } = useCurrency();
   const [transaction, setTransaction] =
     useState<TransactionDetailsRecord | null>(null);
   const [loading, setLoading] = useState(true);
@@ -165,6 +169,7 @@ export default function TransactionDetailsScreen() {
   const displayAmount = transaction.amount
     ? `${transaction.amount} ${transaction.tokenSymbol}`
     : transaction.tokenSymbol;
+  const currencyAmount = formatTransactionAmount(transaction, currency, rate);
   const secondaryAmount = transaction.buyAmountExpected
     ? `${transaction.buyAmountExpected} ${transaction.buyTokenSymbol || ""}`.trim()
     : "Not available";
@@ -192,7 +197,7 @@ export default function TransactionDetailsScreen() {
         </View>
 
         <View style={styles.summaryCard}>
-          <Text style={styles.amountText}>{displayAmount}</Text>
+          <Text style={styles.amountText}>{currencyAmount}</Text>
           <Text style={styles.descriptionText}>
             {transaction.description || "Base transaction details"}
           </Text>
@@ -226,6 +231,14 @@ export default function TransactionDetailsScreen() {
             value={
               transaction.zarAmount
                 ? `R${transaction.zarAmount}`
+                : "Not available"
+            }
+          />
+          <DetailRow
+            label="EUR amount"
+            value={
+              transaction.eurAmount
+                ? `€${transaction.eurAmount}`
                 : "Not available"
             }
           />

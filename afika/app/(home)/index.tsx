@@ -1,9 +1,9 @@
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { usePrivy, useEmbeddedEthereumWallet } from "@privy-io/expo";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
+import { FlashList } from "@shopify/flash-list";
 import * as Haptics from "expo-haptics";
-import { Feather } from "@expo/vector-icons";
 import { createPublicClient, http } from "viem";
 import { base } from "viem/chains";
 import { useKernelClient } from "@/hooks/use-Kernal";
@@ -13,21 +13,24 @@ import { useWalletBalances } from "@/hooks/use-wallet-balances";
 import { useHoldings } from "@/hooks/use-holdings";
 import { usePortfolio } from "@/hooks/use-portfolio";
 import { useStocks } from "@/hooks/use-stocks";
-import { useWatchlist } from "@/hooks/use-watchlist";
+import { useTransactions } from "@/hooks/use-transactions";
+import { useSyncCurrencyPreference } from "@/hooks/use-currency-preference";
 import { getActiveWalletAddress } from "@/lib/wallet";
 import { DEFAULT_WALLET_NETWORK, upsertWallet } from "@/lib/firebase";
 import { parseNumber } from "@/lib/money";
 import HeroHeader from "@/components/ui/HeroHeader";
 import Sheet from "@/components/ui/Sheet";
-import StatCard from "@/components/ui/StatCard";
-import HoldingRow from "@/components/ui/HoldingRow";
-import StockLogo from "@/components/ui/StockLogo";
+import TransactionRow from "@/components/ui/TransactionRow";
+import EmptyTransactionCard from "@/components/empty-transaction-card";
+import SendTray from "@/components/send/send-tray";
 import { colors, fonts } from "@/theme";
 
 const publicClient = createPublicClient({
   chain: base,
   transport: http(),
 });
+
+const RECENT_TRANSACTIONS_LIMIT = 8;
 
 export default function Portfolio() {
   const [isReady, setIsReady] = useState(false);
@@ -41,11 +44,15 @@ export default function Portfolio() {
   useFirebaseSession();
 
   const activeWalletAddress = getActiveWalletAddress(walletStore);
+  useSyncCurrencyPreference(activeWalletAddress);
   const { balanceMap } = useWalletBalances(activeWalletAddress);
   const { holdings } = useHoldings(activeWalletAddress);
   const { summary } = usePortfolio(activeWalletAddress);
-  const { byAddress, stocks } = useStocks();
-  const { items: watchlist } = useWatchlist(activeWalletAddress);
+  const { byAddress } = useStocks();
+  const { transactions } = useTransactions(
+    activeWalletAddress,
+    RECENT_TRANSACTIONS_LIMIT,
+  );
 
   useEffect(() => {
     if (user && wallets.length === 0) {
@@ -104,16 +111,6 @@ export default function Portfolio() {
   }, 0);
   const total = summary.totalValue || usdc + holdingsValue;
 
-  const quick = useMemo(() => {
-    if (watchlist.length) {
-      return watchlist
-        .map((item) => byAddress[item.stockAddress])
-        .filter(Boolean)
-        .slice(0, 5);
-    }
-    return stocks.slice(0, 4);
-  }, [watchlist, byAddress, stocks]);
-
   if (!isReady) {
     return (
       <View style={styles.loading}>
@@ -125,55 +122,30 @@ export default function Portfolio() {
   return (
     <View style={styles.screen} testID="portfolio-screen">
       <HeroHeader balance={total} onAddMoney={() => router.push("/top-up")}>
-
+        <View style={styles.actions}>
+          <SendTray />
+        </View>
       </HeroHeader>
 
-      {
+      <Sheet>
+        <View style={styles.sectionHead}>
+          <Text style={styles.sectionTitle}>Recent activity</Text>
+          <Pressable onPress={() => router.push("/activity")} testID="see-all-transactions">
+            <Text style={styles.seeAll}>See all</Text>
+          </Pressable>
+        </View>
 
-        /*
-        <Sheet>
-          <View style={styles.statRow}>
-            <StatCard value={summary.dayPnl} label="Per day" />
-            <StatCard value={summary.allTimePnl} label="All time" />
-          </View>
-          <View style={styles.sectionHead}>
-            <Text style={styles.sectionTitle}>Today</Text>
-            <Pressable onPress={() => router.push("/explore")}>
-              <Text style={styles.seeAll}>see all</Text>
-            </Pressable>
-          </View>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>
-            {holdings.filter((h) => h.qty > 0).length === 0 ? (
-              <Text style={styles.empty}>Buy your first stock from Explore.</Text>
-            ) : (
-              holdings
-                .filter((h) => h.qty > 0)
-                .map((holding) => {
-                  const stock = byAddress[holding.stockAddress];
-                  const price = stock?.price || holding.avgCost;
-                  const totalValue = holding.qty * price;
-                  const pnl = totalValue - holding.costBasis;
-                  const pnlPct = holding.costBasis ? Number(((pnl / holding.costBasis) * 100).toFixed(2)) : 0;
-                  return (
-                    <HoldingRow
-                      key={holding.stockAddress}
-                      name={stock?.name || holding.symbol || "Stock"}
-                      iconUrl={stock?.iconUrl}
-                      qty={holding.qty}
-                      avg={holding.avgCost}
-                      total={totalValue}
-                      pnl={pnl}
-                      pnlPct={pnlPct}
-                      onPress={() => router.push(`/stock/${holding.stockAddress}`)}
-                    />
-                  );
-                })
-            )}
-          </ScrollView>
-        </Sheet>
-        */
-      }
-
+        <View style={styles.list}>
+          <FlashList
+            data={transactions}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <TransactionRow tx={item} />}
+            ListEmptyComponent={<EmptyTransactionCard />}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContent}
+          />
+        </View>
+      </Sheet>
     </View>
   );
 }
@@ -181,22 +153,15 @@ export default function Portfolio() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.ink },
   loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.ink },
-  quick: { gap: 14, paddingTop: 30 },
-  quickItem: { alignItems: "center", gap: 8 },
-  addCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 1.5,
-    borderStyle: "dashed",
-    borderColor: colors.limeLine,
+  sectionHead: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    justifyContent: "center",
+    marginBottom: 12,
   },
-  quickLabel: { fontFamily: fonts.regular, fontSize: 12, color: colors.paper },
-  statRow: { flexDirection: "row", gap: 12 },
-  sectionHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 24, marginBottom: 12 },
   sectionTitle: { fontFamily: fonts.medium, fontSize: 20, color: colors.ink },
   seeAll: { fontFamily: fonts.regular, fontSize: 14, color: colors.ink },
-  empty: { fontFamily: fonts.regular, fontSize: 14, color: colors.muted, paddingVertical: 20 },
+  actions: { alignItems: "center", marginTop: 18 },
+  list: { flex: 1 },
+  listContent: { paddingBottom: 24 },
 });

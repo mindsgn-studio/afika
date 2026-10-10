@@ -3,6 +3,8 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { colors } from "@/theme/colors";
 import * as Haptics from "expo-haptics";
 import { useRouter } from "expo-router";
+import { formatTransactionAmount } from "@/lib/money";
+import { useCurrency } from "@/hooks/use-currency";
 import type { AppTransactionRecord } from "@/lib/transactions";
 
 type TransactionCardItem = AppTransactionRecord & {
@@ -20,22 +22,12 @@ function formatDate(timestamp: any) {
   return date.toLocaleString();
 }
 
-function getDisplayAmount(tx: TransactionCardItem) {
-  if (tx.usdAmount && !Number.isNaN(Number(tx.usdAmount))) {
-    return `$ ${Number(tx.usdAmount).toFixed(2)}`;
-  }
-
-  if (tx.amount && tx.tokenSymbol) {
-    return `${tx.amount} ${tx.tokenSymbol}`;
-  }
-
-  return tx.tokenSymbol || "Pending";
-}
-
 export default function TransactionCard({ tx }: { tx: TransactionCardItem }) {
   const router = useRouter();
+  const { effectiveCurrency: currency, rate } = useCurrency();
   const transactionHash = tx.txHash || tx.userOperationHash || "";
   const transactionId = tx.id || transactionHash;
+  const displayAmount = formatTransactionAmount(tx, currency, rate);
 
   return (
     <Pressable
@@ -82,7 +74,7 @@ export default function TransactionCard({ tx }: { tx: TransactionCardItem }) {
       </View>
 
       <View>
-        <Text style={styles.primaryBalance}>{getDisplayAmount(tx)}</Text>
+        <Text style={styles.primaryBalance}>{displayAmount}</Text>
       </View>
     </Pressable>
   );

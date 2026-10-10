@@ -1,5 +1,4 @@
 import {
-  getFirestore,
   doc,
   getDoc,
   setDoc,
@@ -11,7 +10,9 @@ import {
   deleteDoc,
 } from "@react-native-firebase/firestore";
 
+import { getFirestore } from "@/lib/firestore";
 import { walletIdentityFields } from "@/lib/wallet-identity";
+import { SUPPORTED_CURRENCIES } from "@/lib/money";
 
 export {
   DEFAULT_WALLET_NETWORK,
@@ -26,7 +27,7 @@ export interface UpsertData {
   updatedAt?: any;
 }
 
-export type PreferredCurrency = "USD" | "ZAR";
+export type PreferredCurrency = (typeof SUPPORTED_CURRENCIES)[number];
 
 export interface WalletSettings {
   preferredCurrency: PreferredCurrency;
@@ -64,7 +65,7 @@ function wait(ms: number) {
 
 async function createWalletIdentity(address: string, network: string) {
   try {
-    await setDoc(doc(getFirestore("afika-db"), "wallets", address), {
+    await setDoc(doc(getFirestore(), "wallets", address), {
       address,
       network,
       createdAt: serverTimestamp(),
@@ -166,6 +167,17 @@ function walletDetailsDoc(address: string, detailId: string) {
   return doc(db, "wallets", address.toLowerCase(), "details", detailId);
 }
 
+const SUPPORTED_PREFERRED_CURRENCIES: readonly PreferredCurrency[] =
+  SUPPORTED_CURRENCIES;
+
+function normalizePreferredCurrency(
+  value: unknown,
+): PreferredCurrency {
+  return SUPPORTED_PREFERRED_CURRENCIES.includes(value as PreferredCurrency)
+    ? (value as PreferredCurrency)
+    : DEFAULT_WALLET_SETTINGS.preferredCurrency;
+}
+
 export async function getWalletSettings(
   walletAddress: string,
 ): Promise<WalletSettings> {
@@ -185,10 +197,7 @@ export async function getWalletSettings(
     const data = settingsDoc.data() as Partial<WalletSettings> | undefined;
 
     return {
-      preferredCurrency:
-        data?.preferredCurrency === "ZAR"
-          ? "ZAR"
-          : DEFAULT_WALLET_SETTINGS.preferredCurrency,
+      preferredCurrency: normalizePreferredCurrency(data?.preferredCurrency),
     };
   } catch (error) {
     console.log("getWalletSettings error:", error);

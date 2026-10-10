@@ -18,6 +18,8 @@ import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { useWallet } from "@/store/wallet";
+import { useCurrencyStore } from "@/store/currency";
+import { SUPPORTED_CURRENCIES } from "@/lib/money";
 import {
   deletePushNotificationDetails,
   getWalletSettings,
@@ -32,8 +34,8 @@ export default function Settings() {
   const [settingsLoading, setSettingsLoading] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [notificationSaving, setNotificationSaving] = useState(false);
-  const [preferredCurrency, setPreferredCurrency] =
-    useState<PreferredCurrency>("USD");
+  const preferredCurrency = useCurrencyStore((state) => state.currency);
+  const setCurrency = useCurrencyStore((state) => state.setCurrency);
   const [currencySaving, setCurrencySaving] =
     useState<PreferredCurrency | null>(null);
   const { logout } = usePrivy();
@@ -58,7 +60,7 @@ export default function Settings() {
     async function loadSettings() {
       if (!walletAddress) {
         if (!cancelled) {
-          setPreferredCurrency("USD");
+          setCurrency("USD");
           setNotificationsEnabled(false);
           setSettingsLoading(false);
         }
@@ -74,12 +76,12 @@ export default function Settings() {
         ]);
 
         if (!cancelled) {
-          setPreferredCurrency(settings.preferredCurrency);
+          setCurrency(settings.preferredCurrency);
           setNotificationsEnabled(pushEnabled);
         }
       } catch (error) {
         if (!cancelled) {
-          setPreferredCurrency("USD");
+          setCurrency("USD");
           setNotificationsEnabled(false);
         }
       } finally {
@@ -104,7 +106,7 @@ export default function Settings() {
     setCurrencySaving(currency);
     try {
       await setWalletCurrencyPreference(walletAddress, currency);
-      setPreferredCurrency(currency);
+      setCurrency(currency);
     } catch (error) {
       Alert.alert("Could not save currency", "Please try again.");
     } finally {
@@ -239,16 +241,17 @@ export default function Settings() {
           <View style={styles.cardColumn}>
             <Text style={styles.rowTitle}>Default currency</Text>
             <Text style={styles.rowDescription}>
-              Choose whether balances should default to USD or ZAR.
+              Choose whether balances should default to USD, ZAR or EUR.
             </Text>
             <View style={styles.currencyRow}>
-              {(["USD"] as PreferredCurrency[]).map((currency) => {
+              {SUPPORTED_CURRENCIES.map((currency) => {
                 const selected = preferredCurrency === currency;
                 const savingThisOption = currencySaving === currency;
 
                 return (
                   <Pressable
                     key={currency}
+                    testID={`currency-${currency}`}
                     onPress={() => updateCurrency(currency)}
                     disabled={!walletAddress || !!currencySaving}
                     style={[
@@ -314,9 +317,10 @@ const styles = StyleSheet.create({
   rowCopy: { flex: 1, gap: 4 },
   rowTitle: { fontFamily: fonts.medium, fontSize: 16, color: colors.ink },
   rowDescription: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18, color: colors.muted },
-  currencyRow: { flexDirection: "row", gap: 12 },
+  currencyRow: { flexDirection: "row", gap: 10 },
   currencyOption: {
-    minWidth: 96,
+    flex: 1,
+    minWidth: 72,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: colors.line,

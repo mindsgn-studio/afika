@@ -17,6 +17,7 @@ export type AppTransactionRecord = {
   amount: string;
   usdAmount?: string;
   zarAmount?: string;
+  eurAmount?: string;
   fromAddress: string;
   toAddress: string;
   description?: string;

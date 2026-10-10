@@ -17,6 +17,7 @@ export type WalletBalance = {
   multiplier?: string;
   usdAmount?: string;
   zarAmount?: string;
+  eurAmount?: string;
   fetchedAt?: number;
 };
 

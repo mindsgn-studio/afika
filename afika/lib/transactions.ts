@@ -1,4 +1,6 @@
-import firestore from "@react-native-firebase/firestore";
+import { collection, onSnapshot, query, where, orderBy, limit, doc, setDoc, updateDoc } from "@react-native-firebase/firestore";
+import { getFirestore } from "@/lib/firestore";
+import { serverTimestamp } from "@react-native-firebase/firestore";
 
 export type TransactionKind = "send" | "swap";
 export type TransactionState = "pending" | "submitted" | "confirmed" | "failed";
@@ -31,10 +33,8 @@ export type AppTransactionRecord = {
 };
 
 function walletTransactions(walletAddress: string) {
-  return firestore()
-    .collection("wallets")
-    .doc(walletAddress.toLowerCase())
-    .collection("transactions");
+  const db = getFirestore();
+  return collection(db, "wallets", walletAddress.toLowerCase(), "transactions");
 }
 
 export function buildPendingTransactionId(kind: TransactionKind) {
@@ -50,7 +50,28 @@ export async function createPendingTransaction(
   docId: string,
   payload: AppTransactionRecord
 ) {
-  await walletTransactions(walletAddress).doc(docId).set(payload, { merge: true });
+  const record: Record<string, unknown> = {
+    kind: payload.kind,
+    state: "pending",
+    source: "app",
+    walletAddress: walletAddress.toLowerCase(),
+    network: payload.network,
+    direction: payload.direction,
+    tokenSymbol: payload.tokenSymbol,
+    tokenAddress: payload.tokenAddress,
+    amount: payload.amount,
+    fromAddress: payload.fromAddress,
+    toAddress: payload.toAddress,
+    timestampMs: payload.timestampMs,
+    timestamp: payload.timestamp,
+    updatedAt: serverTimestamp(),
+  };
+  if (payload.usdAmount) record.usdAmount = payload.usdAmount;
+  if (payload.description) record.description = payload.description;
+  if (payload.buyTokenSymbol) record.buyTokenSymbol = payload.buyTokenSymbol;
+  if (payload.buyTokenAddress) record.buyTokenAddress = payload.buyTokenAddress;
+  if (payload.buyAmountExpected) record.buyAmountExpected = payload.buyAmountExpected;
+  await setDoc(doc(walletTransactions(walletAddress), docId), record);
   return docId;
 }
 
@@ -59,34 +80,9 @@ export async function updateTransaction(
   docId: string,
   payload: Partial<AppTransactionRecord>
 ) {
-  await walletTransactions(walletAddress).doc(docId).set(payload, { merge: true });
-}
-
-export async function finalizeTransaction(
-  walletAddress: string,
-  currentDocId: string,
-  txHash: string,
-  direction: "credit" | "debit",
-  payload: Partial<AppTransactionRecord>
-) {
-  const finalDocId = buildConfirmedTransactionId(txHash, direction);
-  const collection = walletTransactions(walletAddress);
-  const currentRef = collection.doc(currentDocId);
-  const snapshot = await currentRef.get();
-  const currentData = snapshot.exists() ? snapshot.data() : {};
-
-  await collection.doc(finalDocId).set(
-    {
-      ...currentData,
-      ...payload,
-      txHash: txHash.toLowerCase(),
-    },
-    { merge: true }
-  );
-
-  if (currentDocId !== finalDocId) {
-    await currentRef.delete();
-  }
-
-  return finalDocId;
+  const next: Record<string, unknown> = { updatedAt: serverTimestamp() };
+  if (payload.state) next.state = payload.state;
+  if (payload.userOperationHash) next.userOperationHash = payload.userOperationHash;
+  if (payload.errorMessage) next.errorMessage = payload.errorMessage;
+  await walletTransactions(walletAddress).doc(docId).update(next);
 }

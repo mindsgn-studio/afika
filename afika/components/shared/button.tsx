@@ -19,8 +19,8 @@ export const Button: React.FC<{
   width = 150,
   testID,
   progress = false,
-  backgroundColor = colors.buttonBackground,
-  color = colors.buttonTextBackground,
+  backgroundColor = colors.ink,
+  color = colors.lime,
 }) => (
   <Pressable 
     testID={testID} 
@@ -40,7 +40,7 @@ export const Button: React.FC<{
     >
     {
       progress?
-      <ActivityIndicator />
+      <ActivityIndicator color={color} />
       :
       <Text 
         style={[

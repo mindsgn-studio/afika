@@ -1,0 +1,11 @@
+appId: mindsgn.studio.pockt
+---
+- launchApp
+- tapOn:
+    id: "stock-row-AAPL"
+- tapOn:
+    id: "follow-button"
+- tapOn:
+    id: "stock-back"
+- assertVisible:
+    id: "explore-screen"

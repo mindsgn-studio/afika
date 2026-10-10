@@ -1,0 +1,10 @@
+appId: mindsgn.studio.pockt
+---
+- launchApp
+- assertVisible:
+    id: "explore-screen"
+- tapOn:
+    id: "explore-search"
+- inputText: "Apple"
+- assertVisible:
+    id: "stock-row-AAPL"

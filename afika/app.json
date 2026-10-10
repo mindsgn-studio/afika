@@ -8,6 +8,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "icon": "./assets/afika.icon",
       "usesAppleSignIn": true,
       "supportsTablet": false,
       "bundleIdentifier": "mindsgn.studio.pockt",
@@ -15,9 +16,9 @@
       "buildNumber": "43",
       "infoPlist": {
         "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": true,
-          "ITSAppUsesNonExemptEncryption": false
-        }
+          "NSAllowsArbitraryLoads": false
+        },
+        "ITSAppUsesNonExemptEncryption": false
       },
       "googleServicesFile": "../../GoogleService-Info.plist"
     },
@@ -40,12 +41,15 @@
       "expo-web-browser",
       "expo-localization",
       "@react-native-firebase/app",
-      "@react-native-firebase/auth",
       "@react-native-firebase/crashlytics",
       "@react-native-firebase/analytics",
       [
         "expo-build-properties",
         {
+          "android": {
+            "minSdkVersion": 26,
+            "extraProguardRules": "-dontwarn com.gemalto.jp2.**\n-dontwarn com.tom_roush.pdfbox.filter.JPXFilter"
+          },
           "ios": {
             "useFrameworks": "static",
             "enableSceneSupport": true,
@@ -65,12 +69,33 @@
       ],
       "expo-sqlite",
       "expo-status-bar",
-      "expo-font"
+      "expo-font",
+      "expo-background-task",
+      [
+        "react-native-continued-task",
+        {
+          "identifierPrefixes": [
+            "com.foo.MyApp.export"
+          ],
+          "enableGPU": false
+        }
+      ],
+      "./plugins/withGrpcSwiftModuleFix.js",
+      [
+        "expo-image",
+        {
+          "disableLibdav1d": true
+        }
+      ]
     ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
     "extra": {
       "router": {},
-      "privyAppId": "cmpgv7my000lk0ck0lqou8t1p",
-      "privyClientId": "client-WY6ZYS17vucWpizQijQ7wqqTxhxyeGWGfWXwV1pwzrhbi",
+      "privyAppId": "cmuqob0zx011s0cjqgmza7ovk",
+      "privyClientId": "client-WY6dzubtPqBKGnPj2TUbUok8KRXN626SLDxiq31kbrbm3",
       "eas": {
         "projectId": "595f11ae-2cb9-48f8-b628-6ef59937e3e2"
       }

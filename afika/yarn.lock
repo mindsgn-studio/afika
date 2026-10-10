@@ -689,6 +689,7 @@
     "@babel/types" "^7.29.7"
     debug "^4.3.1"
 
+<<<<<<< HEAD
 "@babel/types@^7.0.0", "@babel/types@^7.20.7", "@babel/types@^7.21.3", "@babel/types@^7.27.1", "@babel/types@^7.28.2", "@babel/types@^7.29.8", "@babel/types@^7.3.3":
   version "7.29.8"
   resolved "https://registry.yarnpkg.com/@babel/types/-/types-7.29.8.tgz#1229eef31d85156d70fa3f4cd859376d0eaf6863"
@@ -697,6 +698,8 @@
     "@babel/helper-string-parser" "^7.29.7"
     "@babel/helper-validator-identifier" "^7.29.7"
 
+=======
+>>>>>>> 3d175f14 (app upgrade)
 "@babel/types@^7.26.0", "@babel/types@^7.29.0", "@babel/types@^7.29.7":
   version "7.29.7"
   resolved "https://registry.npmjs.org/@babel/types/-/types-7.29.7.tgz"
@@ -705,6 +708,7 @@
     "@babel/helper-string-parser" "^7.29.7"
     "@babel/helper-validator-identifier" "^7.29.7"
 
+<<<<<<< HEAD
 "@bcoe/v8-coverage@^0.2.3":
   version "0.2.3"
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
@@ -743,6 +747,15 @@
     nice-grpc-web "^3.3.7"
     ua-parser-js "^2.0.6"
     uuidv7 "^1.0.2"
+=======
+"@babel/types@^7.27.1":
+  version "7.29.8"
+  resolved "https://registry.yarnpkg.com/@babel/types/-/types-7.29.8.tgz#1229eef31d85156d70fa3f4cd859376d0eaf6863"
+  integrity sha512-Vj1jF3cPfxg7OAfoI7QnVKLoILlm2JF9pnVHrX8qx7AHMiYWT+NDAA7jChlNgRS4WTLc/fD1lXLmPixluj+3Gg==
+  dependencies:
+    "@babel/helper-string-parser" "^7.29.7"
+    "@babel/helper-validator-identifier" "^7.29.7"
+>>>>>>> 3d175f14 (app upgrade)
 
 "@drizzle-team/brocli@^0.10.2":
   version "0.10.2"
@@ -1152,11 +1165,14 @@
   resolved "https://registry.npmjs.org/@expo-google-fonts/material-symbols/-/material-symbols-0.4.38.tgz"
   integrity sha512-IJkBtN1o8u9BW5fvSii1MyHPQ7Q0HxbWcVBvOrOzgMLpVtZw7R2w94wBTVR7kZwv3w1JNTESMmLA5Sqn1+Z36A==
 
+<<<<<<< HEAD
 "@expo-google-fonts/outfit@^0.4.3":
   version "0.4.3"
   resolved "https://registry.yarnpkg.com/@expo-google-fonts/outfit/-/outfit-0.4.3.tgz#aa513893f064c3345b694cb6df0ac5cf9e427ee7"
   integrity sha512-2uQmDVJencWLllxds6SG92E+SjxyZfvg7eZKZ5XLHggmm5AuUyQK7lzMAFOUzT6kheq2kJ7BAiubMdjKT32fJg==
 
+=======
+>>>>>>> 3d175f14 (app upgrade)
 "@expo/cli@^57.0.27":
   version "57.0.27"
   resolved "https://registry.yarnpkg.com/@expo/cli/-/cli-57.0.27.tgz#68573b46121c03e326f196c4c9fcad3336f5eb2f"
@@ -1519,10 +1535,17 @@
   resolved "https://registry.npmjs.org/@expo/sudo-prompt/-/sudo-prompt-9.3.2.tgz"
   integrity sha512-HHQigo3rQWKMDzYDLkubN5WQOYXJJE2eNqIQC2axC2iO3mHdwnIR7FgZVvHWtBwAdzBgAP0ECp8KqS8TiMKvgw==
 
+<<<<<<< HEAD
 "@expo/ui@^57.0.21":
   version "57.0.21"
   resolved "https://registry.yarnpkg.com/@expo/ui/-/ui-57.0.21.tgz#8d812e204eab37a7f472cf536a6fe92a6cfdd18e"
   integrity sha512-4s1ypGNxJhJv2r1fj3wZo4Aubao0zGnCajCuiaTp8pTNrT+1vR8KvyoFEwp+c7gpKm2D58nGCiGBXhEnmKHtDQ==
+=======
+"@expo/ui@^57.0.20":
+  version "57.0.20"
+  resolved "https://registry.yarnpkg.com/@expo/ui/-/ui-57.0.20.tgz#86d9f1404888a62d387a97f2205e75220b8f6ed8"
+  integrity sha512-0ChmuyWBwEy3JHMR5wDkJGyvkTR5zH3BTwjJrv3f2ymtamhpU9hD5uH4GsLoWuB6MJFOPTuchq4zByZbtgPyNw==
+>>>>>>> 3d175f14 (app upgrade)
   dependencies:
     sf-symbols-typescript "^2.1.0"
     vaul "^1.1.2"
@@ -2230,6 +2253,7 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
+<<<<<<< HEAD
 "@js-sdsl/ordered-map@^4.4.2":
   version "4.4.2"
   resolved "https://registry.yarnpkg.com/@js-sdsl/ordered-map/-/ordered-map-4.4.2.tgz#9299f82874bab9e4c7f9c48d865becbfe8d6907c"
@@ -2247,6 +2271,8 @@
     ws "^8.12.1"
     zen-observable-ts "^1.1.0"
 
+=======
+>>>>>>> 3d175f14 (app upgrade)
 "@noble/ciphers@^1.3.0":
   version "1.3.0"
   resolved "https://registry.npmjs.org/@noble/ciphers/-/ciphers-1.3.0.tgz"
@@ -2781,6 +2807,7 @@
   resolved "https://registry.npmjs.org/@sinclair/typebox/-/typebox-0.27.10.tgz"
   integrity sha512-MTBk/3jGLNB2tVxv6uLlFh1iu64iYOQ2PbdOSK3NW8JZsmlaOh2q6sdtKowBhfw8QFLmYNzTW4/oK4uATIi6ZA==
 
+<<<<<<< HEAD
 "@sinonjs/commons@^3.0.0":
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/@sinonjs/commons/-/commons-3.0.1.tgz#1029357e44ca901a615585f6d27738dbc89084cd"
@@ -2794,6 +2821,12 @@
   integrity sha512-V4BG07kuYSUkTCSBHG8G8TNhM+F19jXFWnQtzj+we8DrkpSBCee9Z3Ms8yiGer/dlmhe35/Xdgyo3/0rQKg7YA==
   dependencies:
     "@sinonjs/commons" "^3.0.0"
+=======
+"@types/hammerjs@^2.0.36":
+  version "2.0.46"
+  resolved "https://registry.yarnpkg.com/@types/hammerjs/-/hammerjs-2.0.46.tgz#381daaca1360ff8a7c8dff63f32e69745b9fb1e1"
+  integrity sha512-ynRvcq6wvqexJ9brDMS4BnBLzmr0e14d6ZJTEShTBWKymQiHwlAyGu0ZPEFI2Fh1U53F7tN9ufClWM5KvqkKOw==
+>>>>>>> 3d175f14 (app upgrade)
 
 "@svgr/babel-plugin-add-jsx-attribute@8.0.0":
   version "8.0.0"
@@ -3302,6 +3335,7 @@ babel-plugin-transform-flow-enums@^0.0.2:
   dependencies:
     "@babel/plugin-syntax-flow" "^7.12.1"
 
+<<<<<<< HEAD
 babel-preset-current-node-syntax@^1.0.0:
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/babel-preset-current-node-syntax/-/babel-preset-current-node-syntax-1.2.0.tgz#20730d6cdc7dda5d89401cab10ac6a32067acde6"
@@ -3323,6 +3357,8 @@ babel-preset-current-node-syntax@^1.0.0:
     "@babel/plugin-syntax-private-property-in-object" "^7.14.5"
     "@babel/plugin-syntax-top-level-await" "^7.14.5"
 
+=======
+>>>>>>> 3d175f14 (app upgrade)
 babel-preset-expo@~57.0.0, babel-preset-expo@~57.0.13:
   version "57.0.13"
   resolved "https://registry.yarnpkg.com/babel-preset-expo/-/babel-preset-expo-57.0.13.tgz#916f16b807e22bfdb72c179e7f0911a8176b0d3a"
@@ -3370,6 +3406,7 @@ babel-preset-expo@~57.0.0, babel-preset-expo@~57.0.13:
     babel-plugin-syntax-hermes-parser "^0.36.0"
     babel-plugin-transform-flow-enums "^0.0.2"
     debug "^4.3.4"
+<<<<<<< HEAD
 
 babel-preset-jest@^29.6.3:
   version "29.6.3"
@@ -3378,6 +3415,8 @@ babel-preset-jest@^29.6.3:
   dependencies:
     babel-plugin-jest-hoist "^29.6.3"
     babel-preset-current-node-syntax "^1.0.0"
+=======
+>>>>>>> 3d175f14 (app upgrade)
 
 badgin@^1.1.5:
   version "1.2.3"
@@ -4019,6 +4058,7 @@ css-what@^6.1.0:
   resolved "https://registry.npmjs.org/css-what/-/css-what-6.2.2.tgz"
   integrity sha512-u/O3vwbptzhMs3L1fQE82ZSLHQQfto5gyZzwteVIEyeaY5Fc7R4dapF/BvRoSYFeqfBk4m0V1Vafq5Pjv25wvA==
 
+<<<<<<< HEAD
 csso@^5.0.5:
   version "5.0.5"
   resolved "https://registry.yarnpkg.com/csso/-/csso-5.0.5.tgz#f9b7fe6cc6ac0b7d90781bb16d5e9874303e2ca6"
@@ -4026,6 +4066,8 @@ csso@^5.0.5:
   dependencies:
     css-tree "~2.2.0"
 
+=======
+>>>>>>> 3d175f14 (app upgrade)
 csstype@^3.2.2:
   version "3.2.3"
   resolved "https://registry.npmjs.org/csstype/-/csstype-3.2.3.tgz"
@@ -4103,11 +4145,14 @@ destroy@1.2.0:
   resolved "https://registry.npmjs.org/destroy/-/destroy-1.2.0.tgz"
   integrity sha512-2sJGJTaXIIaR1w4iJSNoN0hnMY7Gpc/n8D4qSCJw8QqFWXf7cuAgnEHxBpweaVcPevC2l3KpjYCx3NypQQgaJg==
 
+<<<<<<< HEAD
 detect-europe-js@^0.1.2:
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/detect-europe-js/-/detect-europe-js-0.1.2.tgz#aa76642e05dae786efc2e01a23d4792cd24c7b88"
   integrity sha512-lgdERlL3u0aUdHocoouzT10d9I89VVhk0qNRmll7mXdGfJT1/wqZ2ZLA4oJAjeACPY5fT1wsbq2AT+GkuInsow==
 
+=======
+>>>>>>> 3d175f14 (app upgrade)
 detect-libc@^2.0.3:
   version "2.1.2"
   resolved "https://registry.npmjs.org/detect-libc/-/detect-libc-2.1.2.tgz"
@@ -4433,6 +4478,7 @@ events@^3.3.0:
   resolved "https://registry.npmjs.org/events/-/events-3.3.0.tgz"
   integrity sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==
 
+<<<<<<< HEAD
 execa@^5.0.0:
   version "5.1.1"
   resolved "https://registry.yarnpkg.com/execa/-/execa-5.1.1.tgz#f80ad9cbf4298f7bd1d4c9555c21e93741c411dd"
@@ -4499,6 +4545,36 @@ expo-build-properties@~57.0.22:
   resolved "https://registry.yarnpkg.com/expo-build-properties/-/expo-build-properties-57.0.22.tgz#38f2d91e0db8d43d4c6471df277cc9fcdf6ecd75"
   integrity sha512-A5oRf2I02XDRu2NnqKo7Au5kUu244unvyoRMUsB+xvg/BOlsR+G/oyDFGkjbda1cJbeKm9eqposIXbA2ri5UrQ==
   dependencies:
+=======
+expo-apple-authentication@~57.0.2:
+  version "57.0.2"
+  resolved "https://registry.yarnpkg.com/expo-apple-authentication/-/expo-apple-authentication-57.0.2.tgz#fe32ec6ac6ff1ec7eec3bb62597e67e7772ad100"
+  integrity sha512-00KnlyRceRKski+ljZz8q8JhJZ4D3ZScU+Y0RqS6ElJ8GaCWfd7Qh5tMr47yIU/dKDrOnkzkFUM+6vyHS5HI7Q==
+
+expo-application@~57.0.3:
+  version "57.0.3"
+  resolved "https://registry.yarnpkg.com/expo-application/-/expo-application-57.0.3.tgz#92d3f386e5a02b978c377a24e7eb32d1fcee1edb"
+  integrity sha512-t/CxeLio0NjY9/cOak1tQp62/hAUjzJxmhR4rVUR7K5bb9YoEtfl1ZekTn+Iuh+dYOMYzF0l72ODMSmY3CR1NA==
+
+expo-asset@~57.0.18:
+  version "57.0.18"
+  resolved "https://registry.yarnpkg.com/expo-asset/-/expo-asset-57.0.18.tgz#c81177df21f2e84f88a1a5ca99292bd7ba425a55"
+  integrity sha512-zDIQkUr0NM2S7YRj98Zohf/OBuM1q0o4ctxLz1C1oe4/33lHNLjp+2v3qUtBWVwn0zKka8UGADmS8M+83Wi6pw==
+  dependencies:
+    "@expo/image-utils" "^0.11.5"
+    expo-constants "~57.0.19"
+
+expo-blur@~57.0.3:
+  version "57.0.3"
+  resolved "https://registry.yarnpkg.com/expo-blur/-/expo-blur-57.0.3.tgz#87feb0b2e48e7ecba239b3b7a5358d1810203ccc"
+  integrity sha512-uyBeJwxIuXzWXXNrnRub5pcF8VzQsiOz0VBTWDpMG2UztmaFyfAz6pI/GCwRtWpHhiOpLoJj79WLdg1GMB+9cg==
+
+expo-build-properties@~57.0.22:
+  version "57.0.22"
+  resolved "https://registry.yarnpkg.com/expo-build-properties/-/expo-build-properties-57.0.22.tgz#38f2d91e0db8d43d4c6471df277cc9fcdf6ecd75"
+  integrity sha512-A5oRf2I02XDRu2NnqKo7Au5kUu244unvyoRMUsB+xvg/BOlsR+G/oyDFGkjbda1cJbeKm9eqposIXbA2ri5UrQ==
+  dependencies:
+>>>>>>> 3d175f14 (app upgrade)
     "@expo/schema-utils" "^57.0.2"
     resolve-from "^5.0.0"
     semver "^7.6.0"
@@ -4515,6 +4591,7 @@ expo-constants@~57.0.19:
   dependencies:
     "@expo/env" "~2.4.3"
 
+<<<<<<< HEAD
 expo-constants@~57.0.20:
   version "57.0.20"
   resolved "https://registry.yarnpkg.com/expo-constants/-/expo-constants-57.0.20.tgz#d8691eccf44282f230a60b5f415b2d94cf7b9be0"
@@ -4564,6 +4641,50 @@ expo-file-system@~57.0.7:
   resolved "https://registry.yarnpkg.com/expo-file-system/-/expo-file-system-57.0.7.tgz#03c4587c0027f65f7e04d88796aefcfe74b03cae"
   integrity sha512-1vkZRadOsIputFDBcclqBa1pO3iXOO6iIsdqJipQWw4V5TSnWgmRTuOF7ro8IzrVue+PHbum++KCG3Tawem4cg==
 
+=======
+expo-crypto@~57.0.3:
+  version "57.0.3"
+  resolved "https://registry.yarnpkg.com/expo-crypto/-/expo-crypto-57.0.3.tgz#e232bf2775f268baa8c5afab30085dc850410bb2"
+  integrity sha512-SAWqEfF37nc8ot7bXsVmu9AFYwQdC2kGvH/eNAHiR3bmlcf1Vv8wu9AnGKT+a90r3T8YfwMpZP4QAYlo4vCn9w==
+
+expo-dev-client@~57.0.19:
+  version "57.0.19"
+  resolved "https://registry.yarnpkg.com/expo-dev-client/-/expo-dev-client-57.0.19.tgz#aefa665fcb736365ac161d4811723c8b4498b33e"
+  integrity sha512-7giMK6BLL685GECHem2UAQvS473ImZLi5l+Q5tq+XSyv6I9UNVPs0p07mKwgBzq8z7DR3d4nTl702ziFxTjO3Q==
+  dependencies:
+    expo-dev-launcher "~57.0.20"
+    expo-dev-menu "~57.0.18"
+    expo-dev-menu-interface "~57.0.0"
+    expo-manifests "~57.0.2"
+    expo-updates-interface "~57.0.2"
+
+expo-dev-launcher@~57.0.20:
+  version "57.0.20"
+  resolved "https://registry.yarnpkg.com/expo-dev-launcher/-/expo-dev-launcher-57.0.20.tgz#1a268a13294223c9577d4d9fffba85792018773c"
+  integrity sha512-F6oAHaDn9j3L/gyMGE+OalriX6PHZWnZLxpN5jc6crTrp8f6hSwGhmsHpAvdOzijfMjyi3R2UkcISFsCIIQYFA==
+  dependencies:
+    "@expo/schema-utils" "^57.0.2"
+    expo-dev-menu "~57.0.18"
+    expo-manifests "~57.0.2"
+
+expo-dev-menu-interface@~57.0.0:
+  version "57.0.0"
+  resolved "https://registry.yarnpkg.com/expo-dev-menu-interface/-/expo-dev-menu-interface-57.0.0.tgz#23bd53c35d00cead3fd963a9bc3e2abf8c00467d"
+  integrity sha512-F47VdzOHYc19FhI/jBgctpO8a5UskTIxG6a1E5t3W5gF8VImuvBQffdXXfLHhsuCl7dS3v3U0R45cleeVXO1Zg==
+
+expo-dev-menu@~57.0.18:
+  version "57.0.18"
+  resolved "https://registry.yarnpkg.com/expo-dev-menu/-/expo-dev-menu-57.0.18.tgz#5256bf45ed213a5387a02c35b4028e14d2583486"
+  integrity sha512-H7m9ENtVYz4FpJktQj+z/njIN1t7kOEaKCv8Qgv2SdAlyFTW8s2EnufxPoSlg2zUTanaauJ6wrR6XESHwW7kpw==
+  dependencies:
+    expo-dev-menu-interface "~57.0.0"
+
+expo-file-system@~57.0.7:
+  version "57.0.7"
+  resolved "https://registry.yarnpkg.com/expo-file-system/-/expo-file-system-57.0.7.tgz#03c4587c0027f65f7e04d88796aefcfe74b03cae"
+  integrity sha512-1vkZRadOsIputFDBcclqBa1pO3iXOO6iIsdqJipQWw4V5TSnWgmRTuOF7ro8IzrVue+PHbum++KCG3Tawem4cg==
+
+>>>>>>> 3d175f14 (app upgrade)
 expo-font@~57.0.4:
   version "57.0.4"
   resolved "https://registry.yarnpkg.com/expo-font/-/expo-font-57.0.4.tgz#ccd67dd2ee3168510a1a2453a5a8b8fd7f8a5fe4"
@@ -4582,6 +4703,7 @@ expo-haptics@~57.0.3:
   integrity sha512-qucUXtwtJdtECKSQK5D6TQBc/0SxKj7s5wQ4mrfSxhZsHrS9a4rcxINl/gbruMaY9spTXStco32ST4pV0vXmxw==
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 expo-image@~57.0.5:
   version "57.0.5"
   resolved "https://registry.yarnpkg.com/expo-image/-/expo-image-57.0.5.tgz#fafabb49e50fafc3795bb1d4d221cc5b6a1780b1"
@@ -4589,16 +4711,21 @@ expo-image@~57.0.5:
   dependencies:
     sf-symbols-typescript "^2.2.0"
 
+=======
+>>>>>>> 3d175f14 (app upgrade)
 expo-json-utils@~57.0.2:
   version "57.0.2"
   resolved "https://registry.yarnpkg.com/expo-json-utils/-/expo-json-utils-57.0.2.tgz#913c4389e1b51a4429e13e09ea1923541ca79ef3"
   integrity sha512-9kYZECLKE3pYZQs+kt3+ggY83Lfryog9/UEo3HJKGcHUZeKKtlFBIPFjI4LzREubsvjP7AsvG0FdEX9EquIoAQ==
+<<<<<<< HEAD
 =======
 expo-json-utils@~56.0.0:
   version "56.0.0"
   resolved "https://registry.yarnpkg.com/expo-json-utils/-/expo-json-utils-56.0.0.tgz#ddf903e571c3d985ca670c028d06970926a1d3e0"
   integrity sha512-lUqyv9aIGDbYTQ5Nux2FnH2/Dz0w5uJ8Pr080eS0StXi2jr5OmuMNErpzUnpfnYOU55xKotd4AHv68PfV/ludg==
 >>>>>>> 6f6d95b1 (update)
+=======
+>>>>>>> 3d175f14 (app upgrade)
 
 expo-keep-awake@~57.0.2:
   version "57.0.2"
@@ -4637,10 +4764,17 @@ expo-modules-autolinking@~57.0.13:
     chalk "^4.1.0"
     commander "^7.2.0"
 
+<<<<<<< HEAD
 expo-modules-core@~57.0.20:
   version "57.0.20"
   resolved "https://registry.yarnpkg.com/expo-modules-core/-/expo-modules-core-57.0.20.tgz#b9bce153f43766e6f9d1cf01f157f5b89587303f"
   integrity sha512-vEL3aeih32yuD7sQHB3Y3LKXRT8mMgoVQWFIcHtX811Bl0StnNZUG2vT5je4fe+OWYVfkjb6gNqfMc04moREgA==
+=======
+expo-modules-core@~57.0.19:
+  version "57.0.19"
+  resolved "https://registry.yarnpkg.com/expo-modules-core/-/expo-modules-core-57.0.19.tgz#2a9021c7d5658c4574c70607b06312298936dd46"
+  integrity sha512-eAJwa5u30r4BTT8cFAcrY3809qG1cPszmEci7//+RjWGA1OMXtwirhVY1H+YtCJPyVGs9MuwrIjqQDMReguG2g==
+>>>>>>> 3d175f14 (app upgrade)
   dependencies:
     "@expo/expo-modules-macros-plugin" "0.6.1"
     expo-modules-jsi "~57.1.1"
@@ -4662,15 +4796,26 @@ expo-notifications@~57.0.21:
     expo-application "~57.0.3"
     expo-constants "~57.0.19"
 
+<<<<<<< HEAD
 expo-router@~57.0.24:
   version "57.0.24"
   resolved "https://registry.yarnpkg.com/expo-router/-/expo-router-57.0.24.tgz#169b8b0c92c6381bc13b3ce360d7528845cf7294"
   integrity sha512-XpqE4Oh4yrmc+sVfsDQPLErBlus//85ulLRghVZltYcdvFm9yNzErmaKrXuBVMUL6D3tnpDtkIgxESG9hYBd7w==
+=======
+expo-router@~57.0.23:
+  version "57.0.23"
+  resolved "https://registry.yarnpkg.com/expo-router/-/expo-router-57.0.23.tgz#d15a2dd4a983028a653ed227edb237007ba1b4a6"
+  integrity sha512-u/iWSdQovEma/owymgz8etxGAif5ZrC8YdXYeGQhDRZwXpAvraordYV0SWej1QWWbYoIkgXcoqHVkgsAff8P4w==
+>>>>>>> 3d175f14 (app upgrade)
   dependencies:
     "@expo/log-box" "^57.0.4"
     "@expo/metro-runtime" "^57.0.16"
     "@expo/schema-utils" "^57.0.2"
+<<<<<<< HEAD
     "@expo/ui" "^57.0.21"
+=======
+    "@expo/ui" "^57.0.20"
+>>>>>>> 3d175f14 (app upgrade)
     "@radix-ui/react-slot" "^1.2.0"
     "@radix-ui/react-tabs" "^1.1.12"
     "@react-native-masked-view/masked-view" "^0.3.2"
@@ -4717,11 +4862,14 @@ expo-status-bar@~57.0.1:
   resolved "https://registry.yarnpkg.com/expo-status-bar/-/expo-status-bar-57.0.1.tgz#0a8ec1657fcd0987f9612ca411a0c3d002f0eaf0"
   integrity sha512-Xwaq1gAoVRWx5dPG5VhT5RSbnI9OilhZnO5qoPBnUaBAa5VzRzfdS8q0/bsPt0jR2DKLtGuP0bQ6efMJ4RIMDg==
 
+<<<<<<< HEAD
 expo-store-review@~57.0.3:
   version "57.0.3"
   resolved "https://registry.yarnpkg.com/expo-store-review/-/expo-store-review-57.0.3.tgz#cb428abbf42b4cb8094eef6c84367e3a5d309c6b"
   integrity sha512-++aTnzw0Dsudxx026aZPgrRUc96dxdJVCoi+LZWYbmyoXf76KNKtNWsv7vYWEDjuDU7Z67Z9mGpP+cxQRcBLpw==
 
+=======
+>>>>>>> 3d175f14 (app upgrade)
 expo-symbols@^57.0.3, expo-symbols@~57.0.3:
   version "57.0.3"
   resolved "https://registry.yarnpkg.com/expo-symbols/-/expo-symbols-57.0.3.tgz#291f56d981d8271842aa0878b7e197c1793c1eef"
@@ -4738,6 +4886,7 @@ expo-system-ui@~57.0.4:
     "@react-native/normalize-colors" "0.86.3"
     debug "^4.3.2"
 
+<<<<<<< HEAD
 expo-task-manager@~57.0.21:
   version "57.0.21"
   resolved "https://registry.yarnpkg.com/expo-task-manager/-/expo-task-manager-57.0.21.tgz#ace56e4367c934158dff23839c37f243e5214291"
@@ -4759,6 +4908,22 @@ expo@^57.0.26:
   version "57.0.26"
   resolved "https://registry.yarnpkg.com/expo/-/expo-57.0.26.tgz#f0f35b49629c75c0e0a6e28e91a6b011c0776a54"
   integrity sha512-U1rsFwcuZNnU61Z/YLnnVC/ZqP0wpxh/rCKUMff3ot/rhLpxFY1zxEqu4vyaexyvBAB1mwpl9lA/ltcHBoQGyg==
+=======
+expo-updates-interface@~57.0.2:
+  version "57.0.2"
+  resolved "https://registry.yarnpkg.com/expo-updates-interface/-/expo-updates-interface-57.0.2.tgz#b3d357aee2a618e6e38b275d7de9886776338fd3"
+  integrity sha512-x3SA5toiHZEkW+5oeNdUM1Rvt6M3ExegQsSwS3Z1+S9gn9utGYTGBkb8MBQivhjIZiRlQYDIhauxA8kySQEWtQ==
+
+expo-web-browser@~57.0.3:
+  version "57.0.3"
+  resolved "https://registry.yarnpkg.com/expo-web-browser/-/expo-web-browser-57.0.3.tgz#adc332852ef29546de2fa47ba33ce4df9137f98e"
+  integrity sha512-+ecvhyS/PdWkpv4ai6FF1Trd6Y/4kn/eQ3O86mie2ecU3w+I8bKZh13kppY/jw1uSL7yikt03L5W/iiHojrFwQ==
+
+expo@^57.0.25:
+  version "57.0.25"
+  resolved "https://registry.yarnpkg.com/expo/-/expo-57.0.25.tgz#52278e265bc9ca9e9063e1220920fe4ec3c65b8f"
+  integrity sha512-oqtX4PekGgU+pBQfsbnbwxh5tKG58o27mN13wTmAhRPlQyK9SHICfCNHxBo+uQyT1BlI3OLhqTwu1qKmHYL5Ug==
+>>>>>>> 3d175f14 (app upgrade)
   dependencies:
     "@babel/runtime" "^7.20.0"
     "@expo/cli" "^57.0.27"
@@ -4774,12 +4939,20 @@ expo@^57.0.26:
     "@ungap/structured-clone" "^1.3.0"
     babel-preset-expo "~57.0.13"
     expo-asset "~57.0.18"
+<<<<<<< HEAD
     expo-constants "~57.0.20"
+=======
+    expo-constants "~57.0.19"
+>>>>>>> 3d175f14 (app upgrade)
     expo-file-system "~57.0.7"
     expo-font "~57.0.4"
     expo-keep-awake "~57.0.2"
     expo-modules-autolinking "~57.0.13"
+<<<<<<< HEAD
     expo-modules-core "~57.0.20"
+=======
+    expo-modules-core "~57.0.19"
+>>>>>>> 3d175f14 (app upgrade)
     pretty-format "^29.7.0"
     react-refresh "^0.14.2"
     whatwg-url-minimum "^0.1.2"
@@ -5225,6 +5398,7 @@ image-size@^1.0.2:
   dependencies:
     queue "6.0.2"
 
+<<<<<<< HEAD
 import-fresh@^3.3.0:
   version "3.3.1"
   resolved "https://registry.yarnpkg.com/import-fresh/-/import-fresh-3.3.1.tgz#9cecb56503c0ada1f2741dbbd6546e4b13b57ccf"
@@ -5255,6 +5429,9 @@ inflight@^1.0.4:
     wrappy "1"
 
 inherits@2, inherits@~2.0.3, inherits@~2.0.4:
+=======
+inherits@~2.0.3, inherits@~2.0.4:
+>>>>>>> 3d175f14 (app upgrade)
   version "2.0.4"
   resolved "https://registry.npmjs.org/inherits/-/inherits-2.0.4.tgz"
   integrity sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==
@@ -6464,6 +6641,7 @@ metro@0.84.5:
     ws "^7.5.10"
     yargs "^17.6.2"
 
+<<<<<<< HEAD
 micro-packed@~0.7.3:
   version "0.7.3"
   resolved "https://registry.yarnpkg.com/micro-packed/-/micro-packed-0.7.3.tgz#59e96b139dffeda22705c7a041476f24cabb12b6"
@@ -6472,6 +6650,9 @@ micro-packed@~0.7.3:
     "@scure/base" "~1.2.5"
 
 micromatch@^4.0.2, micromatch@^4.0.4:
+=======
+micromatch@^4.0.4:
+>>>>>>> 3d175f14 (app upgrade)
   version "4.0.8"
   resolved "https://registry.npmjs.org/micromatch/-/micromatch-4.0.8.tgz"
   integrity sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA==
@@ -6513,11 +6694,14 @@ mimic-fn@^1.0.0:
   resolved "https://registry.npmjs.org/mimic-fn/-/mimic-fn-1.2.0.tgz"
   integrity sha512-jf84uxzwiuiIVKiOLpfYk7N46TSy8ubTonmneY9vrpHNAnp0QBt2BxWV9dO3/j+BoVAb+a5G6YDPW3M5HOdMWQ==
 
+<<<<<<< HEAD
 mimic-fn@^2.1.0:
   version "2.1.0"
   resolved "https://registry.yarnpkg.com/mimic-fn/-/mimic-fn-2.1.0.tgz#7ed2c2ccccaf84d3ffcb7a69b57711fc2083401b"
   integrity sha512-OqbOk5oEQeAZ8WXWydlu9HJjz9WVdEIvamMCcXmuqUYjTknH/sqsWvhQ3vgwKFRR1HpjvNBKQ37nbJgYzGqGcg==
 
+=======
+>>>>>>> 3d175f14 (app upgrade)
 minimatch@^10.2.2:
   version "10.2.5"
   resolved "https://registry.npmjs.org/minimatch/-/minimatch-10.2.5.tgz"
@@ -6572,11 +6756,14 @@ nanoid@^3.3.18:
   resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-3.3.19.tgz#336d4aa4bcd4fb24d2cddede7ffeae40bec03f0a"
   integrity sha512-Y2tUNy4ouw6tq5oDSKeQYGOyhkUBhNOcGV/02KC+6kd9eDGqdZd++mjMiIDilrBYvjEnCYvVtsuHCuP+okSfug==
 
+<<<<<<< HEAD
 natural-compare@^1.4.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/natural-compare/-/natural-compare-1.4.0.tgz#4abebfeed7541f2c27acfb29bdbbd15c8d5ba4f7"
   integrity sha512-OWND8ei3VtNC9h7V60qff3SVobHr996CTwgxubgyQYEpg290h9J0buyECNNJexkFm5sOajh5G116RYA1c8ZMSw==
 
+=======
+>>>>>>> 3d175f14 (app upgrade)
 negotiator@0.6.3:
   version "0.6.3"
   resolved "https://registry.npmjs.org/negotiator/-/negotiator-0.6.3.tgz"
@@ -6702,11 +6889,14 @@ ob1@0.84.5:
   dependencies:
     flow-enums-runtime "^0.0.6"
 
+<<<<<<< HEAD
 object-keys@^1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/object-keys/-/object-keys-1.1.1.tgz#1c47f272df277f3b1daf061677d9c82e2322c60e"
   integrity sha512-NuAESUOUMrlIXOfHKzD6bpPu3tYt3xvjNdRIQ+FeT0lNb4K8WR70CaDxhuNguS2XG+GjkyMwOzsN5ZktImfhLA==
 
+=======
+>>>>>>> 3d175f14 (app upgrade)
 on-finished@~2.3.0:
   version "2.3.0"
   resolved "https://registry.npmjs.org/on-finished/-/on-finished-2.3.0.tgz"
@@ -7087,6 +7277,7 @@ react-freeze@^1.0.0:
   resolved "https://registry.npmjs.org/react-freeze/-/react-freeze-1.0.4.tgz"
   integrity sha512-r4F0Sec0BLxWicc7HEyo2x3/2icUTrRmDjaaRyzzn+7aDyFZliszMDOgLVwSnQnYENOlL1o569Ze2HZefk8clA==
 
+<<<<<<< HEAD
 react-i18next@^17.0.15:
   version "17.0.15"
   resolved "https://registry.yarnpkg.com/react-i18next/-/react-i18next-17.0.15.tgz#ca219789bf83b556fd0404df4cfbe31b05e4e253"
@@ -7096,6 +7287,8 @@ react-i18next@^17.0.15:
     html-parse-stringify "^4.0.1"
     use-sync-external-store "^1.6.0"
 
+=======
+>>>>>>> 3d175f14 (app upgrade)
 react-is@^16.7.0:
   version "16.13.1"
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-16.13.1.tgz#789729a4dc36de2999dc156dd6c1d9c18cea56a4"
@@ -7134,10 +7327,17 @@ react-native-gesture-handler@~2.32.0:
     hoist-non-react-statics "^3.3.0"
     invariant "^2.2.4"
 
+<<<<<<< HEAD
 react-native-get-random-values@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/react-native-get-random-values/-/react-native-get-random-values-2.0.0.tgz#21b6e40601d297a342378792a8cb9c8f853bff66"
   integrity sha512-wx7/aPqsUIiWsG35D+MsUJd8ij96e3JKddklSdrdZUrheTx89gPtz3Q2yl9knBArj5u26Cl23T88ai+Q0vypdQ==
+=======
+react-native-get-random-values@~1.11.0:
+  version "1.11.0"
+  resolved "https://registry.yarnpkg.com/react-native-get-random-values/-/react-native-get-random-values-1.11.0.tgz#1ca70d1271f4b08af92958803b89dccbda78728d"
+  integrity sha512-4BTbDbRmS7iPdhYLRcz3PGFIpFJBwNZg9g42iwa2P6FOv9vZj/xJc678RZXnLNZzd0qd7Q3CCF6Yd+CU2eoXKQ==
+>>>>>>> 3d175f14 (app upgrade)
   dependencies:
     fast-base64-decode "^1.0.0"
 
@@ -7503,7 +7703,11 @@ semver@^7.1.3, semver@^7.3.5, semver@^7.5.4, semver@^7.6.0, semver@^7.7.3:
   resolved "https://registry.npmjs.org/semver/-/semver-7.8.2.tgz"
   integrity sha512-c8jsqUZm3omBOI66G90z1Dyw5z622G8oLG+omfsHBJf3CWQTlOcwOjvOG6wtiNfW6anKm/eA39LMwMtMez2TiQ==
 
+<<<<<<< HEAD
 semver@^7.5.3, semver@^7.7.4, semver@^7.8.5:
+=======
+semver@^7.7.4:
+>>>>>>> 3d175f14 (app upgrade)
   version "7.8.5"
   resolved "https://registry.yarnpkg.com/semver/-/semver-7.8.5.tgz#39b646037dd50c14fb451e7e4cac58ed8b863f69"
   integrity sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA==
@@ -7809,6 +8013,7 @@ strip-ansi@^6.0.0, strip-ansi@^6.0.1:
   dependencies:
     ansi-regex "^5.0.1"
 
+<<<<<<< HEAD
 strip-bom@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/strip-bom/-/strip-bom-4.0.0.tgz#9c3505c1db45bcedca3d9cf7a16f5c5aa3901878"
@@ -7824,6 +8029,8 @@ strip-json-comments@^3.1.1:
   resolved "https://registry.yarnpkg.com/strip-json-comments/-/strip-json-comments-3.1.1.tgz#31f1281b3832630434831c310c01cccda8cbe006"
   integrity sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==
 
+=======
+>>>>>>> 3d175f14 (app upgrade)
 structured-headers@^0.4.1:
   version "0.4.1"
   resolved "https://registry.npmjs.org/structured-headers/-/structured-headers-0.4.1.tgz"

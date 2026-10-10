@@ -74,8 +74,17 @@
       [
         "react-native-continued-task",
         {
-          "identifierPrefixes": ["com.foo.MyApp.export"],
+          "identifierPrefixes": [
+            "com.foo.MyApp.export"
+          ],
           "enableGPU": false
+        }
+      ],
+      "./plugins/withGrpcSwiftModuleFix.js",
+      [
+        "expo-image",
+        {
+          "disableLibdav1d": true
         }
       ]
     ],

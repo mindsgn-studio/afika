@@ -24,6 +24,16 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
   return upstreamResolveRequest(context, moduleName, platform);
 };
 
+config.transformer.babelTransformerPath = require.resolve(
+  "react-native-svg-transformer"
+);
+
+config.resolver.assetExts = config.resolver.assetExts.filter(
+  (ext) => ext !== "svg"
+);
+
+config.resolver.sourceExts.push("svg");
+
 config.resolver.sourceExts.push("sql");
 config.resolver.extraNodeModules = {
   ...(config.resolver.extraNodeModules || {}),

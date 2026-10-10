@@ -58,7 +58,6 @@ export default function RootLayout() {
             <Stack>
               <Stack.Screen name="index" options={{ headerShown: false }} />
               <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-              <Stack.Screen name="sign-in" options={{ headerShown: false }} />
               <Stack.Screen name="(home)" options={{ headerShown: false }} />
               <Stack.Screen name="send/index" options={{ headerShown: false }} />
               <Stack.Screen name="top-up" options={{ headerShown: false }} />

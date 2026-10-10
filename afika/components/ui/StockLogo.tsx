@@ -1,5 +1,7 @@
-import { Image, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { colors, fonts } from "@/theme";
+import logoPath from '@/assets/stocks/usdc.svg';
+import { Image } from 'expo-image';
 
 type Props = {
   name?: string;
@@ -12,11 +14,13 @@ type Props = {
 export default function StockLogo({
   name = "",
   iconUrl,
-  size = 40,
+  size = 100,
   ring,
   bordered = true,
 }: Props) {
+
   const monogram = (name || "?").slice(0, 1).toUpperCase();
+
   return (
     <View
       testID="stock-logo"
@@ -25,23 +29,16 @@ export default function StockLogo({
         {
           width: size,
           height: size,
-          borderRadius: size / 2,
-          borderWidth: ring ? 2 : bordered ? 1 : 0,
-          borderColor: ring ?? colors.line,
         },
       ]}
     >
-      {iconUrl ? (
-        <Image source={{ uri: iconUrl }} style={{ width: size, height: size, borderRadius: size / 2 }} />
-      ) : (
-        <Text style={{ fontFamily: fonts.semibold, fontSize: size * 0.42, color: colors.ink }}>
-          {monogram}
-        </Text>
-      )}
+      <Image
+        source={iconUrl}
+        style={{ backgroundColor: "none", width: size, height: size,  }} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  base: { backgroundColor: colors.paper, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  base: {alignItems: "center", justifyContent: "center", overflow: "hidden" },
 });

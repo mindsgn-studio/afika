@@ -13,13 +13,18 @@ export default function TabLayout() {
           src={<VectorIcon family={Feather} name="home" />}
         />
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="portfollio">
-        <NativeTabs.Trigger.Label>Portfolio</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          selectedColor={colors.ink}
-          src={<VectorIcon family={Feather} name="pie-chart" />}
-        />
-      </NativeTabs.Trigger>
+      {
+        /*
+        <NativeTabs.Trigger name="portfollio">
+          <NativeTabs.Trigger.Label>Portfolio</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon
+            selectedColor={colors.ink}
+            src={<VectorIcon family={Feather} name="pie-chart" />}
+          />
+        </NativeTabs.Trigger>
+        */
+      }
+
       <NativeTabs.Trigger name="markets">
         <NativeTabs.Trigger.Label>Markets</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon selectedColor={colors.ink} src={<VectorIcon family={Feather} name="trending-up" />} />

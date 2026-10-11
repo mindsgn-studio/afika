@@ -47,7 +47,7 @@ export default function Settings() {
     setProgress(true);
     try {
       await logout();
-      await router.replace("/sign-in");
+      await router.replace("/onboarding");
     } catch (error) {
     } finally {
       setProgress(false);

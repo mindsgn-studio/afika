@@ -123,9 +123,7 @@ export default function Portfolio() {
   return (
     <View style={styles.screen} testID="portfolio-screen">
       <HeroHeader balance={total} onAddMoney={() => router.push("/top-up")}>
-        <View style={styles.actions}>
           <SendTray />
-        </View>
       </HeroHeader>
 
       <Sheet>

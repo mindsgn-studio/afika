@@ -17,12 +17,6 @@ export default function BalanceCard({ balance, label = "Total balance" }: Props)
 
   return (
     <View style={styles.card} testID="balance-card">
-      <View style={styles.topRow}>
-        <Text style={styles.label}>{label}</Text>
-        <View style={styles.chip} testID="balance-currency">
-          <Text style={styles.chipText}>{currency}</Text>
-        </View>
-      </View>
       <Text style={styles.amount} testID="portfolio-balance">
         <Text style={styles.symbol}>{symbol} </Text>
         {formatMoney(convert(balance))}
@@ -32,7 +26,7 @@ export default function BalanceCard({ balance, label = "Total balance" }: Props)
 }
 
 const styles = StyleSheet.create({
-  card: { alignItems: "center", gap: 8 },
+  card: { alignItems: "center", gap: 8, paddingVertical: 40 },
   topRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   label: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted },
   chip: {

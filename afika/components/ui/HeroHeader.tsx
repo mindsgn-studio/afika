@@ -28,14 +28,19 @@ export default function HeroHeader({ balance, children, onAddMoney }: Props) {
     <SafeAreaView edges={["top"]} style={styles.hero} testID="hero-header">
       <View style={styles.balanceWrap}>
         <BalanceCard balance={balance} />
-        <Pressable style={styles.addMoney} onPress={onAddMoney} testID="add-money">
-          <View style={styles.plusDot}>
-            <Feather name="plus" size={12} color={colors.ink} />
-          </View>
-          <Text style={styles.addMoneyText}>ADD MONEY</Text>
-        </Pressable>
+        <View style={{display: "flex", flexDirection: "row", gap: 50}}>
+          <Pressable style={styles.addMoney} onPress={onAddMoney} testID="add-money">
+            <View style={styles.plusDot}>
+              <Feather name="plus" size={12} color={colors.ink} />
+            </View>
+            <Text style={styles.addMoneyText}>ADD MONEY</Text>
+          </Pressable>
+          {children}
+        </View>
+
+
       </View>
-      {children}
+
     </SafeAreaView>
   );
 }

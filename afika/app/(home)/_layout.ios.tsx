@@ -11,6 +11,8 @@ export default function TabLayout() {
           selectedColor={colors.primary}
         />
       </NativeTabs.Trigger>
+      {
+      /*
       <NativeTabs.Trigger name="portfollio">
         <NativeTabs.Trigger.Label>Portfolio</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon
@@ -18,6 +20,9 @@ export default function TabLayout() {
           selectedColor={colors.primary}
         />
       </NativeTabs.Trigger>
+      */
+      }
+
       <NativeTabs.Trigger name="markets">
         <NativeTabs.Trigger.Label>Markets</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon

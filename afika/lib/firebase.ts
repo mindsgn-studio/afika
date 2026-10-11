@@ -240,6 +240,22 @@ export async function hasPushNotificationDetails(walletAddress: string) {
   }
 }
 
+export async function getPushNotificationDetails(
+  walletAddress: string,
+): Promise<PushNotificationDetails | null> {
+  if (!walletAddress) return null;
+  try {
+    const pushDoc = await getDoc(
+      walletDetailsDoc(walletAddress, "push-notifications"),
+    );
+    if (!pushDoc.exists()) return null;
+    return pushDoc.data() as PushNotificationDetails;
+  } catch (error) {
+    console.log("getPushNotificationDetails error:", error);
+    return null;
+  }
+}
+
 export async function savePushNotificationDetails(
   walletAddress: string,
   details: PushNotificationDetails,

@@ -21,6 +21,8 @@ export type StockRecord = {
   open: number;
   dayLow: number;
   dayHigh: number;
+  marketCap?: number;
+  volume24h?: number;
   tradable: boolean;
 };
 
@@ -44,6 +46,8 @@ function mapStock(id: string, data: Record<string, unknown>): StockRecord {
     open: Number(data.open || 0),
     dayLow: Number(data.dayLow || 0),
     dayHigh: Number(data.dayHigh || 0),
+    marketCap: Number((data as any).marketCap || (data as any).marketcap || 0) || undefined,
+    volume24h: Number((data as any).volume24h || (data as any).volume || 0) || undefined,
     tradable: data.tradable !== false && !data.paused,
   };
 }

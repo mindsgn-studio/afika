@@ -22,7 +22,12 @@ export default function Explore() {
 
   return (
     <SafeAreaView style={styles.screen} testID="explore-screen">
-      <Text style={styles.title}>Explore</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>Explore</Text>
+        <Pressable onPress={() => router.push("/market")} testID="view-markets">
+          <Text style={styles.link}>View markets</Text>
+        </Pressable>
+      </View>
       <TextInput
         testID="explore-search"
         value={query}
@@ -63,7 +68,9 @@ export default function Explore() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.paper, paddingHorizontal: 20 },
-  title: { fontFamily: fonts.medium, fontSize: 28, color: colors.ink, marginTop: 8, marginBottom: 16 },
+  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 8, marginBottom: 16 },
+  title: { fontFamily: fonts.medium, fontSize: 28, color: colors.ink },
+  link: { fontFamily: fonts.regular, fontSize: 14, color: colors.ink },
   search: {
     height: 48,
     borderRadius: 16,

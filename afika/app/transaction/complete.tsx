@@ -4,9 +4,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import PillButton from "@/components/ui/PillButton";
 import { shortenAddress } from "@/lib/wallet";
 import { colors, fonts } from "@/theme";
+import { useIncomingPaymentNotifications } from "@/lib/notifications-incoming";
 
 export default function TransactionCompleteScreen() {
-  const { title, message, txHash, amount, token, secondaryAmount, secondaryToken, target } =
+  const { title, message, txHash, amount, token, secondaryAmount, secondaryToken, target, direction } =
     useLocalSearchParams<{
       title?: string;
       message?: string;
@@ -16,7 +17,10 @@ export default function TransactionCompleteScreen() {
       secondaryAmount?: string;
       secondaryToken?: string;
       target?: string;
+      direction?: string;
     }>();
+
+  useIncomingPaymentNotifications();
 
   return (
     <SafeAreaView style={styles.container} testID="tx-complete-screen">

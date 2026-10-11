@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import PillButton from "@/components/ui/PillButton";
 import { colors, fonts } from "@/theme";
+import { useIncomingPaymentNotifications } from "@/lib/notifications-incoming";
 
 export default function TransactionErrorScreen() {
   const { title, message, retryPath } = useLocalSearchParams<{
@@ -10,6 +11,8 @@ export default function TransactionErrorScreen() {
     message?: string;
     retryPath?: string;
   }>();
+
+  useIncomingPaymentNotifications();
 
   return (
     <SafeAreaView style={styles.container} testID="tx-error-screen">

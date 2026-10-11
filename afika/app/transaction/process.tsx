@@ -2,9 +2,12 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams } from "expo-router";
 import { colors, fonts } from "@/theme";
+import { useIncomingPaymentNotifications } from "@/lib/notifications-incoming";
 
 export default function TransactionProcessScreen() {
   const { title, message } = useLocalSearchParams<{ title?: string; message?: string }>();
+
+  useIncomingPaymentNotifications();
 
   return (
     <SafeAreaView style={styles.container} testID="tx-process-screen">

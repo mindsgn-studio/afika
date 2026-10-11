@@ -6,11 +6,12 @@ import { colors, fonts } from "@/theme";
 type Props = {
   data: number[];
   height?: number;
+  formatValue?: (value: number) => string;
 };
 
 const AXIS_W = 48;
 
-export default function PriceChart({ data, height = 190 }: Props) {
+export default function PriceChart({ data, height = 190, formatValue = (value) => `$${Math.round(value).toLocaleString("en-US")}` }: Props) {
   const [width, setWidth] = useState(0);
   const [active, setActive] = useState(Math.max(0, data.length - 1));
   const widthRef = useRef(0);
@@ -88,7 +89,7 @@ export default function PriceChart({ data, height = 190 }: Props) {
                   { left: Math.min(Math.max(cur.x - 26, 0), width - 56), top: Math.min(cur.y + 14, height - 30) },
                 ]}
               >
-                <Text style={styles.tipText}>${Math.round(safe[active] ?? 0).toLocaleString("en-US")}</Text>
+                <Text style={styles.tipText}>{formatValue(safe[active] ?? 0)}</Text>
               </View>
             </>
           ) : null}
@@ -98,7 +99,7 @@ export default function PriceChart({ data, height = 190 }: Props) {
             const y = ((max - v) / span) * height;
             return (
               <Text key={v} style={[styles.yLabel, { top: y - 8 }]}>
-                ${v.toLocaleString("en-US")}
+                {formatValue(v)}
               </Text>
             );
           })}

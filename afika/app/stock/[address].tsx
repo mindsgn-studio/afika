@@ -4,8 +4,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather, Ionicons } from "@expo/vector-icons";
 import StockLogo from "@/components/ui/StockLogo";
-import PriceChart from "@/components/ui/PriceChart";
 import RangePills from "@/components/ui/RangePills";
+import LineChart from "@/shared/ui/charts/line-chart";
 import PillButton from "@/components/ui/PillButton";
 import IconButton from "@/components/ui/IconButton";
 import { useStock } from "@/hooks/use-stocks";
@@ -13,9 +13,9 @@ import { useStockHistory } from "@/hooks/use-stock-history";
 import { useWatchlist } from "@/hooks/use-watchlist";
 import { useWallet } from "@/store/wallet";
 import { getActiveWalletAddress } from "@/lib/wallet";
-import { formatMoney } from "@/lib/money";
 import { getAllowlistedStock, normalizeStockAddress } from "@/constants/stocks";
 import { colors, fonts } from "@/theme";
+import { useCurrency } from "@/hooks/use-currency";
 
 export default function StockDetails() {
   const { address } = useLocalSearchParams<{ address: string }>();
@@ -25,6 +25,7 @@ export default function StockDetails() {
   const allow = getAllowlistedStock(normalized);
   const { stock } = useStock(normalized);
   const { points } = useStockHistory(normalized, range);
+  const { format, rate } = useCurrency();
   const wallet = useWallet();
   const { toggle, has } = useWatchlist(getActiveWalletAddress(wallet));
   const name = stock?.name || allow?.name || "Stock";
@@ -33,7 +34,7 @@ export default function StockDetails() {
   const changePct = stock?.changePct24h || 0;
   const up = changePct >= 0;
   const following = has(normalized);
-  const chart = points.map((p) => p.price);
+  const chart = points.map((p) => p.price * rate);
 
   return (
     <SafeAreaView style={styles.screen} testID="stock-detail-screen">
@@ -54,7 +55,7 @@ export default function StockDetails() {
           <Text style={styles.ticker}>{symbol}</Text>
         </View>
         <View style={{ alignItems: "flex-end" }}>
-          <Text style={styles.price}>${formatMoney(price)}</Text>
+          <Text style={styles.price}>{format(price)}</Text>
           <Text style={[styles.change, { color: up ? colors.green : colors.red }]}>
             {up ? "↑" : "↓"} {Math.abs(changePct)}%
           </Text>
@@ -63,7 +64,17 @@ export default function StockDetails() {
 
       <RangePills value={range} onChange={setRange} />
       <View style={styles.chart}>
-        <PriceChart data={chart.length ? chart : [price || 0, price || 0]} />
+        <LineChart.Root
+          data={(chart.length ? chart : [price * rate || 0, price * rate || 0]).map((y, x) => ({ x, y }))}
+          style={{ height: 190 }}
+        >
+          <LineChart.Grid count={4} color={colors.line} thickness={1} />
+          <LineChart.Area colors={[colors.lime, colors.paper]} opacity={0.12} />
+          <LineChart.Line color={colors.limeLine} thickness={3} />
+          <LineChart.Indicator color={colors.paper} borderColor={colors.ink} />
+          <LineChart.Cursor color={colors.muted} showCrosshair />
+          <LineChart.Tooltip format={(point) => format(point.y)} />
+        </LineChart.Root>
       </View>
 
       {stock?.navStale ? (
@@ -79,15 +90,15 @@ export default function StockDetails() {
         <View style={styles.overviewRow}>
           <View>
             <Text style={styles.ovLabel}>Open</Text>
-            <Text style={styles.ovValue}>${formatMoney(stock?.open || price)}</Text>
+            <Text style={styles.ovValue}>{format(stock?.open || price)}</Text>
           </View>
           <View>
             <Text style={styles.ovLabel}>Day Low</Text>
-            <Text style={styles.ovValue}>${formatMoney(stock?.dayLow || price)}</Text>
+            <Text style={styles.ovValue}>{format(stock?.dayLow || price)}</Text>
           </View>
           <View>
             <Text style={styles.ovLabel}>Day High</Text>
-            <Text style={styles.ovValue}>${formatMoney(stock?.dayHigh || price)}</Text>
+            <Text style={styles.ovValue}>{format(stock?.dayHigh || price)}</Text>
           </View>
         </View>
       </View>

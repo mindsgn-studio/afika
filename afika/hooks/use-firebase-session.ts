@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { usePrivy, useEmbeddedEthereumWallet } from "@privy-io/expo";
-import auth from "@react-native-firebase/auth";
+import { getAuth, signInWithCustomToken } from "@react-native-firebase/auth";
+import { getApp } from "@react-native-firebase/app";
 import { getActiveWalletAddress } from "@/lib/wallet";
 import { useWallet } from "@/store/wallet";
 
@@ -9,7 +10,7 @@ const AUTH_MESSAGE_PREFIX = "Afika auth\n";
 function authBaseUrl() {
   return (
     process.env.EXPO_PUBLIC_AUTH_SESSION_URL ||
-    "https://europe-west1-pocket-money-backend.cloudfunctions.net"
+    "https://europe-west1-afika-510408.cloudfunctions.net"
   ).replace(/\/$/, "");
 }
 
@@ -19,11 +20,20 @@ async function postJson<T>(path: string, body: Record<string, unknown>): Promise
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const data = (await response.json()) as T & { error?: { message?: string } };
-  if (!response.ok) {
-    throw new Error(data.error?.message || "Auth session failed");
+  const responseBody = await response.text();
+  let data: (T & { error?: { message?: string } }) | undefined;
+  try {
+    data = JSON.parse(responseBody);
+  } catch {
+    const route = response.url || `${authBaseUrl()}${path}`;
+    throw new Error(
+      `Auth endpoint returned non-JSON (${response.status}) at ${route}. Check that the auth-session function is deployed and its URL is configured.`,
+    );
   }
-  return data;
+  if (!response.ok) {
+    throw new Error(data?.error?.message || `Auth session failed (${response.status})`);
+  }
+  return data as T;
 }
 
 // Optional Firebase Auth for users/{uid} eligibility. Wallet docs are created
@@ -44,7 +54,8 @@ export function useFirebaseSession() {
     if (!isReady || !user || !kernelAddress || !signerAddress || !wallets?.[0]) {
       return;
     }
-    if (auth().currentUser && auth().currentUser?.uid) {
+    const firebaseAuth = getAuth(getApp());
+    if (firebaseAuth.currentUser?.uid) {
       return;
     }
     if (inFlight.current) return;
@@ -57,7 +68,6 @@ export function useFirebaseSession() {
         const privyAccessToken = getAccessToken
           ? await getAccessToken()
           : "";
-        console.log(privyAccessToken)
         if (!privyAccessToken) {
           throw new Error("Missing Privy access token");
         }
@@ -76,7 +86,7 @@ export function useFirebaseSession() {
           nonce,
         });
         if (!cancelled) {
-          await auth().signInWithCustomToken(session.customToken);
+          await signInWithCustomToken(firebaseAuth, session.customToken);
         }
       } catch (error) {
         console.log("firebase session error:", error);

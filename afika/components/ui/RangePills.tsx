@@ -1,8 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Feather } from "@expo/vector-icons";
 import { colors, fonts } from "@/theme";
 
-const RANGES = ["1D", "7D", "1M", "3M", "All"];
+const RANGES = ["1D", "7D", "1M", "1Y"];
 
 type Props = {
   value: string;
@@ -20,9 +19,6 @@ export default function RangePills({ value, onChange }: Props) {
           </Pressable>
         );
       })}
-      <Pressable style={styles.expand}>
-        <Feather name="maximize" size={14} color={colors.lime} />
-      </Pressable>
     </View>
   );
 }
@@ -33,5 +29,4 @@ const styles = StyleSheet.create({
   pillOn: { backgroundColor: colors.ink },
   pillText: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted },
   pillTextOn: { color: colors.lime },
-  expand: { width: 28, height: 28, borderRadius: 6, backgroundColor: colors.ink, alignItems: "center", justifyContent: "center" },
 });

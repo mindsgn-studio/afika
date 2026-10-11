@@ -129,7 +129,6 @@ export default function Portfolio() {
       </HeroHeader>
 
       <Sheet>
-        <PortfolioCard summary={summary} />
         <View style={styles.sectionHead}>
           <Text style={styles.sectionTitle}>Recent activity</Text>
           <Pressable onPress={() => router.push("/activity")} testID="see-all-transactions">

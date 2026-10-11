@@ -9,7 +9,7 @@ const RANGE_MS: Record<string, number> = {
   "1D": 24 * 60 * 60 * 1000,
   "7D": 7 * 24 * 60 * 60 * 1000,
   "1M": 30 * 24 * 60 * 60 * 1000,
-  "3M": 90 * 24 * 60 * 60 * 1000,
+  "1Y": 365 * 24 * 60 * 60 * 1000,
 };
 
 export function useStockHistory(address?: string | null, range = "1D") {
@@ -29,10 +29,10 @@ export function useStockHistory(address?: string | null, range = "1D") {
     }
     const db = getFirestore();
     const q = query(
-      collection(db, "stocks", normalized, "history"),
+      collection(db, "stocks", normalized, range === "1Y" ? "historyDaily" : range === "1D" ? "history" : "historyYear"),
       where("t", ">=", since),
       orderBy("t", "asc"),
-      limit(500),
+      limit(range === "1M" ? 1000 : 500),
     );
     const unsubscribe = onSnapshot(q,
         (snapshot) => {

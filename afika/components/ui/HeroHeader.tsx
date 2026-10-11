@@ -26,9 +26,6 @@ function onWalletError(error: unknown) {
 export default function HeroHeader({ balance, children, onAddMoney }: Props) {
   return (
     <SafeAreaView edges={["top"]} style={styles.hero} testID="hero-header">
-      <View style={styles.topBar}>
-      </View>
-
       <View style={styles.balanceWrap}>
         <BalanceCard balance={balance} />
         <Pressable style={styles.addMoney} onPress={onAddMoney} testID="add-money">

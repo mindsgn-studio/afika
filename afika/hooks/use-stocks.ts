@@ -24,6 +24,7 @@ export type StockRecord = {
   marketCap?: number;
   volume24h?: number;
   tradable: boolean;
+  updatedAt?: number;
 };
 
 function mapStock(id: string, data: Record<string, unknown>): StockRecord {
@@ -49,6 +50,7 @@ function mapStock(id: string, data: Record<string, unknown>): StockRecord {
     marketCap: Number((data as any).marketCap || (data as any).marketcap || 0) || undefined,
     volume24h: Number((data as any).volume24h || (data as any).volume || 0) || undefined,
     tradable: data.tradable !== false && !data.paused,
+    updatedAt: Number(data.updatedAt || 0) || undefined,
   };
 }
 

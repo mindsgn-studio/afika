@@ -69,6 +69,7 @@ export default function RootLayout() {
               <Stack.Screen name="trade/[address]" options={{ headerShown: false }} />
               <Stack.Screen name="transaction-details" options={{ headerShown: false }} />
               <Stack.Screen name="swap" options={{ headerShown: false }} />
+              <Stack.Screen name="market" options={{ headerShown: false }} />
               <Stack.Screen name="transaction/process" options={{ headerShown: false }} />
               <Stack.Screen name="transaction/complete" options={{ headerShown: false }} />
               <Stack.Screen name="transaction/error" options={{ headerShown: false }} />

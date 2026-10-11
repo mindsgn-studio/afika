@@ -1,9 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Feather } from "@expo/vector-icons";
 import { Button } from "@/components/shared/button";
-import IconButton from "@/components/ui/IconButton";
 import StockLogo from "@/components/ui/StockLogo";
 import { useStock } from "@/hooks/use-stocks";
 import { formatMoney } from "@/lib/money";
@@ -19,14 +17,6 @@ export default function MarketDetailsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.headerRow}>
-        <IconButton onPress={() => router.back()}>
-          <Feather name="arrow-left" size={20} color={colors.ink} />
-        </IconButton>
-        <Text style={styles.title}>Market</Text>
-        <View style={{ width: 40 }} />
-      </View>
-
       <View style={styles.summary}>
         <StockLogo name={stock?.name || ""} iconUrl={stock?.iconUrl} size={48} bordered={false} />
         <View style={{ flex: 1 }}>

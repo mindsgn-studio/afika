@@ -7689,6 +7689,11 @@ react-native-url-polyfill@3.0.0:
   dependencies:
     whatwg-url-without-unicode "8.0.0-3"
 
+react-native-vision-camera-barcode-scanner@5.2.3:
+  version "5.2.3"
+  resolved "https://registry.yarnpkg.com/react-native-vision-camera-barcode-scanner/-/react-native-vision-camera-barcode-scanner-5.2.3.tgz#247e5fa2a3d37266bb75d0406322c104dde0b78a"
+  integrity sha512-p8SyswRlr9Ty5gFcQ1qM8gmU8hKbHyRLyu9TKFMD7oUXsZDF93NKGvcr4Qdr16Z+AIj3HYA/fW1NgoeY+L353g==
+
 react-native-vision-camera@^5.2.3:
   version "5.2.3"
   resolved "https://registry.yarnpkg.com/react-native-vision-camera/-/react-native-vision-camera-5.2.3.tgz#8b489ae2939dbebc441917069fc0c3146f49aa93"

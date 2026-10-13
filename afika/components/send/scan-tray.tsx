@@ -1,6 +1,5 @@
 import { useCallback, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Linking,
   Platform,
   Pressable,
@@ -8,20 +7,13 @@ import {
   Text,
   View,
 } from "react-native";
-import {
-  Camera,
-  useCameraDevice,
-  useCameraPermission,
-  useObjectOutput,
-  type ScannedCode,
-  type ScannedObject,
-  type ScannedObjectType,
-} from "react-native-vision-camera";
+import { useCameraPermission } from "react-native-vision-camera";
 import { Feather } from "@expo/vector-icons";
 
 import { Tray, useTray } from "@/shared/ui/organisms/tray";
 import { colors, fonts } from "@/theme";
 import { extractWalletAddress } from "@/lib/scan";
+import Scanner from "@/components/send/Scanner";
 
 const PALETTE = {
   surface: colors.ink,
@@ -31,15 +23,6 @@ const PALETTE = {
   mutedText: colors.muted,
   backdrop: "rgba(0,0,0,0.55)",
 };
-
-// Stable reference: `useObjectOutput` recreates the output when the array
-// identity changes, so it must not be inlined.
-const QR_TYPES: ScannedObjectType[] = ["qr"];
-
-// VisionCamera's Object Output (native QR detection) is iOS-only. On Android
-// it requires the separate `react-native-vision-camera-barcode-scanner`
-// package, so we show a fallback instead of mounting a broken native output.
-const SUPPORTS_QR_OUTPUT = Platform.OS === "ios";
 
 const DENIED_STEPS =
   Platform.select({
@@ -166,34 +149,29 @@ function DeniedView() {
 
 function CameraView({ onScanned }: { onScanned: (address: string) => void }) {
   const { close, view } = useTray();
-  const device = useCameraDevice("back");
   const handled = useRef(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleObjects = useCallback(
-    (objects: ScannedObject[]) => {
+  const handleScan = useCallback(
+    (value: string) => {
       if (handled.current) return;
-      for (const object of objects) {
-        if (object.type !== "qr") continue;
-        const value = (object as ScannedCode).value;
-        if (!value) continue;
-        const address = extractWalletAddress(value);
-        if (address) {
-          handled.current = true;
-          onScanned(address);
-          close();
-          return;
-        }
-        setError("That QR code is not an Ethereum or Bitcoin address.");
+      const address = extractWalletAddress(value);
+      if (address) {
+        handled.current = true;
+        onScanned(address);
+        close();
+        return;
       }
+      setError("That QR code is not an Ethereum or Bitcoin address.");
     },
     [close, onScanned],
   );
 
-  const objectOutput = useObjectOutput({
-    types: QR_TYPES,
-    onObjectsScanned: handleObjects,
-  });
+  const handleError = useCallback(
+    (message: string) =>
+      setError(message || "The camera could not be started."),
+    [],
+  );
 
   return (
     <Tray.View id="camera">
@@ -201,18 +179,11 @@ function CameraView({ onScanned }: { onScanned: (address: string) => void }) {
         <TrayHead title="Scan QR code" />
         <Tray.Body>
           <View style={styles.cameraFrame}>
-            {device ? (
-              <Camera
-                style={StyleSheet.absoluteFill}
-                device={device}
-                isActive={view === "camera"}
-                outputs={[objectOutput]}
-              />
-            ) : (
-              <View style={styles.cameraLoading}>
-                <ActivityIndicator color={colors.lime} />
-              </View>
-            )}
+            <Scanner
+              isActive={view === "camera"}
+              onScan={handleScan}
+              onError={handleError}
+            />
             <View pointerEvents="none" style={styles.reticle} />
           </View>
           <Text style={styles.hint}>
@@ -223,34 +194,6 @@ function CameraView({ onScanned }: { onScanned: (address: string) => void }) {
         <Tray.Footer>
           <Pressable style={styles.ghost} onPress={close}>
             <Text style={styles.ghostLabel}>Close</Text>
-          </Pressable>
-        </Tray.Footer>
-      </View>
-    </Tray.View>
-  );
-}
-
-function UnsupportedView() {
-  const { close } = useTray();
-  return (
-    <Tray.View id="camera">
-      <View testID="scan-camera-unsupported">
-        <TrayHead title="Scan QR code" />
-        <Tray.Body>
-          <View style={styles.status}>
-            <View style={[styles.iconMark, styles.errorMark]}>
-              <Feather name="camera-off" size={24} color={colors.paper} />
-            </View>
-            <Text style={styles.statusTitle}>Scanning unavailable</Text>
-            <Text style={styles.statusDetail}>
-              QR scanning is not supported on this device yet. Enter the wallet
-              address manually.
-            </Text>
-          </View>
-        </Tray.Body>
-        <Tray.Footer>
-          <Pressable style={styles.primary} onPress={close}>
-            <Text style={styles.primaryLabel}>Enter manually</Text>
           </Pressable>
         </Tray.Footer>
       </View>
@@ -298,11 +241,7 @@ export default function ScanTray({
 
       <Tray.Content>
         <PermissionView />
-        {SUPPORTS_QR_OUTPUT ? (
-          <CameraView onScanned={onScanned} />
-        ) : (
-          <UnsupportedView />
-        )}
+        <CameraView onScanned={onScanned} />
         <DeniedView />
       </Tray.Content>
     </Tray>
@@ -370,7 +309,6 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     backgroundColor: colors.inkSoft,
   },
-  cameraLoading: { flex: 1, alignItems: "center", justifyContent: "center" },
   reticle: {
     position: "absolute",
     left: "50%",

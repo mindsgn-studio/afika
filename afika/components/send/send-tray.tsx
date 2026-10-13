@@ -334,12 +334,10 @@ function SuccessView({
   recipient,
   amount,
   tokenSymbol,
-  onDone,
 }: {
   recipient: string;
   amount: string;
   tokenSymbol: string;
-  onDone: () => void;
 }) {
   const { close } = useTray();
   return (
@@ -359,13 +357,7 @@ function SuccessView({
           </View>
         </Tray.Body>
         <Tray.Footer>
-          <Pressable
-            style={styles.primary}
-            onPress={() => {
-              onDone();
-              close();
-            }}
-          >
+          <Pressable testID="send-done" style={styles.primary} onPress={close}>
             <Text style={styles.primaryLabel}>Done</Text>
           </Pressable>
         </Tray.Footer>
@@ -377,11 +369,9 @@ function SuccessView({
 function ErrorView({
   message,
   onRetry,
-  onDone,
 }: {
   message: string | null;
   onRetry: () => void;
-  onDone: () => void;
 }) {
   const { close, setView } = useTray();
   return (
@@ -410,11 +400,9 @@ function ErrorView({
             <Text style={styles.primaryLabel}>Try again</Text>
           </Pressable>
           <Pressable
+            testID="send-error-close"
             style={styles.ghost}
-            onPress={() => {
-              onDone();
-              close();
-            }}
+            onPress={close}
           >
             <Text style={styles.ghostLabel}>Close</Text>
           </Pressable>
@@ -457,11 +445,21 @@ export default function SendTray() {
     resetError();
   }, [resetError]);
 
+  // Clear the draft whenever the tray closes, so a cancelled, dismissed, or
+  // completed send never leaks stale recipient/amount values into the next open.
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open) reset();
+    },
+    [reset],
+  );
+
   return (
     <Tray
       theme="dark"
       palette={PALETTE}
       defaultView="recipient"
+      onOpenChange={handleOpenChange}
       motion={{ viewAxis: "x", viewSlide: 90, viewStartScale: 1, startScale: 0.5 }}
     >
       <View testID="send-tray-trigger">
@@ -495,7 +493,6 @@ export default function SendTray() {
           recipient={recipient}
           amount={usdcAmount}
           tokenSymbol={tokenSymbol}
-          onDone={reset}
         />
         <ErrorView
           message={submitError || error}
@@ -503,7 +500,6 @@ export default function SendTray() {
             setSubmitError(null);
             resetError();
           }}
-          onDone={reset}
         />
       </Tray.Content>
     </Tray>

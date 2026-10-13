@@ -28,17 +28,17 @@ export default function Loading() {
   );
 
   return (
-    <View style={styles.container} testID="boot-screen">
-      <ActivityIndicator color={colors.ink} />
+    <View style={styles.loading} testID="boot-screen">
+      <ActivityIndicator color={colors.lime} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  loading: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
-    backgroundColor: colors.paper,
+    justifyContent: "center",
+    backgroundColor: colors.ink,
   },
 });

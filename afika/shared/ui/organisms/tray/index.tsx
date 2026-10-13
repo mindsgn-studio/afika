@@ -11,6 +11,7 @@ import React, {
 } from "react";
 import {
   LayoutChangeEvent,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -517,50 +518,55 @@ const TrayContent: React.FC<ITrayContent> &
       animationType="none"
       onRequestClose={close}
     >
-      <View style={styles.fill} pointerEvents="box-none">
-        <AnimatedPressable
-          style={[
-            styles.backdrop,
-            { backgroundColor: palette.backdrop },
-            backdropStyle,
-          ]}
-          onPress={dismissOnBackdropPress ? close : undefined}
-        />
+      <KeyboardAvoidingView
+        style={styles.fill}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <View style={styles.fill} pointerEvents="box-none">
+          <AnimatedPressable
+            style={[
+              styles.backdrop,
+              { backgroundColor: palette.backdrop },
+              backdropStyle,
+            ]}
+            onPress={dismissOnBackdropPress ? close : undefined}
+          />
 
-        <View
-          style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 12) }]}
-          pointerEvents="box-none"
-        >
-          <GestureDetector gesture={pan}>
-            <Animated.View
-              style={[
-                styles.sheet,
-                {
-                  backgroundColor: palette.surface,
-                  borderColor: palette.border,
-                  borderRadius: radius,
-                },
-                transformStyle,
-                style,
-              ]}
-            >
-              <Animated.View style={[styles.clip, heightStyle]}>
-                <View style={styles.measure} onLayout={onContentLayout}>
-                  <View style={styles.handleArea}>
-                    <View
-                      style={[
-                        styles.handle,
-                        { backgroundColor: palette.handle },
-                      ]}
-                    />
+          <View
+            style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 12) }]}
+            pointerEvents="box-none"
+          >
+            <GestureDetector gesture={pan}>
+              <Animated.View
+                style={[
+                  styles.sheet,
+                  {
+                    backgroundColor: palette.surface,
+                    borderColor: palette.border,
+                    borderRadius: radius,
+                  },
+                  transformStyle,
+                  style,
+                ]}
+              >
+                <Animated.View style={[styles.clip, heightStyle]}>
+                  <View style={styles.measure} onLayout={onContentLayout}>
+                    <View style={styles.handleArea}>
+                      <View
+                        style={[
+                          styles.handle,
+                          { backgroundColor: palette.handle },
+                        ]}
+                      />
+                    </View>
+                    {children}
                   </View>
-                  {children}
-                </View>
+                </Animated.View>
               </Animated.View>
-            </Animated.View>
-          </GestureDetector>
+            </GestureDetector>
+          </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };

@@ -24,7 +24,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#1C1C1E",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -48,7 +48,8 @@
         {
           "android": {
             "minSdkVersion": 26,
-            "extraProguardRules": "-dontwarn com.gemalto.jp2.**\n-dontwarn com.tom_roush.pdfbox.filter.JPXFilter"
+            "extraProguardRules": "-dontwarn com.gemalto.jp2.**\n-dontwarn com.tom_roush.pdfbox.filter.JPXFilter",
+            "permissions": ["android.permission.CAMERA", "android.permission.RECORD_AUDIO"]
           },
           "ios": {
             "useFrameworks": "static",
@@ -63,7 +64,10 @@
               "RNFBMessaging",
               "RNFBRemoteConfig",
               "RNFBStorage"
-            ]
+            ],
+            "infoPlist": {
+              "NSCameraUsageDescription": "$(PRODUCT_NAME) needs access to your Camera to scan wallet addresses"
+            }
           }
         }
       ],

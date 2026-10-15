@@ -2,7 +2,7 @@
   "expo": {
     "name": "AFIKA",
     "slug": "afika",
-    "version": "0.2.38",
+    "version": "0.2.39",
     "scheme": "afika",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,7 +13,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "mindsgn.studio.pockt",
       "appleTeamId": "B3U8UM2966",
-      "buildNumber": "43",
+      "buildNumber": "44",
       "infoPlist": {
         "NSCameraUsageDescription": "$(PRODUCT_NAME) needs access to your Camera to scan wallet addresses",
         "NSAppTransportSecurity": {

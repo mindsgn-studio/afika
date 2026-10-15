@@ -4,9 +4,9 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
-  ScrollView,
   StyleSheet,
   Text,
+  View,
   useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -183,7 +183,7 @@ export default function TransactionDetailsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <View contentContainerStyle={styles.content}>
         <ReceiptCard width={receiptWidth} palette={RECEIPT_PALETTE}>
           <ReceiptCard.TornEdge key="edge-top" side="top" />
 
@@ -300,14 +300,20 @@ export default function TransactionDetailsScreen() {
           <ReceiptCard.TornEdge key="edge-bottom" side="bottom" />
         </ReceiptCard>
 
-        <Button
-          label={baseScanUrl ? "Open in Basescan" : "Awaiting tx hash"}
-          onPress={handleOpenBaseScan}
-          width={receiptWidth}
-          backgroundColor={baseScanUrl ? colors.buttonBackground : colors.line}
-          color={baseScanUrl ? colors.buttonTextBackground : colors.muted}
-        />
-      </ScrollView>
+        {
+          /*
+          <Button
+            label={baseScanUrl ? "Open in Basescan" : "Awaiting tx hash"}
+            onPress={handleOpenBaseScan}
+            width={receiptWidth}
+            backgroundColor={baseScanUrl ? colors.buttonBackground : colors.line}
+            color={baseScanUrl ? colors.buttonTextBackground : colors.muted}
+          />
+          */
+        }
+
+
+      </View>
     </SafeAreaView>
   );
 }

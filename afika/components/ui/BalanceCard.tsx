@@ -37,6 +37,6 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   chipText: { fontFamily: fonts.medium, fontSize: 11, color: colors.lime, letterSpacing: 0.4 },
-  amount: { fontFamily: fonts.medium, fontSize: 48, color: colors.paper, letterSpacing: -1 },
+  amount: { fontFamily: fonts.medium, fontSize: 52, color: colors.paper, letterSpacing: -1 },
   symbol: { fontSize: 22, color: colors.lime },
 });

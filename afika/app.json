@@ -15,6 +15,7 @@
       "appleTeamId": "B3U8UM2966",
       "buildNumber": "43",
       "infoPlist": {
+        "NSCameraUsageDescription": "$(PRODUCT_NAME) needs access to your Camera to scan wallet addresses",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false
         },
@@ -31,7 +32,8 @@
       },
       "package": "mindsgn.studio.pockt",
       "predictiveBackGestureEnabled": false,
-      "googleServicesFile": "../../google-services.json"
+      "googleServicesFile": "../../google-services.json",
+      "permissions": ["android.permission.CAMERA"]
     },
     "plugins": [
       "expo-router",
@@ -48,8 +50,7 @@
         {
           "android": {
             "minSdkVersion": 26,
-            "extraProguardRules": "-dontwarn com.gemalto.jp2.**\n-dontwarn com.tom_roush.pdfbox.filter.JPXFilter",
-            "permissions": ["android.permission.CAMERA", "android.permission.RECORD_AUDIO"]
+            "extraProguardRules": "-dontwarn com.gemalto.jp2.**\n-dontwarn com.tom_roush.pdfbox.filter.JPXFilter"
           },
           "ios": {
             "useFrameworks": "static",
@@ -64,10 +65,7 @@
               "RNFBMessaging",
               "RNFBRemoteConfig",
               "RNFBStorage"
-            ],
-            "infoPlist": {
-              "NSCameraUsageDescription": "$(PRODUCT_NAME) needs access to your Camera to scan wallet addresses"
-            }
+            ]
           }
         }
       ],

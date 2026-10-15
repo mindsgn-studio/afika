@@ -22,8 +22,6 @@ export default function Receive() {
 
   return (
     <SafeAreaView style={styles.container} testID="receive-screen">
-      <Text style={styles.title}>Receive USDC</Text>
-      <Text style={styles.subtitle}>Share this Base smart account address.</Text>
       <View style={styles.card}>
         <QRCodeStyled data={`${smartAdress || ""}`} padding={25} pieceBorderRadius={"50%"} color={colors.ink} />
         <Text style={styles.address}>{shortenAddress(smartAdress, 10, 8)}</Text>

@@ -1,17 +1,10 @@
 import { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Feather, Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { colors, fonts } from "@/theme";
 import BalanceCard from "@/components/ui/BalanceCard";
-import { getFirestore, collection, onSnapshot, query, where, orderBy, limit, doc } from "@react-native-firebase/firestore";
-import { useWallet } from "@/store/wallet";
-import { useEffect, useState } from "react";
-import { useEmbeddedEthereumWallet } from "@privy-io/expo";
-import { QuerySnapshot } from "@react-native-firebase/firestore";
-import { UpsertData, upsertWallet } from "@/lib/firebase";
 
-const DEFAULT_NETWORK: string = "base-mainnet";
 
 type Props = {
   balance: number;
@@ -37,10 +30,7 @@ export default function HeroHeader({ balance, children, onAddMoney }: Props) {
           </Pressable>
           {children}
         </View>
-
-
       </View>
-
     </SafeAreaView>
   );
 }

@@ -204,40 +204,44 @@ function AmountView({
       <View testID="send-amount">
         <TrayHead title="Amount" back />
         <Tray.Body>
-          <View style={styles.currencyRow}>
-            {SEND_AMOUNT_CURRENCIES.map((code) => {
-              const on = code === currency;
-              return (
-                <Pressable
-                  key={code}
-                  testID={`send-currency-${code}`}
-                  onPress={() => handleCurrencyChange(code)}
-                  style={[styles.currencyPill, on && styles.currencyPillOn]}
-                >
-                  <Text
-                    style={[
-                      styles.currencyLabel,
-                      on && styles.currencyLabelOn,
-                    ]}
+          {
+            /*
+            <View style={styles.currencyRow}>
+              {SEND_AMOUNT_CURRENCIES.map((code) => {
+                const on = code === currency;
+                return (
+                  <Pressable
+                    key={code}
+                    testID={`send-currency-${code}`}
+                    onPress={() => handleCurrencyChange(code)}
+                    style={[styles.currencyPill, on && styles.currencyPillOn]}
                   >
-                    {amountCurrencyLabel(code)}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+                    <Text
+                      style={[
+                        styles.currencyLabel,
+                        on && styles.currencyLabelOn,
+                      ]}
+                    >
+                      {amountCurrencyLabel(code)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
 
-          <Text style={styles.available}>
-            Available {available} {tokenSymbol}
-          </Text>
-          {currency !== "USDC" && usdcAmount !== "0" ? (
-            <Text style={styles.converted}>
-              ≈ {usdcAmount} {tokenSymbol}
+            <Text style={styles.available}>
+              Available {available} {tokenSymbol}
             </Text>
-          ) : null}
-          <Pressable testID="send-amount-max" onPress={handleUseMax}>
-            <Text style={styles.maxLabel}>Use max</Text>
-          </Pressable>
+            {currency !== "USDC" && usdcAmount !== "0" ? (
+              <Text style={styles.converted}>
+                ≈ {usdcAmount} {tokenSymbol}
+              </Text>
+            ) : null}
+            <Pressable testID="send-amount-max" onPress={handleUseMax}>
+              <Text style={styles.maxLabel}>Use max</Text>
+            </Pressable>
+            */
+          }
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
           <AmountKeypad
             key={keypadKey}

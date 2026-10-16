@@ -246,7 +246,6 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   pad: {
-    backgroundColor: "#161616",
     borderRadius: 24,
     paddingVertical: 12,
     paddingHorizontal: 6,

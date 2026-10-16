@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { FlashList } from "@shopify/flash-list";
 import { useStocks } from "@/hooks/use-stocks";
 import StockLogo from "@/components/ui/StockLogo";
 import { colors, fonts } from "@/theme";
@@ -32,12 +33,13 @@ export default function MarketList() {
         style={styles.search}
         autoCapitalize="none"
       />
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {filtered.map((stock) => {
+      <FlashList
+        data={filtered}
+        keyExtractor={(stock) => stock.address}
+        renderItem={({ item: stock }) => {
           const up = stock.changePct24h >= 0;
           return (
             <Pressable
-              key={stock.address}
               style={styles.row}
               onPress={() => router.push(`/market/${stock.address}`)}
               testID={`market-row-${stock.symbol}`}
@@ -56,8 +58,10 @@ export default function MarketList() {
               </View>
             </Pressable>
           );
-        })}
-      </ScrollView>
+        }}
+        showsVerticalScrollIndicator={false}
+        style={styles.list}
+      />
     </SafeAreaView>
   );
 }
@@ -82,4 +86,5 @@ const styles = StyleSheet.create({
   symbol: { fontFamily: fonts.regular, fontSize: 13, color: colors.muted, marginTop: 2 },
   price: { fontFamily: fonts.medium, fontSize: 16, color: colors.ink },
   updated: { fontFamily: fonts.regular, fontSize: 10, color: colors.muted, marginTop: 2 },
+  list: { flex: 1 },
 });

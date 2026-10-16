@@ -4,18 +4,18 @@ import { colors, fonts } from "@/theme";
 import Hero from "@/components/hero"
 import { ChromaRing } from "@/shared/ui/organisms/chroma-ring";
 import Reanimated from "react-native-reanimated"
-import { useState, useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { useLoginWithOAuth, OAuthProviderID } from "@privy-io/expo";
 import { useFocusEffect } from "expo-router";
 import * as Haptics from "expo-haptics";
 
 export default function Onboarding() {
   const router = useRouter();
-  const [progress, setProgress] = useState(false);
+  const progressRef = useRef(false);
   const { login } = useLoginWithOAuth();
 
   async function handleSignIn(provider: OAuthProviderID) {
-    setProgress(true);
+    progressRef.current = true;
     try {
       await login({ provider });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -24,7 +24,7 @@ export default function Onboarding() {
       console.log(error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
-    setProgress(false);
+    progressRef.current = false;
   }
 
   useFocusEffect(

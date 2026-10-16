@@ -278,7 +278,7 @@ export default function Settings() {
           </View>
         </>
       )}
-
+      <View style={{flex: 1}} />
       <PillButton
         onPress={logoutWallet}
         label="Sign out"

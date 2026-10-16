@@ -89,13 +89,13 @@ const OtpItem: FC<IOtpItem> & FunctionComponent<IOtpItem> = ({
         withSpring(1, { damping: 50, stiffness: 120, mass: 0.5 }),
       );
     }
-  }, [focus]);
+  }, [focus, index, borderWidth, focusProgress, inputScale]);
 
   useEffect(() => {
     errorProgress.value = withTiming<number>(error ? 1 : 0, {
       duration: 200,
     });
-  }, [error]);
+  }, [error, errorProgress]);
 
   useEffect(() => {
     if (otpValue) {
@@ -107,7 +107,7 @@ const OtpItem: FC<IOtpItem> & FunctionComponent<IOtpItem> = ({
         Keyboard.dismiss();
       }
     }
-  }, [otpValue]);
+  }, [otpValue, index, otpCount, setOtpValue, setFocus]);
 
   const animatedInputStyle = useAnimatedStyle<
     Pick<
@@ -293,24 +293,6 @@ export const OtpInput: FC<IOtpInput> & FunctionComponent<IOtpInput> =
         opacity: opacity.value,
         transform: [{ translateX: translateX.value }],
       }));
-      const triggerCompleteAnimation = (): void => {
-        opacity.value = withSequence<number>(
-          withTiming(0.6, { duration: 900 }),
-          withTiming(1, { duration: 900 }),
-        );
-      };
-
-      const triggerShakeAnimation = (): void => {
-        translateX.value = withSequence<number>(
-          withTiming(-4, { duration: 50 }),
-          withTiming(4, { duration: 50 }),
-          withTiming(-3, { duration: 50 }),
-          withTiming(3, { duration: 50 }),
-          withTiming(-2, { duration: 50 }),
-          withTiming(2, { duration: 50 }),
-          withTiming(0, { duration: 50 }),
-        );
-      };
 
       const inputProps: IOtpContext = {
         inputRef,
@@ -351,24 +333,34 @@ export const OtpInput: FC<IOtpInput> & FunctionComponent<IOtpInput> =
           onInputFinished
         ) {
           if (!error) {
-            triggerCompleteAnimation();
+            opacity.value = withSequence<number>(
+              withTiming(0.6, { duration: 900 }),
+              withTiming(1, { duration: 900 }),
+            );
           }
           onInputFinished(otpValue.join(""));
         }
-      }, [otpValue]);
+      }, [otpValue, otpCount, onInputChange, onInputFinished, error, opacity]);
 
       useEffect(() => {
         if (error) {
-          triggerShakeAnimation();
+          translateX.value = withSequence<number>(
+            withTiming(-4, { duration: 50 }),
+            withTiming(4, { duration: 50 }),
+            withTiming(-3, { duration: 50 }),
+            withTiming(3, { duration: 50 }),
+            withTiming(-2, { duration: 50 }),
+            withTiming(2, { duration: 50 }),
+            withTiming(0, { duration: 50 }),
+          );
           const timeout = setTimeout(() => {
-            otpValue.fill("");
-            setOtpValue([...otpValue]);
+            setOtpValue((current) => current.map(() => ""));
             setFocus(0);
             inputRef.current[0].current.focus();
           }, 1000);
           return () => clearTimeout(timeout);
         }
-      }, [error]);
+      }, [error, translateX]);
 
       return (
         <OtpContext.Provider value={inputProps}>

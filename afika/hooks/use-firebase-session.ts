@@ -38,6 +38,13 @@ async function postJson<T>(path: string, body: Record<string, unknown>): Promise
 
 // Optional Firebase Auth for users/{uid} eligibility. Wallet docs are created
 // by the app via upsertWallet — this hook does not register wallets.
+function requireAccessToken(token?: string): string {
+  if (!token) {
+    throw new Error("Missing Privy access token");
+  }
+  return token;
+}
+
 export function useFirebaseSession() {
   const { user, getAccessToken, isReady } = usePrivy() as {
     user: unknown;
@@ -65,12 +72,9 @@ export function useFirebaseSession() {
 
     const run = async () => {
       try {
-        const privyAccessToken = getAccessToken
-          ? await getAccessToken()
-          : "";
-        if (!privyAccessToken) {
-          throw new Error("Missing Privy access token");
-        }
+        const privyAccessToken = requireAccessToken(
+          getAccessToken ? await getAccessToken() : "",
+        );
         const { nonce } = await postJson<{ nonce: string }>("/auth-nonce", {});
         const provider = await wallets[0].getProvider();
         const message = `${AUTH_MESSAGE_PREFIX}${nonce}`;
@@ -90,9 +94,9 @@ export function useFirebaseSession() {
         }
       } catch (error) {
         console.log("firebase session error:", error);
-      } finally {
-        inFlight.current = false;
       }
+
+      inFlight.current = false;
     };
 
     run();

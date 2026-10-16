@@ -47,7 +47,7 @@ export function useStockHistory(address?: string | null, range = "1D") {
         () => setLoading(false)
       );
     return unsubscribe;
-  }, [normalized, since]);
+  }, [normalized, since, range]);
 
   return { points, loading };
 }

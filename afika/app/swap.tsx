@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { ScrollView } from "react-native-gesture-handler";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { FlashList } from "@shopify/flash-list";
 import { useEmbeddedEthereumWallet } from "@privy-io/expo";
 import { encodeFunctionData, erc20Abi } from "viem";
 import { router } from "expo-router";
@@ -26,6 +27,8 @@ import {
 import { getActiveWalletAddress } from "@/lib/wallet";
 import { useWallet } from "@/store/wallet";
 import { colors, fonts } from "@/theme";
+
+const PILL_HEIGHT = 40;
 
 type ReviewState = {
   quote: ZeroExQuote;
@@ -85,7 +88,7 @@ export default function SwapScreen() {
     try {
       const parsedAmount = parseTokenAmount(amount, fromToken.decimals);
       const available = parseTokenAmount(fromBalance?.amount || "0", fromToken.decimals);
-      if (parsedAmount <= 0n) {
+      if (parsedAmount <= BigInt(0)) {
         return "Please enter a valid amount.";
       }
       if (parsedAmount > available) {
@@ -141,9 +144,8 @@ export default function SwapScreen() {
         "Quote failed",
         error instanceof Error ? error.message : "Unable to fetch a swap quote right now."
       );
-    } finally {
-      setLoadingQuote(false);
     }
+    setLoadingQuote(false);
   };
 
   const maybeApproveSellToken = async (quote: ZeroExQuote, sellToken: TokenMetadata) => {
@@ -168,7 +170,7 @@ export default function SwapScreen() {
         {
           to: sellToken.address,
           data: approvalCallData,
-          value: 0n,
+          value: BigInt(0),
         },
       ],
     });
@@ -287,9 +289,8 @@ export default function SwapScreen() {
           retryPath: "/swap",
         },
       });
-    } finally {
-      setSubmitting(false);
     }
+    setSubmitting(false);
   };
 
   const buttonLabel = reviewState ? "Swap Now" : "Review Swap";
@@ -407,12 +408,17 @@ function TokenPicker({
   }
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tokenPicker}>
-      {tokens.map((token) => {
+    <FlashList
+      horizontal
+      data={tokens}
+      keyExtractor={(token) => `${title}-${token.symbol}`}
+      extraData={selected?.symbol}
+      showsHorizontalScrollIndicator={false}
+      style={styles.tokenPicker}
+      renderItem={({ item: token }) => {
         const active = selected?.symbol === token.symbol;
         return (
           <Pressable
-            key={`${title}-${token.symbol}`}
             style={({ pressed }) => [
               styles.pill,
               active && styles.pillActive,
@@ -423,8 +429,8 @@ function TokenPicker({
             <Text style={[styles.pillText, active && styles.pillTextActive]}>{token.symbol}</Text>
           </Pressable>
         );
-      })}
-    </ScrollView>
+      }}
+    />
   );
 }
 
@@ -467,8 +473,8 @@ const styles = StyleSheet.create({
   swapButtonText: { color: colors.lime, fontFamily: fonts.medium, fontSize: 17 },
   buttonDisabled: { opacity: 0.6 },
   buttonPressed: { opacity: 0.85 },
-  tokenPicker: { flexDirection: "row" },
-  pill: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: 999, backgroundColor: colors.canvas, marginRight: 10 },
+  tokenPicker: { height: PILL_HEIGHT },
+  pill: { paddingHorizontal: 16, height: PILL_HEIGHT, justifyContent: "center", borderRadius: 999, backgroundColor: colors.canvas, marginRight: 10 },
   pillActive: { backgroundColor: colors.ink },
   pillPressed: { opacity: 0.85 },
   pillText: { color: colors.ink, fontFamily: fonts.medium },

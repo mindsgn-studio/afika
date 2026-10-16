@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -12,8 +12,18 @@ import { Feather } from "@expo/vector-icons";
 import { Tray, useTray } from "@/shared/ui/organisms/tray";
 import { colors, fonts } from "@/theme";
 import { useSendUsdc } from "@/hooks/use-send-usdc";
+import { useCurrency } from "@/hooks/use-currency";
 import { shortenAddress } from "@/lib/wallet";
-import { validateRecipient, validateSendAmount } from "@/lib/send";
+import { currencySymbol } from "@/lib/money";
+import {
+  fromUsdcAmount,
+  SEND_AMOUNT_CURRENCIES,
+  toUsdcAmount,
+  validateCurrencySendAmount,
+  validateRecipient,
+  type SendAmountCurrency,
+} from "@/lib/send";
+import ScanTray from "@/components/send/scan-tray";
 
 const PALETTE = {
   surface: colors.ink,
@@ -23,6 +33,10 @@ const PALETTE = {
   mutedText: colors.muted,
   backdrop: "rgba(0,0,0,0.55)",
 };
+
+function amountCurrencyLabel(currency: SendAmountCurrency) {
+  return currency === "USDC" ? "USDC" : currencySymbol(currency);
+}
 
 function TrayHead({ title, back }: { title: string; back?: boolean }) {
   return (
@@ -56,11 +70,9 @@ function Field({ label, value }: { label: string; value: string }) {
 function RecipientView({
   recipient,
   onChange,
-  tokenSymbol,
 }: {
   recipient: string;
   onChange: (value: string) => void;
-  tokenSymbol: string;
 }) {
   const { setView } = useTray();
   const [error, setError] = useState<string | null>(null);
@@ -71,24 +83,30 @@ function RecipientView({
         <TrayHead title="Send to" />
         <Tray.Body>
           <Text style={styles.fieldLabel}>Recipient address</Text>
-          <TextInput
-            testID="send-recipient-input"
-            value={recipient}
-            onChangeText={(next) => {
-              onChange(next);
-              setError(null);
-            }}
-            placeholder="0x…"
-            placeholderTextColor={colors.muted}
-            autoCapitalize="none"
-            autoCorrect={false}
-            spellCheck={false}
-            style={styles.input}
-          />
+          <View style={styles.inputRow}>
+            <TextInput
+              testID="send-recipient-input"
+              value={recipient}
+              onChangeText={(next) => {
+                onChange(next);
+                setError(null);
+              }}
+              placeholder="0x…"
+              placeholderTextColor={colors.muted}
+              autoCapitalize="none"
+              autoCorrect={false}
+              spellCheck={false}
+              style={[styles.input, styles.recipientInput]}
+            />
+            <ScanTray
+              onScanned={(address) => {
+                onChange(address);
+                setError(null);
+              }}
+            />
+          </View>
+
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
-          <Text style={styles.hint}>
-            Send {tokenSymbol} on Base to another wallet.
-          </Text>
         </Tray.Body>
         <Tray.Footer>
           <Pressable
@@ -114,15 +132,33 @@ function AmountView({
   available,
   decimals,
   tokenSymbol,
+  currency,
+  onCurrencyChange,
+  rates,
 }: {
   amount: string;
   onChange: (value: string) => void;
   available: string;
   decimals: number;
   tokenSymbol: string;
+  currency: SendAmountCurrency;
+  onCurrencyChange: (currency: SendAmountCurrency) => void;
+  rates: Record<SendAmountCurrency, number>;
 }) {
   const { setView, goBack } = useTray();
   const [error, setError] = useState<string | null>(null);
+  const rate = rates[currency];
+  const usdcAmount = toUsdcAmount(amount, currency, rate, decimals);
+
+  const handleCurrencyChange = (next: SendAmountCurrency) => {
+    if (next === currency) return;
+    setError(null);
+    if (amount.trim()) {
+      const converted = fromUsdcAmount(usdcAmount, next, rates[next], 2);
+      onChange(converted === "0" ? "" : converted);
+    }
+    onCurrencyChange(next);
+  };
 
   return (
     <Tray.View id="amount">
@@ -131,11 +167,42 @@ function AmountView({
         <Tray.Body>
           <View style={styles.amountRow}>
             <Text style={styles.amountValue}>{amount || "0"}</Text>
-            <Text style={styles.amountSymbol}>{tokenSymbol}</Text>
+            <Text style={styles.amountSymbol}>
+              {amountCurrencyLabel(currency)}
+            </Text>
           </View>
+
+          <View style={styles.currencyRow}>
+            {SEND_AMOUNT_CURRENCIES.map((code) => {
+              const on = code === currency;
+              return (
+                <Pressable
+                  key={code}
+                  testID={`send-currency-${code}`}
+                  onPress={() => handleCurrencyChange(code)}
+                  style={[styles.currencyPill, on && styles.currencyPillOn]}
+                >
+                  <Text
+                    style={[
+                      styles.currencyLabel,
+                      on && styles.currencyLabelOn,
+                    ]}
+                  >
+                    {amountCurrencyLabel(code)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
           <Text style={styles.available}>
             Available {available} {tokenSymbol}
           </Text>
+          {currency !== "USDC" && usdcAmount !== "0" ? (
+            <Text style={styles.converted}>
+              ≈ {usdcAmount} {tokenSymbol}
+            </Text>
+          ) : null}
           <TextInput
             testID="send-amount-input"
             value={amount}
@@ -149,7 +216,12 @@ function AmountView({
             style={styles.input}
           />
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
-          <Pressable onPress={() => onChange(available)}>
+          <Pressable
+            onPress={() => {
+              onChange(fromUsdcAmount(available, currency, rate, 2));
+              setError(null);
+            }}
+          >
             <Text style={styles.maxLabel}>Use max</Text>
           </Pressable>
         </Tray.Body>
@@ -158,7 +230,13 @@ function AmountView({
             testID="send-amount-next"
             style={styles.primary}
             onPress={() => {
-              const nextError = validateSendAmount(amount, available, decimals);
+              const nextError = validateCurrencySendAmount(
+                amount,
+                currency,
+                available,
+                decimals,
+                rate,
+              );
               setError(nextError);
               if (!nextError) setView("review");
             }}
@@ -256,12 +334,10 @@ function SuccessView({
   recipient,
   amount,
   tokenSymbol,
-  onDone,
 }: {
   recipient: string;
   amount: string;
   tokenSymbol: string;
-  onDone: () => void;
 }) {
   const { close } = useTray();
   return (
@@ -281,13 +357,7 @@ function SuccessView({
           </View>
         </Tray.Body>
         <Tray.Footer>
-          <Pressable
-            style={styles.primary}
-            onPress={() => {
-              onDone();
-              close();
-            }}
-          >
+          <Pressable testID="send-done" style={styles.primary} onPress={close}>
             <Text style={styles.primaryLabel}>Done</Text>
           </Pressable>
         </Tray.Footer>
@@ -299,11 +369,9 @@ function SuccessView({
 function ErrorView({
   message,
   onRetry,
-  onDone,
 }: {
   message: string | null;
   onRetry: () => void;
-  onDone: () => void;
 }) {
   const { close, setView } = useTray();
   return (
@@ -332,11 +400,9 @@ function ErrorView({
             <Text style={styles.primaryLabel}>Try again</Text>
           </Pressable>
           <Pressable
+            testID="send-error-close"
             style={styles.ghost}
-            onPress={() => {
-              onDone();
-              close();
-            }}
+            onPress={close}
           >
             <Text style={styles.ghostLabel}>Close</Text>
           </Pressable>
@@ -354,22 +420,46 @@ function ErrorView({
 export default function SendTray() {
   const { available, decimals, tokenSymbol, error, resetError, send } =
     useSendUsdc();
+  const { rates } = useCurrency();
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
+  const [amountCurrency, setAmountCurrency] =
+    useState<SendAmountCurrency>("USDC");
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const rateByCurrency = useMemo<Record<SendAmountCurrency, number>>(
+    () => ({ USDC: 1, ZAR: rates.ZAR, EUR: rates.EUR }),
+    [rates.ZAR, rates.EUR],
+  );
+  const rate = rateByCurrency[amountCurrency];
+  const usdcAmount = useMemo(
+    () => toUsdcAmount(amount, amountCurrency, rate, decimals),
+    [amount, amountCurrency, rate, decimals],
+  );
 
   const reset = useCallback(() => {
     setRecipient("");
     setAmount("");
+    setAmountCurrency("USDC");
     setSubmitError(null);
     resetError();
   }, [resetError]);
+
+  // Clear the draft whenever the tray closes, so a cancelled, dismissed, or
+  // completed send never leaks stale recipient/amount values into the next open.
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      if (!open) reset();
+    },
+    [reset],
+  );
 
   return (
     <Tray
       theme="dark"
       palette={PALETTE}
       defaultView="recipient"
+      onOpenChange={handleOpenChange}
       motion={{ viewAxis: "x", viewSlide: 90, viewStartScale: 1, startScale: 0.5 }}
     >
       <View testID="send-tray-trigger">
@@ -380,21 +470,20 @@ export default function SendTray() {
       </View>
 
       <Tray.Content>
-        <RecipientView
-          recipient={recipient}
-          onChange={setRecipient}
-          tokenSymbol={tokenSymbol}
-        />
+        <RecipientView recipient={recipient} onChange={setRecipient} />
         <AmountView
           amount={amount}
           onChange={setAmount}
           available={available}
           decimals={decimals}
           tokenSymbol={tokenSymbol}
+          currency={amountCurrency}
+          onCurrencyChange={setAmountCurrency}
+          rates={rateByCurrency}
         />
         <ReviewView
           recipient={recipient}
-          amount={amount}
+          amount={usdcAmount}
           tokenSymbol={tokenSymbol}
           onSend={send}
           onError={setSubmitError}
@@ -402,9 +491,8 @@ export default function SendTray() {
         <SendingView />
         <SuccessView
           recipient={recipient}
-          amount={amount}
+          amount={usdcAmount}
           tokenSymbol={tokenSymbol}
-          onDone={reset}
         />
         <ErrorView
           message={submitError || error}
@@ -412,7 +500,6 @@ export default function SendTray() {
             setSubmitError(null);
             resetError();
           }}
-          onDone={reset}
         />
       </Tray.Content>
     </Tray>
@@ -465,6 +552,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: colors.inkSoft,
   },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 8,
+  },
+  recipientInput: { flex: 1, marginTop: 0 },
   errorText: {
     marginTop: 8,
     fontFamily: fonts.regular,
@@ -502,6 +596,38 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.muted,
   },
+  converted: {
+    marginTop: 4,
+    textAlign: "center",
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.lime,
+  },
+  currencyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 12,
+  },
+  currencyPill: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: colors.inkSoft,
+    backgroundColor: colors.inkSoft,
+  },
+  currencyPillOn: {
+    borderColor: colors.lime,
+    backgroundColor: colors.lime,
+  },
+  currencyLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.muted,
+  },
+  currencyLabelOn: { color: colors.ink },
   maxLabel: {
     marginTop: 10,
     textAlign: "center",

@@ -2,6 +2,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  addDoc,
   collection,
   getDocs,
   query,
@@ -13,6 +14,11 @@ import {
 import { getFirestore } from "@/lib/firestore";
 import { walletIdentityFields } from "@/lib/wallet-identity";
 import { SUPPORTED_CURRENCIES } from "@/lib/money";
+import {
+  buildQueuedPushNotification,
+  NOTIFICATION_QUEUE_COLLECTION,
+  type PushNotificationPayload,
+} from "@/lib/notification-queue";
 
 export {
   DEFAULT_WALLET_NETWORK,
@@ -284,6 +290,29 @@ export async function deletePushNotificationDetails(walletAddress: string) {
     await deleteDoc(walletDetailsDoc(walletAddress, "push-notifications"));
   } catch (error) {
     console.log("deletePushNotificationDetails error:", error);
+    throw error;
+  }
+}
+
+/**
+ * Queues a push notification for the backend `notifications` worker to deliver.
+ * Returns the new queue document id, or null when no wallet address is given.
+ */
+export async function enqueuePushNotification(
+  walletAddress: string,
+  payload: PushNotificationPayload,
+): Promise<string | null> {
+  if (!walletAddress) return null;
+
+  try {
+    const db = getFirestore();
+    const docRef = await addDoc(
+      collection(db, NOTIFICATION_QUEUE_COLLECTION),
+      buildQueuedPushNotification(walletAddress, payload, Date.now()),
+    );
+    return docRef.id;
+  } catch (error) {
+    console.log("enqueuePushNotification error:", error);
     throw error;
   }
 }

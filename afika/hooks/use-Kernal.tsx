@@ -40,6 +40,20 @@ const resolveProvider = async (provider?: ProviderLike): Promise<Eip1193Provider
   return undefined;
 };
 
+const requireProvider = (provider?: Eip1193Provider): Eip1193Provider => {
+  if (!provider) {
+    throw new Error("Unsupported provider");
+  }
+  return provider;
+};
+
+const requireProjectId = (projectId?: string): string => {
+  if (!projectId) {
+    throw new Error("Missing EXPO_PUBLIC_ZERODEV_ID");
+  }
+  return projectId;
+};
+
 export function useKernelClient(provider?: ProviderLike) {
   const [kernelAddress, setKernelAddress] = useState<`0x${string}` | null>(null);
   const [kernelClient, setKernelClient] = useState<any>(null);
@@ -52,16 +66,9 @@ export function useKernelClient(provider?: ProviderLike) {
       try {
         setLoading(true);
 
-        const resolvedProvider = await resolveProvider(provider);
-        if (!resolvedProvider) {
-          throw new Error("Unsupported provider");
-        }
+        const resolvedProvider = requireProvider(await resolveProvider(provider));
 
-        const projectId = process.env.EXPO_PUBLIC_ZERODEV_ID;
-
-        if (!projectId) {
-          throw new Error("Missing EXPO_PUBLIC_ZERODEV_ID");
-        }
+        const projectId = requireProjectId(process.env.EXPO_PUBLIC_ZERODEV_ID);
 
         const ZERODEV_RPC = `https://rpc.zerodev.app/api/v3/${projectId}/chain/8453`;
 
@@ -121,10 +128,10 @@ export function useKernelClient(provider?: ProviderLike) {
         }
       } catch (error) {
         console.log("Kernel setup error:", error);
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
+      }
+
+      if (active) {
+        setLoading(false);
       }
     }
 

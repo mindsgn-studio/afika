@@ -32,6 +32,14 @@ import { BORDER_GLOW_SHADER } from "./conf";
 import { createDotShaderSource, hexToRgb } from "./helpers";
 import type { IRadiantButton } from "./types";
 
+const DEFAULT_THEME = {
+  background: "#000000",
+  backgroundSubtle: "#1a1a1a",
+  foreground: "#ffffff",
+  highlight: "#c084fc",
+  highlightSubtle: "#a855f7",
+};
+
 export const RadiantButton: React.FC<IRadiantButton> &
   React.FunctionComponent<IRadiantButton> = memo<
   IRadiantButton | React.ComponentProps<typeof RadiantButton>
@@ -67,17 +75,9 @@ export const RadiantButton: React.FC<IRadiantButton> &
     const breathe = useSharedValue<number>(0);
     const pressed = useSharedValue<number>(0);
 
-    const defaultTheme = {
-      background: "#000000",
-      backgroundSubtle: "#1a1a1a",
-      foreground: "#ffffff",
-      highlight: "#c084fc",
-      highlightSubtle: "#a855f7",
-    };
-
     const theme = useMemo(
-      () => ({ ...defaultTheme, ...themeProp }),
-      [themeProp, defaultTheme],
+      () => ({ ...DEFAULT_THEME, ...themeProp }),
+      [themeProp],
     );
 
     const highlightRgb = useMemo<number[]>(
@@ -144,7 +144,7 @@ export const RadiantButton: React.FC<IRadiantButton> &
           true,
         );
       }
-    }, [disabled, duration, showShimmer, showGlow, breathingEnabled]);
+    }, [disabled, duration, showShimmer, showGlow, breathingEnabled, progress, shimmerAngle, breathe]);
     const handleLayout = <T extends LayoutChangeEvent>(e: T) => {
       const { width: w, height: h } = e.nativeEvent.layout;
       if (w !== layout.width || h !== layout.height) {

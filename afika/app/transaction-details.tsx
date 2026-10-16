@@ -1,29 +1,38 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocalSearchParams, router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import {
   ActivityIndicator,
   Alert,
-  Dimensions,
   Linking,
-  ScrollView,
   StyleSheet,
   Text,
   View,
+  useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { doc, onSnapshot } from "@react-native-firebase/firestore";
-import { getFirestore } from "@/lib/firestore";
-import Ionicons from "@expo/vector-icons/Ionicons";
+
 import { Button } from "@/components/shared/button";
-import { colors } from "@/theme/colors";
+import { colors } from "@/theme";
+import { getFirestore } from "@/lib/firestore";
 import { useWallet } from "@/store/wallet";
 import { getActiveWalletAddress, shortenAddress } from "@/lib/wallet";
 import { formatTransactionAmount } from "@/lib/money";
 import { useCurrency } from "@/hooks/use-currency";
 import type { AppTransactionRecord } from "@/lib/transactions";
+import ReceiptCard from "@/shared/ui/pieces/receipt-card";
 
 type TransactionDetailsRecord = AppTransactionRecord & {
   id: string;
+};
+
+const RECEIPT_PALETTE = {
+  paper: colors.paper,
+  ink: colors.ink,
+  muted: colors.muted,
+  rule: colors.line,
+  leader: colors.muted,
+  accent: colors.ink,
 };
 
 function formatDate(timestamp?: number) {
@@ -43,6 +52,18 @@ function formatValue(value?: string | number | null) {
   return String(value);
 }
 
+function formatAmount(value?: string | null, prefix = "") {
+  if (value === undefined || value === null || value === "") {
+    return "Not available";
+  }
+
+  return `${prefix}${value}`;
+}
+
+function formatHash(value?: string | null) {
+  return value ? shortenAddress(value) : "Not available";
+}
+
 function rowLabelForDirection(direction?: "credit" | "debit") {
   return direction === "credit" ? "Received" : "Sent";
 }
@@ -55,25 +76,6 @@ function buildBaseScanUrl(txHash?: string) {
   return `https://basescan.org/tx/${txHash.toLowerCase()}`;
 }
 
-function DetailRow({
-  label,
-  value,
-  mono = false,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
-  return (
-    <View style={styles.detailRow}>
-      <Text style={styles.detailLabel}>{label}</Text>
-      <Text style={[styles.detailValue, mono ? styles.mono : null]}>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
 export default function TransactionDetailsScreen() {
   const { id, txHash } = useLocalSearchParams<{
     id?: string;
@@ -82,6 +84,7 @@ export default function TransactionDetailsScreen() {
   const wallet = useWallet();
   const activeWalletAddress = getActiveWalletAddress(wallet);
   const { effectiveCurrency: currency, rate } = useCurrency();
+  const { width: screenWidth } = useWindowDimensions();
   const [transaction, setTransaction] =
     useState<TransactionDetailsRecord | null>(null);
   const [loading, setLoading] = useState(true);
@@ -95,22 +98,22 @@ export default function TransactionDetailsScreen() {
     const db = getFirestore();
     const unsubscribe = onSnapshot(
       doc(db, "wallets", activeWalletAddress, "transactions", id as string),
-        (snapshot) => {
-          if (snapshot.exists()) {
-            setTransaction({
-              id: snapshot.id,
-              ...(snapshot.data() as AppTransactionRecord),
-            });
-          } else {
-            setTransaction(null);
-          }
-          setLoading(false);
-        },
-        (error) => {
-          console.log(error);
-          setLoading(false);
-        },
-      );
+      (snapshot) => {
+        if (snapshot.exists()) {
+          setTransaction({
+            id: snapshot.id,
+            ...(snapshot.data() as AppTransactionRecord),
+          });
+        } else {
+          setTransaction(null);
+        }
+        setLoading(false);
+      },
+      (error) => {
+        console.log(error);
+        setLoading(false);
+      },
+    );
 
     return unsubscribe;
   }, [activeWalletAddress, id]);
@@ -166,6 +169,9 @@ export default function TransactionDetailsScreen() {
   const timestamp = Number(
     transaction.timestampMs || transaction.timestamp || 0,
   );
+  const fetchedAt = Number(transaction.fetchedAtMs || transaction.fetchedAt || 0);
+  const directionLabel = rowLabelForDirection(transaction.direction);
+  const stateLabel = (transaction.state || "pending").toUpperCase();
   const displayAmount = transaction.amount
     ? `${transaction.amount} ${transaction.tokenSymbol}`
     : transaction.tokenSymbol;
@@ -173,143 +179,141 @@ export default function TransactionDetailsScreen() {
   const secondaryAmount = transaction.buyAmountExpected
     ? `${transaction.buyAmountExpected} ${transaction.buyTokenSymbol || ""}`.trim()
     : "Not available";
+  const receiptWidth = Math.min(340, screenWidth - 40);
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.headerRow}>
-          <Ionicons
-            name={
-              transaction.direction === "credit" ? "arrow-down" : "arrow-up"
-            }
-            size={26}
-            color={transaction.direction === "credit" ? "#00E71F" : "#FF225E"}
-          />
-          <View style={styles.headerTextWrap}>
-            <Text style={styles.title}>
-              {rowLabelForDirection(transaction.direction)}{" "}
-              {transaction.tokenSymbol}
-            </Text>
-            <Text style={styles.subtitle}>
-              {(transaction.state || "pending").toUpperCase()} on Base
-            </Text>
-          </View>
-        </View>
+      <View contentContainerStyle={styles.content}>
+        <ReceiptCard width={receiptWidth} palette={RECEIPT_PALETTE}>
+          <ReceiptCard.TornEdge key="edge-top" side="top" />
 
-        <View style={styles.summaryCard}>
-          <Text style={styles.amountText}>{currencyAmount}</Text>
-          <Text style={styles.descriptionText}>
-            {transaction.description || "Base transaction details"}
-          </Text>
-        </View>
+          <ReceiptCard.Header key="header">
+            <ReceiptCard.Store>Afika</ReceiptCard.Store>
+            <ReceiptCard.Meta>
+              {directionLabel} · {stateLabel} on Base
+            </ReceiptCard.Meta>
+          </ReceiptCard.Header>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Overview</Text>
-          <DetailRow label="Status" value={formatValue(transaction.state)} />
-          <DetailRow label="Type" value={formatValue(transaction.kind)} />
-          <DetailRow
-            label="Direction"
-            value={formatValue(transaction.direction)}
-          />
-          <DetailRow label="Network" value={formatValue(transaction.network)} />
-          <DetailRow label="Date" value={formatDate(timestamp)} />
-        </View>
+          <ReceiptCard.Separator key="sep-overview" />
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Amounts</Text>
-          <DetailRow label="Token amount" value={formatValue(displayAmount)} />
-          <DetailRow
-            label="USD amount"
-            value={
-              transaction.usdAmount
-                ? `$${transaction.usdAmount}`
-                : "Not available"
-            }
-          />
-          <DetailRow
-            label="ZAR amount"
-            value={
-              transaction.zarAmount
-                ? `R${transaction.zarAmount}`
-                : "Not available"
-            }
-          />
-          <DetailRow
-            label="EUR amount"
-            value={
-              transaction.eurAmount
-                ? `€${transaction.eurAmount}`
-                : "Not available"
-            }
-          />
-          {transaction.kind === "swap" ? (
-            <DetailRow label="Expected receive" value={secondaryAmount} />
-          ) : null}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Base chain data</Text>
-          <DetailRow
-            label="Tx hash"
-            value={formatValue(transaction.txHash)}
-            mono
-          />
-          <DetailRow
-            label="UserOp hash"
-            value={formatValue(transaction.userOperationHash)}
-            mono
-          />
-          <DetailRow
-            label="From"
-            value={formatValue(transaction.fromAddress)}
-            mono
-          />
-          <DetailRow
-            label="To"
-            value={formatValue(transaction.toAddress)}
-            mono
-          />
-          <DetailRow
-            label="Token address"
-            value={formatValue(transaction.tokenAddress)}
-            mono
-          />
-          {transaction.buyTokenAddress ? (
-            <DetailRow
-              label="Buy token"
-              value={transaction.buyTokenAddress}
-              mono
+          <ReceiptCard.Items key="overview">
+            <ReceiptCard.Item
+              label="Network"
+              value={formatValue(transaction.network)}
             />
-          ) : null}
-        </View>
+            <ReceiptCard.Item
+              label="Type"
+              value={formatValue(transaction.kind)}
+            />
+            <ReceiptCard.Item label="Date" value={formatDate(timestamp)} />
+          </ReceiptCard.Items>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Record</Text>
-          <DetailRow label="Document id" value={transaction.id} mono />
-          <DetailRow
-            label="Wallet"
-            value={formatValue(transaction.walletAddress)}
-            mono
+          <ReceiptCard.Separator key="sep-amounts" />
+
+          <ReceiptCard.Items key="amounts">
+            <ReceiptCard.Item
+              label="Token"
+              value={formatValue(displayAmount)}
+            />
+            <ReceiptCard.Item
+              label="USD"
+              value={formatAmount(transaction.usdAmount, "$")}
+            />
+            <ReceiptCard.Item
+              label="ZAR"
+              value={formatAmount(transaction.zarAmount, "R")}
+            />
+            <ReceiptCard.Item
+              label="EUR"
+              value={formatAmount(transaction.eurAmount, "€")}
+            />
+            {transaction.kind === "swap" ? (
+              <ReceiptCard.Item label="Expected" value={secondaryAmount} />
+            ) : null}
+          </ReceiptCard.Items>
+
+          <ReceiptCard.Separator key="sep-chain" />
+
+          <ReceiptCard.Items key="chain">
+            <ReceiptCard.Item
+              label="Tx hash"
+              value={formatHash(resolvedTxHash)}
+            />
+            <ReceiptCard.Item
+              label="UserOp"
+              value={formatHash(transaction.userOperationHash)}
+            />
+            <ReceiptCard.Item
+              label="From"
+              value={formatHash(transaction.fromAddress)}
+            />
+            <ReceiptCard.Item
+              label="To"
+              value={formatHash(transaction.toAddress)}
+            />
+            <ReceiptCard.Item
+              label="Token"
+              value={formatHash(transaction.tokenAddress)}
+            />
+            {transaction.buyTokenAddress ? (
+              <ReceiptCard.Item
+                label="Buy token"
+                value={formatHash(transaction.buyTokenAddress)}
+              />
+            ) : null}
+          </ReceiptCard.Items>
+
+          <ReceiptCard.Separator key="sep-record" />
+
+          <ReceiptCard.Items key="record">
+            <ReceiptCard.Item label="Ref" value={formatHash(transaction.id)} />
+            <ReceiptCard.Item
+              label="Wallet"
+              value={formatHash(transaction.walletAddress)}
+            />
+            <ReceiptCard.Item label="Fetched" value={formatDate(fetchedAt)} />
+          </ReceiptCard.Items>
+
+          <ReceiptCard.Separator key="sep-total" variant="solid" />
+
+          <ReceiptCard.Total
+            key="total"
+            label={directionLabel}
+            value={currencyAmount}
           />
-          <DetailRow
-            label="Fetched at"
-            value={formatDate(
-              Number(transaction.fetchedAtMs || transaction.fetchedAt || 0),
-            )}
-          />
+
           {transaction.errorMessage ? (
-            <DetailRow label="Error" value={transaction.errorMessage} />
+            <ReceiptCard.Note key="note-error">
+              Error: {transaction.errorMessage}
+            </ReceiptCard.Note>
           ) : null}
-        </View>
+          <ReceiptCard.Note key="note-description">
+            {transaction.description || "Base transaction details"}
+          </ReceiptCard.Note>
 
-        <Button
-          label={baseScanUrl ? `Open in Basescan` : "Awaiting tx hash"}
-          onPress={handleOpenBaseScan}
-          width={Dimensions.get("screen").width - 20}
-          backgroundColor={baseScanUrl ? colors.buttonBackground : "#CBD5E1"}
-          color={baseScanUrl ? colors.buttonTextBackground : "#475569"}
-        />
-      </ScrollView>
+          <ReceiptCard.Barcode
+            key="barcode"
+            code={resolvedTxHash || transaction.id}
+            showCode={false}
+          />
+
+          <ReceiptCard.TornEdge key="edge-bottom" side="bottom" />
+        </ReceiptCard>
+
+        {
+          /*
+          <Button
+            label={baseScanUrl ? "Open in Basescan" : "Awaiting tx hash"}
+            onPress={handleOpenBaseScan}
+            width={receiptWidth}
+            backgroundColor={baseScanUrl ? colors.buttonBackground : colors.line}
+            color={baseScanUrl ? colors.buttonTextBackground : colors.muted}
+          />
+          */
+        }
+
+
+      </View>
     </SafeAreaView>
   );
 }
@@ -317,84 +321,21 @@ export default function TransactionDetailsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F7FA",
+    backgroundColor: colors.canvas,
   },
   centered: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F5F7FA",
+    backgroundColor: colors.canvas,
     padding: 24,
   },
   content: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 32,
     paddingBottom: 40,
-    gap: 18,
-  },
-  headerRow: {
-    flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-  },
-  headerTextWrap: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: colors.textPrimary,
-  },
-  subtitle: {
-    marginTop: 4,
-    fontSize: 14,
-    color: "#64748B",
-    fontWeight: "600",
-  },
-  summaryCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 20,
-    gap: 8,
-  },
-  amountText: {
-    fontSize: 24,
-    fontWeight: "800",
-    color: colors.textPrimary,
-  },
-  descriptionText: {
-    fontSize: 15,
-    lineHeight: 21,
-    color: "#475569",
-  },
-  section: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 20,
-    gap: 14,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: colors.textPrimary,
-  },
-  detailRow: {
-    gap: 6,
-  },
-  detailLabel: {
-    fontSize: 13,
-    color: "#64748B",
-    fontWeight: "600",
-    textTransform: "uppercase",
-  },
-  detailValue: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: colors.textPrimary,
-    fontWeight: "500",
-  },
-  mono: {
-    fontFamily: "monospace",
-    fontSize: 14,
+    gap: 24,
   },
   emptyTitle: {
     fontSize: 22,
@@ -406,12 +347,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontSize: 15,
     textAlign: "center",
-    color: "#64748B",
-  },
-  hashHint: {
-    marginTop: 10,
-    textAlign: "center",
-    color: "#64748B",
-    fontSize: 13,
+    color: colors.muted,
   },
 });

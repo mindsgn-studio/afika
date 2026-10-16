@@ -1,4 +1,4 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { usePrivy, useEmbeddedEthereumWallet } from "@privy-io/expo";
 import { useCallback, useEffect, useState } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -20,7 +20,6 @@ import { DEFAULT_WALLET_NETWORK, upsertWallet } from "@/lib/firebase";
 import { parseNumber } from "@/lib/money";
 import HeroHeader from "@/components/ui/HeroHeader";
 import Sheet from "@/components/ui/Sheet";
-import PortfolioCard from "@/components/ui/PortfolioCard";
 import TransactionRow from "@/components/ui/TransactionRow";
 import EmptyTransactionCard from "@/components/empty-transaction-card";
 import SendTray from "@/components/send/send-tray";
@@ -127,13 +126,6 @@ export default function Portfolio() {
       </HeroHeader>
 
       <Sheet>
-        <View style={styles.sectionHead}>
-          <Text style={styles.sectionTitle}>Recent activity</Text>
-          <Pressable onPress={() => router.push("/activity")} testID="see-all-transactions">
-            <Text style={styles.seeAll}>See all</Text>
-          </Pressable>
-        </View>
-
         <View style={styles.list}>
           <FlashList
             data={transactions}

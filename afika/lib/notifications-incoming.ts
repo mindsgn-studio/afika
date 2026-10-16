@@ -1,9 +1,9 @@
 import { useEffect, useRef } from "react";
-import * as Notifications from "expo-notifications";
 import { useWallet } from "@/store/wallet";
 import { getActiveWalletAddress } from "@/lib/wallet";
 import { useTransactions } from "@/hooks/use-transactions";
 import {
+  enqueuePushNotification,
   getPushNotificationDetails,
   hasPushNotificationDetails,
 } from "@/lib/firebase";
@@ -130,10 +130,12 @@ export async function sendIncomingPaymentNotification(
   }
   const payload = buildIncomingPaymentNotification(tx);
   try {
-    await Notifications.scheduleNotificationAsync({
-      content: payload,
-      trigger: null,
+    const queueId = await enqueuePushNotification(walletAddress, {
+      title: payload.title,
+      body: payload.body,
+      data: { ...payload.data },
     });
+    if (!queueId) return false;
     await markIncomingPaymentSeen(walletAddress, txIdKey(tx));
     return true;
   } catch (error) {
@@ -147,8 +149,9 @@ function txIdKey(tx: { id: string }) {
 }
 
 /**
- * Watches transactions and sends a push notification when a new incoming (credit)
- * payment is detected, if push notifications are enabled.
+ * Watches transactions and queues a push notification when a new incoming
+ * (credit) payment is detected, if push notifications are enabled. The backend
+ * `notifications` worker delivers the queued message.
  */
 export function useIncomingPaymentNotifications(limit?: number) {
   const walletStore = useWallet();
@@ -173,14 +176,18 @@ export function useIncomingPaymentNotifications(limit?: number) {
         const details = await getPushNotificationDetails(walletAddress);
         if (!details?.enabled) continue;
         const payload = buildIncomingPaymentNotification(tx);
+        let queued = false;
         try {
-          await Notifications.scheduleNotificationAsync({
-            content: payload,
-            trigger: null,
+          const queueId = await enqueuePushNotification(walletAddress, {
+            title: payload.title,
+            body: payload.body,
+            data: { ...payload.data },
           });
+          queued = Boolean(queueId);
         } catch (e) {
           console.log("incoming notif error", e);
         }
+        if (!queued) continue;
         seenRef.current.add(tx.id);
         await saveSeenSet(walletAddress, seenRef.current);
       }

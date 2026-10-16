@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import { useLocalSearchParams, router } from "expo-router";
 import {
   View,
@@ -34,7 +34,7 @@ export default function SendAmountScreen() {
   const usdcBalance = balanceMap.USDC;
 
   const [amount, setAmount] = useState("");
-  const [sending, setSending] = useState(false);
+  const sendingRef = useRef(false);
 
   const shortAddress = useMemo(() => shortenAddress(address), [address]);
   const availableAmount = usdcBalance?.amount || "0";
@@ -47,7 +47,7 @@ export default function SendAmountScreen() {
         SEND_TOKEN.decimals,
       );
 
-      if (parsedAmount <= 0n) {
+      if (parsedAmount <= BigInt(0)) {
         return "Please enter a valid USDC amount.";
       }
       if (parsedAmount > parsedBalance) {
@@ -79,7 +79,7 @@ export default function SendAmountScreen() {
     const pendingDocId = buildPendingTransactionId("send");
 
     try {
-      setSending(true);
+      sendingRef.current = true;
 
       await createPendingTransaction(activeWalletAddress, pendingDocId, {
         kind: "send",
@@ -123,7 +123,7 @@ export default function SendAmountScreen() {
           {
             to: SEND_TOKEN.address,
             data: callData,
-            value: 0n,
+            value: BigInt(0),
           },
         ],
       });
@@ -168,9 +168,8 @@ export default function SendAmountScreen() {
           retryPath: `/send/amount?address=${address}`,
         },
       });
-    } finally {
-      setSending(false);
     }
+    sendingRef.current = false;
   };
 
   const amountError = amount ? validateAmount() : null;

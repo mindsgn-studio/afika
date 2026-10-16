@@ -52,6 +52,9 @@ export function useSendUsdc() {
       setSending(true);
       setError(null);
 
+      let result: SendResult | null = null;
+      let failure: Error | null = null;
+
       try {
         await createPendingTransaction(activeWalletAddress, pendingDocId, {
           kind: "send",
@@ -84,7 +87,7 @@ export function useSendUsdc() {
 
         const userOperationHash = await kernelClient.sendUserOperation({
           calls: [
-            { to: SEND_TOKEN.address, data: callData, value: 0n },
+            { to: SEND_TOKEN.address, data: callData, value: BigInt(0) },
           ],
         });
 
@@ -97,7 +100,7 @@ export function useSendUsdc() {
           hash: userOperationHash,
         });
 
-        return {
+        result = {
           userOperationHash,
           txHash: receipt?.receipt?.transactionHash,
         };
@@ -109,11 +112,17 @@ export function useSendUsdc() {
           errorMessage: message,
         }).catch(() => null);
         setError(message);
-        throw cause instanceof Error ? cause : new Error(message);
-      } finally {
-        inFlight.current = false;
-        setSending(false);
+        failure = cause instanceof Error ? cause : new Error(message);
       }
+
+      inFlight.current = false;
+      setSending(false);
+
+      if (failure) {
+        throw failure;
+      }
+
+      return result as SendResult;
     },
     [activeWalletAddress, kernelClient],
   );

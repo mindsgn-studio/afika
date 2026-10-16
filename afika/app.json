@@ -2,7 +2,7 @@
   "expo": {
     "name": "AFIKA",
     "slug": "afika",
-    "version": "0.2.38",
+    "version": "0.2.39",
     "scheme": "afika",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,8 +13,9 @@
       "supportsTablet": false,
       "bundleIdentifier": "mindsgn.studio.pockt",
       "appleTeamId": "B3U8UM2966",
-      "buildNumber": "43",
+      "buildNumber": "44",
       "infoPlist": {
+        "NSCameraUsageDescription": "$(PRODUCT_NAME) needs access to your Camera to scan wallet addresses",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false
         },
@@ -24,14 +25,15 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#1C1C1E",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "package": "mindsgn.studio.pockt",
       "predictiveBackGestureEnabled": false,
-      "googleServicesFile": "../../google-services.json"
+      "googleServicesFile": "../../google-services.json",
+      "permissions": ["android.permission.CAMERA"]
     },
     "plugins": [
       "expo-router",
@@ -52,6 +54,7 @@
           },
           "ios": {
             "useFrameworks": "static",
+            "usePrecompiledModules": false,
             "enableSceneSupport": true,
             "forceStaticLinking": [
               "RNFBAnalytics",

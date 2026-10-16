@@ -5,6 +5,9 @@ import { useFocusEffect } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, fonts } from "@/theme";
+import QRCodeStyled from "react-native-qrcode-styled";
+import { useWallet } from "@/store/wallet";
+import * as Clipboard from 'expo-clipboard';
 
 const topUpMethods = [
   { provider: "MTN MOMO", enabled: false },
@@ -14,7 +17,13 @@ const topUpMethods = [
 ];
 
 export default function TopUp() {
+  const { smartAdress } = useWallet();
   const router = useRouter();
+
+  const copyToClipboard = async () => {
+      await Clipboard.setStringAsync(`${smartAdress}`);
+  };
+
 
   useFocusEffect(
     useCallback(() => {
@@ -27,19 +36,13 @@ export default function TopUp() {
 
   return (
     <SafeAreaView style={styles.container} testID="top-up-screen">
-      <Text style={styles.title}>Add money</Text>
-      <Text style={styles.subtitle}>Fiat on-ramps are coming. For now, send USDC to your Base address.</Text>
-      <Pressable style={styles.card} onPress={() => router.push("/receive")} testID="top-up-receive">
-        <Text style={styles.provider}>Receive USDC</Text>
-        <Text style={styles.disabledText}>Available now</Text>
-      </Pressable>
-      <View style={styles.grid}>
-        {topUpMethods.map((method) => (
-          <Pressable key={method.provider} disabled style={[styles.card, styles.cardDisabled]}>
-            <Text style={styles.provider}>{method.provider}</Text>
-            <Text style={styles.disabledText}>Coming soon</Text>
-          </Pressable>
-        ))}
+      <View style={styles.card}>
+        <Text style={styles.title}>Add money</Text>
+        <Text style={styles.subtitle}>send Tokens to your address.</Text>
+        <QRCodeStyled data={`${smartAdress || ""}`} padding={25} pieceBorderRadius={"50%"} color={colors.ink} />
+        <Pressable onPress={copyToClipboard}>
+          <Text>tap this to Copy wallet address</Text>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
@@ -56,9 +59,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     backgroundColor: colors.canvas,
     padding: 18,
-    flexDirection: "row",
+    flexDirection: "column",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
     marginBottom: 12,
   },
   cardDisabled: { opacity: 0.45 },

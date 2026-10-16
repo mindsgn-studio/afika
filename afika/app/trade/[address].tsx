@@ -53,8 +53,20 @@ export default function TradeScreen() {
   const usdc = parseNumber(balanceMap.USDC?.amount || balanceMap.USDC?.usdAmount);
   const eligible = isEligibleToTrade(profile);
 
-  const sellToken = side === "buy" ? usdcTokenMetadata() : stockTokenMetadata(normalized, stock?.symbol || "STOCK", stock?.decimals);
-  const buyToken = side === "buy" ? stockTokenMetadata(normalized, stock?.symbol || "STOCK", stock?.decimals) : usdcTokenMetadata();
+  const sellToken = useMemo(
+    () =>
+      side === "buy"
+        ? usdcTokenMetadata()
+        : stockTokenMetadata(normalized, stock?.symbol || "STOCK", stock?.decimals),
+    [side, normalized, stock?.symbol, stock?.decimals],
+  );
+  const buyToken = useMemo(
+    () =>
+      side === "buy"
+        ? stockTokenMetadata(normalized, stock?.symbol || "STOCK", stock?.decimals)
+        : usdcTokenMetadata(),
+    [side, normalized, stock?.symbol, stock?.decimals],
+  );
 
   const sellAmountRaw = useMemo(() => {
     const clean = sanitizeDecimalInput(amount);
@@ -91,7 +103,7 @@ export default function TradeScreen() {
         .catch(() => setQuoteLabel("Quote unavailable"));
     }, 400);
     return () => clearTimeout(handle);
-  }, [sellAmountRaw, activeWalletAddress, stock?.address, side]);
+  }, [sellAmountRaw, activeWalletAddress, stock?.address, side, sellToken, buyToken, stock?.decimals]);
 
   const blocked = stock && (!stock.tradable || stock.paused);
 
@@ -180,9 +192,8 @@ export default function TradeScreen() {
           retryPath: `/trade/${normalized}?side=${side}`,
         },
       });
-    } finally {
-      setSubmitting(false);
     }
+    setSubmitting(false);
   };
 
   return (

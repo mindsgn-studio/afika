@@ -23,9 +23,8 @@ export default function Onboarding() {
     } catch (error) {
       console.log(error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-    } finally {
-      setProgress(false);
     }
+    setProgress(false);
   }
 
   useFocusEffect(

@@ -47,7 +47,7 @@ export default function SendAmountScreen() {
         SEND_TOKEN.decimals,
       );
 
-      if (parsedAmount <= 0n) {
+      if (parsedAmount <= BigInt(0)) {
         return "Please enter a valid USDC amount.";
       }
       if (parsedAmount > parsedBalance) {
@@ -123,7 +123,7 @@ export default function SendAmountScreen() {
           {
             to: SEND_TOKEN.address,
             data: callData,
-            value: 0n,
+            value: BigInt(0),
           },
         ],
       });
@@ -168,9 +168,8 @@ export default function SendAmountScreen() {
           retryPath: `/send/amount?address=${address}`,
         },
       });
-    } finally {
-      setSending(false);
     }
+    setSending(false);
   };
 
   const amountError = amount ? validateAmount() : null;

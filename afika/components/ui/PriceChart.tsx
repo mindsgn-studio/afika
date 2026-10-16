@@ -11,7 +11,10 @@ type Props = {
 
 const AXIS_W = 48;
 
-export default function PriceChart({ data, height = 190, formatValue = (value) => `$${Math.round(value).toLocaleString("en-US")}` }: Props) {
+const DEFAULT_FORMAT_VALUE = (value: number) =>
+  `$${Math.round(value).toLocaleString("en-US")}`;
+
+export default function PriceChart({ data, height = 190, formatValue = DEFAULT_FORMAT_VALUE }: Props) {
   const [width, setWidth] = useState(0);
   const [active, setActive] = useState(Math.max(0, data.length - 1));
   const widthRef = useRef(0);

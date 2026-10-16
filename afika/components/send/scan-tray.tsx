@@ -59,12 +59,9 @@ function PermissionView() {
 
   const handleContinue = useCallback(async () => {
     setRequesting(true);
-    try {
-      const granted = await requestPermission();
-      setView(granted ? "camera" : "denied");
-    } finally {
-      setRequesting(false);
-    }
+    await requestPermission()
+      .then((granted) => setView(granted ? "camera" : "denied"))
+      .finally(() => setRequesting(false));
   }, [requestPermission, setView]);
 
   return (

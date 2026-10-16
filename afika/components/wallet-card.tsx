@@ -20,18 +20,18 @@ export default function WalletCard() {
   const [balance, setBalance] = useState<number>(0);
   const { wallets } = useEmbeddedEthereumWallet();
 
-  const onResult = (data: QuerySnapshot) => {
-    data?.forEach((wallet) => {
-      if (wallet.data().tokenSymbol === "USDC") {
-        setBalance(parseFloat(wallet.data().usdAmount || wallet.data().amount));
-      }
-    });
-  };
-
-  const upsertAndListen = async () => {
-    if (address === null) {
+  useEffect(() => {
+    if (wallets.length < 1 || address === null) {
       return;
     }
+
+    const onResult = (data: QuerySnapshot) => {
+      data?.forEach((wallet) => {
+        if (wallet.data().tokenSymbol === "USDC") {
+          setBalance(parseFloat(wallet.data().usdAmount || wallet.data().amount));
+        }
+      });
+    };
 
     try {
       const walletAddress = smartAdress
@@ -51,20 +51,14 @@ export default function WalletCard() {
       //  }
       // })
     } catch (error) {
-    } finally {
-      firestore()
-        .collection("wallets")
-        .doc(smartAdress ? smartAdress.toLowerCase() : address.toLowerCase())
-        .collection("balances")
-        .onSnapshot(onResult, onWalletError);
     }
-  };
 
-  useEffect(() => {
-    if (wallets.length >= 1) {
-      upsertAndListen();
-    }
-  }, [wallets]);
+    firestore()
+      .collection("wallets")
+      .doc(smartAdress ? smartAdress.toLowerCase() : address.toLowerCase())
+      .collection("balances")
+      .onSnapshot(onResult, onWalletError);
+  }, [wallets, address, smartAdress]);
 
   return (
     <View style={styles.container}>

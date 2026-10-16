@@ -16,7 +16,7 @@ export default function Loading() {
     } else if (isReady && user) {
       router.replace("/(home)");
     }
-  }, [isReady, user]);
+  }, [isReady, user, router]);
 
   useFocusEffect(
     useCallback(() => {

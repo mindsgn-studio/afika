@@ -49,9 +49,8 @@ export default function Settings() {
       await logout();
       await router.replace("/onboarding");
     } catch (error) {
-    } finally {
-      setProgress(false);
     }
+    setProgress(false);
   }
 
   useEffect(() => {
@@ -84,10 +83,10 @@ export default function Settings() {
           setCurrency("USD");
           setNotificationsEnabled(false);
         }
-      } finally {
-        if (!cancelled) {
-          setSettingsLoading(false);
-        }
+      }
+
+      if (!cancelled) {
+        setSettingsLoading(false);
       }
     }
 
@@ -96,7 +95,7 @@ export default function Settings() {
     return () => {
       cancelled = true;
     };
-  }, [walletAddress]);
+  }, [walletAddress, setCurrency]);
 
   async function updateCurrency(currency: PreferredCurrency) {
     if (!walletAddress || currencySaving || preferredCurrency === currency) {
@@ -109,9 +108,8 @@ export default function Settings() {
       setCurrency(currency);
     } catch (error) {
       Alert.alert("Could not save currency", "Please try again.");
-    } finally {
-      setCurrencySaving(null);
     }
+    setCurrencySaving(null);
   }
 
   async function registerPushDetails() {
@@ -193,9 +191,9 @@ export default function Settings() {
           ? "Please allow notifications on this device and try again."
           : "Please try again.",
       );
-    } finally {
-      setNotificationSaving(false);
     }
+
+    setNotificationSaving(false);
   }
 
   useFocusEffect(

@@ -85,7 +85,7 @@ export default function SwapScreen() {
     try {
       const parsedAmount = parseTokenAmount(amount, fromToken.decimals);
       const available = parseTokenAmount(fromBalance?.amount || "0", fromToken.decimals);
-      if (parsedAmount <= 0n) {
+      if (parsedAmount <= BigInt(0)) {
         return "Please enter a valid amount.";
       }
       if (parsedAmount > available) {
@@ -141,9 +141,8 @@ export default function SwapScreen() {
         "Quote failed",
         error instanceof Error ? error.message : "Unable to fetch a swap quote right now."
       );
-    } finally {
-      setLoadingQuote(false);
     }
+    setLoadingQuote(false);
   };
 
   const maybeApproveSellToken = async (quote: ZeroExQuote, sellToken: TokenMetadata) => {
@@ -168,7 +167,7 @@ export default function SwapScreen() {
         {
           to: sellToken.address,
           data: approvalCallData,
-          value: 0n,
+          value: BigInt(0),
         },
       ],
     });
@@ -287,9 +286,8 @@ export default function SwapScreen() {
           retryPath: "/swap",
         },
       });
-    } finally {
-      setSubmitting(false);
     }
+    setSubmitting(false);
   };
 
   const buttonLabel = reviewState ? "Swap Now" : "Review Swap";

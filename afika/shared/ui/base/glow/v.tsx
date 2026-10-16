@@ -42,7 +42,7 @@ export const Glow: React.FC<GlowProps> = ({
       -1,
       false,
     );
-  }, [animationDuration]);
+  }, [animationDuration, progress]);
 
   const handleLayout = (event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;

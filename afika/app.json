@@ -54,6 +54,7 @@
           },
           "ios": {
             "useFrameworks": "static",
+            "usePrecompiledModules": false,
             "enableSceneSupport": true,
             "forceStaticLinking": [
               "RNFBAnalytics",

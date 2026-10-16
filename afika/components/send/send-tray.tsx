@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -18,6 +18,7 @@ import { currencySymbol } from "@/lib/money";
 import {
   fromUsdcAmount,
   SEND_AMOUNT_CURRENCIES,
+  sendAmountCurrencyFor,
   sendKeypadMax,
   toUsdcAmount,
   validateCurrencySendAmount,
@@ -436,12 +437,21 @@ function ErrorView({
 export default function SendTray() {
   const { available, decimals, tokenSymbol, error, resetError, send } =
     useSendUsdc();
-  const { rates } = useCurrency();
+  const { rates, effectiveCurrency } = useCurrency();
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
+  // The amount is always entered in the user's default currency. USD (and any
+  // currency without a live rate) falls back to USDC, the wallet's asset.
+  const defaultCurrency = sendAmountCurrencyFor(effectiveCurrency);
   const [amountCurrency, setAmountCurrency] =
-    useState<SendAmountCurrency>("USDC");
+    useState<SendAmountCurrency>(defaultCurrency);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // The preference hydrates asynchronously from the wallet's settings, so
+  // follow it once it loads. "Use max" and the keypad re-seed off this value.
+  useEffect(() => {
+    setAmountCurrency(defaultCurrency);
+  }, [defaultCurrency]);
 
   const rateByCurrency = useMemo<Record<SendAmountCurrency, number>>(
     () => ({ USDC: 1, ZAR: rates.ZAR, EUR: rates.EUR }),
@@ -456,10 +466,10 @@ export default function SendTray() {
   const reset = useCallback(() => {
     setRecipient("");
     setAmount("");
-    setAmountCurrency("USDC");
+    setAmountCurrency(defaultCurrency);
     setSubmitError(null);
     resetError();
-  }, [resetError]);
+  }, [defaultCurrency, resetError]);
 
   // Clear the draft whenever the tray closes, so a cancelled, dismissed, or
   // completed send never leaks stale recipient/amount values into the next open.

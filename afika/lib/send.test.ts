@@ -10,6 +10,7 @@ import {
   normalizeAmountInput,
   normalizeRecipient,
   SEND_AMOUNT_CURRENCIES,
+  sendAmountCurrencyFor,
   sendKeypadMax,
   toUsdcAmount,
   validateCurrencySendAmount,
@@ -245,6 +246,32 @@ describe("sendKeypadMax", () => {
       assert.ok(
         compareDecimal(back, balance) <= 0,
         `${currency}: ${back} exceeds ${balance}`,
+      );
+    }
+  });
+});
+
+describe("sendAmountCurrencyFor", () => {
+  it("keeps the wallet's local denominations", () => {
+    assert.equal(sendAmountCurrencyFor("ZAR"), "ZAR");
+    assert.equal(sendAmountCurrencyFor("EUR"), "EUR");
+    assert.equal(sendAmountCurrencyFor("USDC"), "USDC");
+  });
+
+  it("enters a USD (or unknown) preference as USDC", () => {
+    assert.equal(sendAmountCurrencyFor("USD"), "USDC");
+    assert.equal(sendAmountCurrencyFor(""), "USDC");
+    assert.equal(sendAmountCurrencyFor("GBP"), "USDC");
+    assert.equal(sendAmountCurrencyFor("usd"), "USDC");
+  });
+
+  it("only ever returns a sendable currency", () => {
+    for (const preferred of ["USD", "ZAR", "EUR", "USDC", "", "gbp"]) {
+      assert.ok(
+        (SEND_AMOUNT_CURRENCIES as readonly string[]).includes(
+          sendAmountCurrencyFor(preferred),
+        ),
+        `${preferred} -> ${sendAmountCurrencyFor(preferred)}`,
       );
     }
   });

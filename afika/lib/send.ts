@@ -19,6 +19,16 @@ export function isSendAmountCurrency(
   return (SEND_AMOUNT_CURRENCIES as readonly string[]).includes(value);
 }
 
+/**
+ * The currency the send amount is entered in for a given preferred currency.
+ *
+ * The wallet only holds USDC, so a USD preference (or anything unrecognised)
+ * is entered as USDC while ZAR/EUR keep their own denomination.
+ */
+export function sendAmountCurrencyFor(preferred: string): SendAmountCurrency {
+  return isSendAmountCurrency(preferred) ? preferred : "USDC";
+}
+
 export function normalizeAmountInput(value: string) {
   return value.replace(/,/g, ".").trim();
 }

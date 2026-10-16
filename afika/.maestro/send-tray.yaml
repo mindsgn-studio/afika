@@ -27,16 +27,14 @@ appId: mindsgn.studio.pockt
 - assertVisible:
     id: "account-selector"
 
-# Switching currency re-seeds the keypad with the other currency's symbol.
-- tapOn:
-    id: "send-currency-ZAR"
-- assertVisible: ".*R0\\.00.*"
-- tapOn:
-    id: "send-currency-USDC"
-- assertVisible: ".*\\$0\\.00.*"
+# The amount is always entered in the user's default currency, so the keypad
+# opens on a zero amount in that currency's symbol.
+- assertVisible:
+    id: "amount-display"
+    text: ".*0\\.00.*"
 
 # Amounts above the available balance are rejected in place, so branching on
-# whether $1.00 was accepted covers both a funded and an empty wallet.
+# whether a 1.00 amount was accepted covers both a funded and an empty wallet.
 - tapOn:
     id: "key-1"
 
@@ -45,14 +43,20 @@ appId: mindsgn.studio.pockt
 # E2E_LIVE=1 and a funded wallet.
 - runFlow:
     when:
-      visible: ".*\\$1\\.00.*"
+      visible:
+        id: "amount-display"
+        text: ".*1\\.00.*"
     commands:
       - tapOn:
           id: "key-\\."
-      - assertVisible: ".*\\$1\\.00.*"
+      - assertVisible:
+          id: "amount-display"
+          text: ".*1\\.00.*"
       - tapOn:
           id: "key-backspace"
-      - assertVisible: ".*\\$1\\.00.*"
+      - assertVisible:
+          id: "amount-display"
+          text: ".*1\\.00.*"
       - tapOn:
           id: "create-button"
       - assertVisible:
@@ -62,9 +66,13 @@ appId: mindsgn.studio.pockt
 # never enables.
 - runFlow:
     when:
-      notVisible: ".*\\$1\\.00.*"
+      notVisible:
+        id: "amount-display"
+        text: ".*1\\.00.*"
     commands:
-      - assertVisible: ".*\\$0\\.00.*"
+      - assertVisible:
+          id: "amount-display"
+          text: ".*0\\.00.*"
       - assertVisible:
           id: "create-button"
           enabled: false

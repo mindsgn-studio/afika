@@ -17,37 +17,54 @@ appId: mindsgn.studio.pockt
 - assertVisible:
     id: "send-recipient-input"
 
-# A valid address advances to the amount step.
+# A valid address advances to the amount keypad.
 - eraseText
 - inputText: "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
 - tapOn:
     id: "send-recipient-next"
 - assertVisible:
-    id: "send-amount-input"
+    id: "amount-keypad"
+- assertVisible:
+    id: "account-selector"
 
-# With no USDC available, an amount is rejected in place.
+# Switching currency re-seeds the keypad with the other currency's symbol.
+- tapOn:
+    id: "send-currency-ZAR"
+- assertVisible: ".*R0\\.00.*"
+- tapOn:
+    id: "send-currency-USDC"
+- assertVisible: ".*\\$0\\.00.*"
+
+# Amounts above the available balance are rejected in place, so branching on
+# whether $1.00 was accepted covers both a funded and an empty wallet.
+- tapOn:
+    id: "key-1"
+
+# Funded: the key is accepted, the decimal and backspace keys work, and the
+# keypad's CTA reaches the review step. Live submission still requires
+# E2E_LIVE=1 and a funded wallet.
 - runFlow:
     when:
-      visible: "Available 0 USDC"
+      visible: ".*\\$1\\.00.*"
     commands:
       - tapOn:
-          id: "send-amount-input"
-      - inputText: "1"
+          id: "key-\\."
+      - assertVisible: ".*\\$1\\.00.*"
       - tapOn:
-          id: "send-amount-next"
-      - assertVisible:
-          id: "send-amount-input"
-
-# With funds, a valid amount reaches the review step.
-# Live submission still requires E2E_LIVE=1 and a funded wallet.
-- runFlow:
-    when:
-      notVisible: "Available 0 USDC"
-    commands:
+          id: "key-backspace"
+      - assertVisible: ".*\\$1\\.00.*"
       - tapOn:
-          id: "send-amount-input"
-      - inputText: "0.01"
-      - tapOn:
-          id: "send-amount-next"
+          id: "create-button"
       - assertVisible:
           id: "send-review"
+
+# Empty wallet: the key is rejected, the display stays at zero, and Review
+# never enables.
+- runFlow:
+    when:
+      notVisible: ".*\\$1\\.00.*"
+    commands:
+      - assertVisible: ".*\\$0\\.00.*"
+      - assertVisible:
+          id: "create-button"
+          enabled: false

@@ -18,11 +18,13 @@ import { currencySymbol } from "@/lib/money";
 import {
   fromUsdcAmount,
   SEND_AMOUNT_CURRENCIES,
+  sendKeypadMax,
   toUsdcAmount,
   validateCurrencySendAmount,
   validateRecipient,
   type SendAmountCurrency,
 } from "@/lib/send";
+import { AmountKeypad } from "@/components/keypad";
 import ScanTray from "@/components/send/scan-tray";
 
 const PALETTE = {
@@ -127,6 +129,7 @@ function RecipientView({
 }
 
 function AmountView({
+  recipient,
   amount,
   onChange,
   available,
@@ -136,6 +139,7 @@ function AmountView({
   onCurrencyChange,
   rates,
 }: {
+  recipient: string;
   amount: string;
   onChange: (value: string) => void;
   available: string;
@@ -147,17 +151,52 @@ function AmountView({
 }) {
   const { setView, goBack } = useTray();
   const [error, setError] = useState<string | null>(null);
+  // The keypad owns its digits, so an amount that changes from outside (a
+  // currency switch or "Use max") remounts it with the new value as its seed.
+  const [keypadSeed, setKeypadSeed] = useState<string | undefined>(undefined);
+  const [keypadKey, setKeypadKey] = useState(0);
   const rate = rates[currency];
   const usdcAmount = toUsdcAmount(amount, currency, rate, decimals);
+  const maxAmount = sendKeypadMax(available, currency, rate);
+
+  const reseedKeypad = (seed?: string) => {
+    setKeypadSeed(seed);
+    setKeypadKey((current) => current + 1);
+  };
 
   const handleCurrencyChange = (next: SendAmountCurrency) => {
     if (next === currency) return;
     setError(null);
     if (amount.trim()) {
       const converted = fromUsdcAmount(usdcAmount, next, rates[next], 2);
-      onChange(converted === "0" ? "" : converted);
+      const seed = converted === "0" ? undefined : converted;
+      onChange(seed ?? "");
+      reseedKeypad(seed);
     }
     onCurrencyChange(next);
+  };
+
+  const handleUseMax = () => {
+    const seed = String(maxAmount);
+    setError(null);
+    onChange(seed);
+    reseedKeypad(seed);
+  };
+
+  const handleSubmit = (value: number) => {
+    const next = String(value);
+    const nextError = validateCurrencySendAmount(
+      next,
+      currency,
+      available,
+      decimals,
+      rate,
+    );
+    setError(nextError);
+    if (!nextError) {
+      onChange(next);
+      setView("review");
+    }
   };
 
   return (
@@ -165,13 +204,6 @@ function AmountView({
       <View testID="send-amount">
         <TrayHead title="Amount" back />
         <Tray.Body>
-          <View style={styles.amountRow}>
-            <Text style={styles.amountValue}>{amount || "0"}</Text>
-            <Text style={styles.amountSymbol}>
-              {amountCurrencyLabel(currency)}
-            </Text>
-          </View>
-
           <View style={styles.currencyRow}>
             {SEND_AMOUNT_CURRENCIES.map((code) => {
               const on = code === currency;
@@ -203,50 +235,30 @@ function AmountView({
               ≈ {usdcAmount} {tokenSymbol}
             </Text>
           ) : null}
-          <TextInput
-            testID="send-amount-input"
-            value={amount}
-            onChangeText={(next) => {
-              onChange(next);
-              setError(null);
-            }}
-            placeholder="0.00"
-            placeholderTextColor={colors.muted}
-            keyboardType="decimal-pad"
-            style={styles.input}
-          />
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-          <Pressable
-            onPress={() => {
-              onChange(fromUsdcAmount(available, currency, rate, 2));
-              setError(null);
-            }}
-          >
+          <Pressable testID="send-amount-max" onPress={handleUseMax}>
             <Text style={styles.maxLabel}>Use max</Text>
           </Pressable>
-        </Tray.Body>
-        <Tray.Footer>
-          <Pressable
-            testID="send-amount-next"
-            style={styles.primary}
-            onPress={() => {
-              const nextError = validateCurrencySendAmount(
-                amount,
-                currency,
-                available,
-                decimals,
-                rate,
-              );
-              setError(nextError);
-              if (!nextError) setView("review");
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          <AmountKeypad
+            key={keypadKey}
+            max={maxAmount}
+            initialValue={keypadSeed}
+            currencySymbol={currencySymbol(
+              currency === "USDC" ? "USD" : currency,
+            )}
+            accountLabel={shortenAddress(recipient)}
+            ctaLabel="Review"
+            safeArea={false}
+            compact
+            surfaceColor={PALETTE.surface}
+            onAccountPress={goBack}
+            onChange={(value) => {
+              onChange(String(value));
+              setError(null);
             }}
-          >
-            <Text style={styles.primaryLabel}>Review</Text>
-          </Pressable>
-          <Pressable style={styles.ghost} onPress={goBack}>
-            <Text style={styles.ghostLabel}>Back</Text>
-          </Pressable>
-        </Tray.Footer>
+            onSubmit={handleSubmit}
+          />
+        </Tray.Body>
       </View>
     </Tray.View>
   );
@@ -472,6 +484,7 @@ export default function SendTray() {
       <Tray.Content>
         <RecipientView recipient={recipient} onChange={setRecipient} />
         <AmountView
+          recipient={recipient}
           amount={amount}
           onChange={setAmount}
           available={available}

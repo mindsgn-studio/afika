@@ -24,6 +24,12 @@ export type AmountKeypadProps = AmountKeypadSchemaProps & {
   onSubmit?: (amount: number) => void;
   onChange?: (amount: number) => void;
   onAccountPress?: () => void;
+  /** Wrap the pad in a SafeAreaView. Turn off when embedded, e.g. in a Tray. */
+  safeArea?: boolean;
+  /** Tighter vertical rhythm for embedded sheets. */
+  compact?: boolean;
+  /** Container background color. Defaults to the full-screen surface. */
+  surfaceColor?: string;
 };
 
 const ROWS: KeyPress[][] = [
@@ -34,7 +40,15 @@ const ROWS: KeyPress[][] = [
 ];
 
 export function AmountKeypad(rawProps: AmountKeypadProps) {
-  const { onSubmit, onChange, onAccountPress, ...schemaProps } = rawProps;
+  const {
+    onSubmit,
+    onChange,
+    onAccountPress,
+    safeArea = true,
+    compact = false,
+    surfaceColor,
+    ...schemaProps
+  } = rawProps;
   const { max, initialValue, currencySymbol, accountLabel, ctaLabel } =
     AmountKeypadPropsSchema.parse(schemaProps);
 
@@ -101,10 +115,17 @@ export function AmountKeypad(rawProps: AmountKeypadProps) {
 
   const display = useMemo(() => formatDisplay(raw), [raw]);
   const isEmpty = raw === "";
+  const Container = safeArea ? SafeAreaView : View;
 
   return (
-    <SafeAreaView style={styles.container} testID="amount-keypad">
-      <View style={styles.top}>
+    <Container
+      testID="amount-keypad"
+      style={[
+        styles.container,
+        surfaceColor ? { backgroundColor: surfaceColor } : null,
+      ]}
+    >
+      <View style={[styles.top, compact && styles.topCompact]}>
         <Animated.View style={[styles.amountRow, amountShakeStyle]}>
           <Text
             testID="amount-display"
@@ -120,7 +141,7 @@ export function AmountKeypad(rawProps: AmountKeypadProps) {
         <Pressable
           testID="account-selector"
           onPress={onAccountPress}
-          style={styles.accountPill}
+          style={[styles.accountPill, compact && styles.accountPillCompact]}
         >
           <View style={styles.walletIcon}>
             <Ionicons name="wallet-outline" size={16} color="#c4b5fd" />
@@ -155,7 +176,7 @@ export function AmountKeypad(rawProps: AmountKeypadProps) {
           </Animated.View>
         </Pressable>
       </View>
-    </SafeAreaView>
+    </Container>
   );
 }
 
@@ -177,6 +198,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 48,
     paddingHorizontal: 24,
+  },
+  topCompact: {
+    paddingTop: 16,
   },
   amountRow: {
     width: "100%",
@@ -200,6 +224,9 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingVertical: 12,
     paddingHorizontal: 16,
+  },
+  accountPillCompact: {
+    marginTop: 16,
   },
   walletIcon: {
     width: 28,

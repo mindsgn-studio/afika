@@ -6,9 +6,11 @@ import {
   fromUsdcAmount,
   isSendAmountCurrency,
   isValidEvmAddress,
+  KEYPAD_MAX_FALLBACK,
   normalizeAmountInput,
   normalizeRecipient,
   SEND_AMOUNT_CURRENCIES,
+  sendKeypadMax,
   toUsdcAmount,
   validateCurrencySendAmount,
   validateRecipient,
@@ -200,5 +202,50 @@ describe("validateCurrencySendAmount", () => {
   it("requires a rate for local currencies", () => {
     assert.ok(validateCurrencySendAmount("10", "ZAR", balance, 6, 0));
     assert.ok(validateCurrencySendAmount("10", "EUR", balance, 6, 0));
+  });
+});
+
+describe("sendKeypadMax", () => {
+  it("returns the USDC balance truncated to the keypad's two decimals", () => {
+    assert.equal(sendKeypadMax("100", "USDC", 1), 100);
+    assert.equal(sendKeypadMax("10.234567", "USDC", 1), 10.23);
+    // Float trap: floor(balance * 100) would yield 0.28 here.
+    assert.equal(sendKeypadMax("0.29", "USDC", 1), 0.29);
+  });
+
+  it("converts the balance into local currencies at two decimals", () => {
+    assert.equal(sendKeypadMax("100", "ZAR", 18), 1800);
+    assert.equal(sendKeypadMax("10", "ZAR", 18), 180);
+    assert.equal(sendKeypadMax("0.5", "EUR", 0.92), 0.46);
+  });
+
+  it("falls back below the keypad's smallest amount when unusable", () => {
+    assert.equal(sendKeypadMax("", "USDC", 1), KEYPAD_MAX_FALLBACK);
+    assert.equal(sendKeypadMax("0", "USDC", 1), KEYPAD_MAX_FALLBACK);
+    assert.equal(sendKeypadMax("abc", "USDC", 1), KEYPAD_MAX_FALLBACK);
+    assert.equal(sendKeypadMax("-5", "USDC", 1), KEYPAD_MAX_FALLBACK);
+    // Smaller than a cent cannot be typed, so the CTA must stay disabled.
+    assert.equal(sendKeypadMax("0.004", "USDC", 1), KEYPAD_MAX_FALLBACK);
+    assert.equal(sendKeypadMax("10", "ZAR", 0), KEYPAD_MAX_FALLBACK);
+    assert.equal(sendKeypadMax("10", "EUR", Number.NaN), KEYPAD_MAX_FALLBACK);
+    assert.ok(KEYPAD_MAX_FALLBACK < 0.01);
+  });
+
+  it("never converts back to more than the balance", () => {
+    const balance = "123.456789";
+    const cases = [
+      ["USDC", 1],
+      ["ZAR", 18],
+      ["EUR", 0.92],
+    ] as const;
+    for (const [currency, rate] of cases) {
+      const max = sendKeypadMax(balance, currency, rate);
+      assert.ok(max > 0, `${currency} max must be positive`);
+      const back = toUsdcAmount(String(max), currency, rate, 6);
+      assert.ok(
+        compareDecimal(back, balance) <= 0,
+        `${currency}: ${back} exceeds ${balance}`,
+      );
+    }
   });
 });

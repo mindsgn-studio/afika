@@ -170,6 +170,32 @@ export function fromUsdcAmount(
 }
 
 /**
+ * Floor for `sendKeypadMax`. The AmountKeypad schema requires a positive,
+ * finite max and only accepts two decimals, so an unusable balance maps to a
+ * value below the keypad's smallest increment (0.01): the keypad renders but
+ * rejects every typed amount and its CTA stays disabled.
+ */
+export const KEYPAD_MAX_FALLBACK = 0.001;
+
+/**
+ * Largest amount the AmountKeypad can accept in `currency` without exceeding
+ * the USDC balance. Truncates to the keypad's two decimals so "use max"
+ * produces an amount that is both typeable and sendable.
+ */
+export function sendKeypadMax(
+  available: string,
+  currency: SendAmountCurrency,
+  rate: number,
+): number {
+  const truncated =
+    currency === "USDC"
+      ? truncateToDecimals(Number(available), 2)
+      : fromUsdcAmount(available, currency, rate, 2);
+  const value = Number(truncated);
+  return Number.isFinite(value) && value > 0 ? value : KEYPAD_MAX_FALLBACK;
+}
+
+/**
  * Validates an amount entered in `currency` against a USDC balance by first
  * converting it to USDC. Returns an error message, or null when sendable.
  */

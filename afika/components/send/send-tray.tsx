@@ -160,6 +160,9 @@ function AmountView({
   const usdcAmount = toUsdcAmount(amount, currency, rate, decimals);
   const maxAmount = sendKeypadMax(available, currency, rate);
 
+
+
+
   const reseedKeypad = (seed?: string) => {
     setKeypadSeed(seed);
     setKeypadKey((current) => current + 1);
@@ -272,16 +275,18 @@ function AmountView({
 function ReviewView({
   recipient,
   amount,
+  amountCurrency,
   tokenSymbol,
   onSend,
   onError,
 }: {
   recipient: string;
+  amountCurrency: string;
   amount: string;
   tokenSymbol: string;
   onSend: (recipient: string, amount: string) => Promise<unknown>;
   onError: (message: string) => void;
-}) {
+  }) {
   const { goBack, setView } = useTray();
 
   const confirm = async () => {
@@ -301,18 +306,13 @@ function ReviewView({
         <TrayHead title="Review" back />
         <Tray.Body>
           <View style={styles.amountRow}>
-            <Text style={styles.amountValue}>{amount || "0"}</Text>
-            <Text style={styles.amountSymbol}>{tokenSymbol}</Text>
+            <Text style={styles.amountValue}>{currencySymbol(amountCurrency === "USDC" ? "USD" : amountCurrency,)} {amount}</Text>
           </View>
           <View style={styles.fields}>
             <Field label="To" value={shortenAddress(recipient)} />
             <Field label="Network" value="Base" />
             <Field label="Network fee" value="Sponsored" />
           </View>
-          <Text style={styles.hint}>
-            Confirm to send {amount} {tokenSymbol} to{" "}
-            {shortenAddress(recipient)}.
-          </Text>
         </Tray.Body>
         <Tray.Footer>
           <Pressable
@@ -440,6 +440,7 @@ export default function SendTray() {
   const { rates, effectiveCurrency } = useCurrency();
   const [recipient, setRecipient] = useState("");
   const [amount, setAmount] = useState("");
+  console.log(amount)
   // The amount is always entered in the user's default currency. USD (and any
   // currency without a live rate) falls back to USDC, the wallet's asset.
   const defaultCurrency = sendAmountCurrencyFor(effectiveCurrency);
@@ -510,7 +511,8 @@ export default function SendTray() {
         />
         <ReviewView
           recipient={recipient}
-          amount={usdcAmount}
+          amountCurrency={amountCurrency}
+          amount={amount}
           tokenSymbol={tokenSymbol}
           onSend={send}
           onError={setSubmitError}

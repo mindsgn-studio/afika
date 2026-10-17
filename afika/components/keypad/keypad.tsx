@@ -19,6 +19,7 @@ import {
   type AmountKeypadSchemaProps,
   type KeyPress,
 } from "./schema";
+import { colors } from "@/constants";
 
 export type AmountKeypadProps = AmountKeypadSchemaProps & {
   onSubmit?: (amount: number) => void;
@@ -69,7 +70,7 @@ export function AmountKeypad(rawProps: AmountKeypadProps) {
     backgroundColor: interpolateColor(
       acceptedProgress.value,
       [0, 1],
-      ["#3a3a3a", "#22c55e"]
+      ["#3a3a3a", colors.lime]
     ),
   }));
 
@@ -262,7 +263,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   ctaText: {
-    color: "#fff",
+    color: colors.ink,
     fontSize: 17,
     fontWeight: "600",
   },

@@ -1,11 +1,13 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
+import type { ComponentType } from "react";
+import type { SvgProps } from "react-native-svg";
 import { colors, fonts } from "@/theme";
-import logoPath from '@/assets/stocks/usdc.svg';
 import { Image } from 'expo-image';
 
 type Props = {
   name?: string;
   iconUrl?: string | null;
+  icon?: ComponentType<SvgProps>;
   size?: number;
   ring?: string;
   bordered?: boolean;
@@ -14,6 +16,7 @@ type Props = {
 export default function StockLogo({
   name = "",
   iconUrl,
+  icon: Icon,
   size = 100,
   ring,
   bordered = true,
@@ -32,9 +35,13 @@ export default function StockLogo({
         },
       ]}
     >
-      <Image
-        source={iconUrl}
-        style={{ backgroundColor: "none", width: size, height: size,  }} />
+      {Icon ? (
+        <Icon width={size} height={size} />
+      ) : (
+        <Image
+          source={iconUrl ?? undefined}
+          style={{ backgroundColor: "none", width: size, height: size,  }} />
+      )}
     </View>
   );
 }

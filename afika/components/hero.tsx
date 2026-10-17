@@ -3,51 +3,31 @@ import StockLogo from "@/components/ui/StockLogo";
 import { STOCK_ALLOWLIST } from "@/constants/stocks";
 import { colors, fonts } from "@/theme";
 import { Marquee } from "@/shared/ui/base/marquee";
-import { Aurora } from "@/shared/ui/molecules/aurora";
+import UsdcLogo from "@/assets/stocks/usdc.svg";
+import EurcLogo from "@/assets/stocks/eurc.svg";
+import BitcoinLogo from "@/assets/stocks/bitcoin.svg";
+import ZarpLogo from "@/assets/stocks/zarp.svg";
+import BaseLogo from "@/assets/stocks/base.svg";
 
 const rows = [
   STOCK_ALLOWLIST.slice(0, 3),
 ];
 
+const rowLogos = [UsdcLogo, EurcLogo, BitcoinLogo, ZarpLogo, BaseLogo];
+
 export default function Hero() {
 
   return (
     <View style={styles.screen}>
-      <Marquee>
-            {STOCK_ALLOWLIST.map((t) => (
-              <View key={t.ticker} style={styles.ticker}>
-                <StockLogo name={t.name} size={100} iconUrl={"https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4a/Circle_USDC_Logo.svg/1280px-Circle_USDC_Logo.svg.png?utm_source=en.wikipedia.org&utm_campaign=index&utm_content=thumbnail"}/>
-              </View>
-            ))}
-      </Marquee>
-      <Marquee>
-            {STOCK_ALLOWLIST.map((t) => (
-              <View key={t.ticker} style={styles.ticker}>
-                <StockLogo name={t.name} size={100} iconUrl={"https://s2.coinmarketcap.com/static/img/coins/200x200/20641.png"}/>
-              </View>
-            ))}
-      </Marquee>
-      <Marquee>
-            {STOCK_ALLOWLIST.map((t) => (
-              <View key={t.ticker} style={styles.ticker}>
-                <StockLogo name={t.name} size={100} iconUrl={"https://thumb.wikimedia.org/wikipedia/commons/thumb/4/46/Bitcoin.svg/3840px-Bitcoin.svg.png?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=thumbnail"}/>
-              </View>
-            ))}
-      </Marquee>
-      <Marquee>
-            {STOCK_ALLOWLIST.map((t) => (
-              <View key={t.ticker} style={styles.ticker}>
-                <StockLogo name={t.name} size={100} iconUrl={"https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/tesla-icon.png"}/>
-              </View>
-            ))}
-      </Marquee>
-      <Marquee>
-            {STOCK_ALLOWLIST.map((t) => (
-              <View key={t.ticker} style={styles.ticker}>
-                <StockLogo name={t.name} size={100} iconUrl={""}/>
-              </View>
-            ))}
-      </Marquee>
+      {rowLogos.map((Logo, rowIndex) => (
+        <Marquee key={rowIndex}>
+          {STOCK_ALLOWLIST.map((t) => (
+            <View key={t.ticker} style={styles.ticker}>
+              <StockLogo name={t.name} size={100} icon={Logo} />
+            </View>
+          ))}
+        </Marquee>
+      ))}
     </View>
   );
 }

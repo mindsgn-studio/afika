@@ -350,11 +350,11 @@ function SendingView() {
 function SuccessView({
   recipient,
   amount,
-  tokenSymbol,
+  amountCurrency,
 }: {
   recipient: string;
   amount: string;
-  tokenSymbol: string;
+  amountCurrency: string;
 }) {
   const { close } = useTray();
   return (
@@ -366,7 +366,7 @@ function SuccessView({
               <Feather name="check" size={26} color={colors.ink} />
             </View>
             <Text style={styles.statusTitle}>
-              Sent {amount} {tokenSymbol}
+              Sent {currencySymbol(amountCurrency === "USDC" ? "USD" : amountCurrency,)} {amount}
             </Text>
             <Text style={styles.statusDetail}>
               to {shortenAddress(recipient)}
@@ -439,8 +439,7 @@ export default function SendTray() {
     useSendUsdc();
   const { rates, effectiveCurrency } = useCurrency();
   const [recipient, setRecipient] = useState("");
-  const [amount, setAmount] = useState("");
-  console.log(amount)
+  const [amount, setAmount] = useState("")
   // The amount is always entered in the user's default currency. USD (and any
   // currency without a live rate) falls back to USDC, the wallet's asset.
   const defaultCurrency = sendAmountCurrencyFor(effectiveCurrency);
@@ -514,14 +513,15 @@ export default function SendTray() {
           amountCurrency={amountCurrency}
           amount={amount}
           tokenSymbol={tokenSymbol}
-          onSend={send}
+          onSend={() => send(recipient, usdcAmount)}
           onError={setSubmitError}
         />
         <SendingView />
         <SuccessView
           recipient={recipient}
-          amount={usdcAmount}
+          amount={amount}
           tokenSymbol={tokenSymbol}
+          amountCurrency={amountCurrency}
         />
         <ErrorView
           message={submitError || error}

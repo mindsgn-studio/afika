@@ -35,7 +35,7 @@ export default function PillButton({
 }
 
 const styles = StyleSheet.create({
-  btn: { flex: 1, height: 58, borderRadius: 30, alignItems: "center", justifyContent: "center" },
+  btn: { height: 58, borderRadius: 30, alignItems: "center", justifyContent: "center" },
   solid: { backgroundColor: colors.ink },
   outline: { borderWidth: 1, borderColor: colors.ink, backgroundColor: colors.paper },
   solidText: { fontFamily: fonts.medium, fontSize: 16, color: colors.lime },

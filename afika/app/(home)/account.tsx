@@ -207,7 +207,7 @@ export default function Settings() {
   );
 
   return (
-    <ScrollView contentContainerStyle={styles.content} testID="account-screen">
+    <View style={styles.content} testID="account-screen">
       <View style={styles.section}>
         <Text style={styles.title}>Preferences</Text>
         <Text style={styles.subtitle}>
@@ -285,12 +285,12 @@ export default function Settings() {
         loading={progress}
         testID="sign-out"
       />
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 20, paddingTop: 48, gap: 16, backgroundColor: colors.paper },
+  content: { flex: 1, padding: 20, paddingTop: 48, gap: 16, backgroundColor: colors.paper, paddingBottom: 100 },
   section: { gap: 6 },
   title: { fontFamily: fonts.medium, fontSize: 28, color: colors.ink },
   subtitle: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.muted },

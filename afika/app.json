@@ -13,7 +13,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "mindsgn.studio.pockt",
       "appleTeamId": "B3U8UM2966",
-      "buildNumber": "44",
+      "buildNumber": "45",
       "infoPlist": {
         "NSCameraUsageDescription": "$(PRODUCT_NAME) needs access to your Camera to scan wallet addresses",
         "NSAppTransportSecurity": {
@@ -49,8 +49,14 @@
         "expo-build-properties",
         {
           "android": {
-            "minSdkVersion": 26,
-            "extraProguardRules": "-dontwarn com.gemalto.jp2.**\n-dontwarn com.tom_roush.pdfbox.filter.JPXFilter"
+            "buildArchs": ["armeabi-v7a", "arm64-v8a", "x86", "x86_64"],
+            "minSdkVersion": 34,
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "enableBundleCompression": true,
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "extraProguardRules": "-dontwarn com.gemalto.jp2.**\n-dontwarn com.tom_roush.pdfbox.filter.JPXFilter\n# JNA 5.17.0 Android AAR: Native.getWindowHandle0(java.awt.Component) is a desktop entry point. Spark UniFFI only calls Native.load.\n-dontwarn java.awt.Component"
           },
           "ios": {
             "useFrameworks": "static",
@@ -74,16 +80,8 @@
       "expo-status-bar",
       "expo-font",
       "expo-background-task",
-      [
-        "react-native-continued-task",
-        {
-          "identifierPrefixes": [
-            "com.foo.MyApp.export"
-          ],
-          "enableGPU": false
-        }
-      ],
       "./plugins/withGrpcSwiftModuleFix.js",
+      "./plugins/withAndroidReleaseNodeEnv.js",
       [
         "expo-image",
         {

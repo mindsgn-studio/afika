@@ -67,6 +67,37 @@ describe("api configuration", () => {
     delete process.env.EXPO_PUBLIC_API_TOKEN;
     assert.equal(apiToken(), "");
   });
+
+  it("sends EXPO_PUBLIC_API_TOKEN when options.token is omitted", async () => {
+    process.env.EXPO_PUBLIC_API_TOKEN = " env-token ";
+    const { impl, calls } = fakeFetch(() =>
+      json({ data: [], pagination: { limit: 50, hasMore: false } }),
+    );
+
+    await fetchBalances(ADDRESS, {}, { baseUrl: BASE, fetch: impl });
+
+    assert.equal(
+      (calls[0].init.headers as Record<string, string>).Authorization,
+      "Bearer env-token",
+    );
+  });
+
+  it("does not call the API when no token is configured", async () => {
+    delete process.env.EXPO_PUBLIC_API_TOKEN;
+    const { impl, calls } = fakeFetch(() =>
+      json({ data: [], pagination: { limit: 50, hasMore: false } }),
+    );
+
+    await assert.rejects(
+      fetchTransactions(ADDRESS, {}, { baseUrl: BASE, fetch: impl }),
+      (error: unknown) =>
+        error instanceof ApiError &&
+        error.status === 401 &&
+        error.code === "UNAUTHENTICATED" &&
+        /EXPO_PUBLIC_API_TOKEN/.test(error.message),
+    );
+    assert.equal(calls.length, 0);
+  });
 });
 
 describe("upsertWallet", () => {
@@ -223,7 +254,7 @@ describe("errors", () => {
     );
 
     await assert.rejects(
-      fetchBalances(ADDRESS, {}, { baseUrl: BASE, token: "", fetch: impl }),
+      fetchBalances(ADDRESS, {}, { baseUrl: BASE, token: "bad-token", fetch: impl }),
       (error: unknown) => {
         assert.ok(error instanceof ApiError);
         assert.equal(error.status, 401);

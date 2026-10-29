@@ -123,6 +123,18 @@ export function apiToken() {
   return process.env.EXPO_PUBLIC_API_TOKEN?.trim() ?? "";
 }
 
+function resolveToken(options: ApiClientOptions) {
+  const token = options.token ?? apiToken();
+  if (!token) {
+    throw new ApiError(
+      "A valid API token is required. Set EXPO_PUBLIC_API_TOKEN in afika/.env.",
+      401,
+      "UNAUTHENTICATED",
+    );
+  }
+  return token;
+}
+
 function requestUrl(
   baseUrl: string,
   path: string,
@@ -169,13 +181,13 @@ async function request<T>(
   options: ApiClientOptions = {},
 ): Promise<T> {
   const baseUrl = (options.baseUrl ?? apiBaseUrl()).replace(/\/+$/, "");
-  const token = options.token ?? apiToken();
+  const token = resolveToken(options);
   const fetchImpl = options.fetch ?? fetch;
 
   const headers: Record<string, string> = {
     Accept: "application/json",
     ...(init.body ? { "Content-Type": "application/json" } : {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    Authorization: `Bearer ${token}`,
     ...((init.headers as Record<string, string> | undefined) ?? {}),
   };
 

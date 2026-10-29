@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
-import { collection, doc, onSnapshot } from "@react-native-firebase/firestore";
-import { getFirestore } from "@/lib/firestore";
+import { useMemo } from "react";
+import { getAllowlistedStock, normalizeStockAddress } from "@/constants/stocks";
+import { parseNumber } from "@/lib/money";
+import type { WalletBalance } from "@/hooks/use-wallet-balances";
 
 export type HoldingRecord = {
   stockAddress: string;
@@ -11,39 +12,36 @@ export type HoldingRecord = {
   symbol?: string;
 };
 
-export function useHoldings(walletAddress?: string | null) {
-  const [holdings, setHoldings] = useState<HoldingRecord[]>([]);
-  const [loading, setLoading] = useState(Boolean(walletAddress));
+/** Derives stock holdings from the API balance feed. */
+export function deriveHoldings(balances: WalletBalance[]): HoldingRecord[] {
+  return balances
+    .filter((balance) => getAllowlistedStock(balance.tokenAddress))
+    .map((balance) => {
+      const allow = getAllowlistedStock(balance.tokenAddress);
+      const qty = parseNumber(balance.uiAmount || balance.amount);
+      const value = parseNumber(balance.usdAmount);
+      return {
+        stockAddress: normalizeStockAddress(balance.tokenAddress),
+        qty,
+        // Average cost and realised PnL need the orders/holdings worker. Until
+        // there is a REST endpoint we only expose current quantity and value.
+        avgCost: qty > 0 ? value / qty : 0,
+        costBasis: value,
+        realizedPnl: 0,
+        symbol: balance.tokenSymbol || allow?.ticker,
+      };
+    })
+    .filter((holding) => holding.qty > 0 || holding.costBasis > 0);
+}
 
-  useEffect(() => {
-    if (!walletAddress) {
-      setHoldings([]);
-      setLoading(false);
-      return;
-    }
-    const db = getFirestore();
-    const unsubscribe = onSnapshot(
-      collection(db, "wallets", walletAddress.toLowerCase(), "holdings"),
-        (snapshot) => {
-          setHoldings(
-            snapshot.docs.map((doc) => {
-              const data = doc.data();
-              return {
-                stockAddress: doc.id.toLowerCase(),
-                qty: Number(data.qty || 0),
-                avgCost: Number(data.avgCost || 0),
-                costBasis: Number(data.costBasis || 0),
-                realizedPnl: Number(data.realizedPnl || 0),
-                symbol: data.symbol ? String(data.symbol) : undefined,
-              };
-            })
-          );
-          setLoading(false);
-        },
-        () => setLoading(false)
-      );
-    return unsubscribe;
-  }, [walletAddress]);
+export function useHoldings(
+  walletAddress?: string | null,
+  balances: WalletBalance[] = [],
+) {
+  const holdings = useMemo(() => {
+    if (!walletAddress) return [];
+    return deriveHoldings(balances);
+  }, [walletAddress, balances]);
 
-  return { holdings, loading };
+  return { holdings, loading: false };
 }

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { PreferredCurrency } from "@/lib/firebase";
+import type { PreferredCurrency } from "@/lib/wallet-service";
 
 interface CurrencyStore {
   currency: PreferredCurrency;

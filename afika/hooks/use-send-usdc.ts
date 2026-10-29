@@ -18,7 +18,7 @@ export type SendResult = { userOperationHash: string; txHash?: string };
 
 /**
  * Sends the configured stablecoin (USDC on Base) from the active smart wallet
- * to another address, recording pending → submitted/failed states in Firestore.
+ * to another address, recording pending → submitted/failed states locally.
  */
 export function useSendUsdc() {
   const { wallets } = useEmbeddedEthereumWallet();
@@ -100,9 +100,16 @@ export function useSendUsdc() {
           hash: userOperationHash,
         });
 
+        const txHash = receipt?.receipt?.transactionHash;
+        if (txHash) {
+          await updateTransaction(activeWalletAddress, pendingDocId, {
+            txHash,
+          }).catch(() => null);
+        }
+
         result = {
           userOperationHash,
-          txHash: receipt?.receipt?.transactionHash,
+          txHash,
         };
       } catch (cause) {
         const message =

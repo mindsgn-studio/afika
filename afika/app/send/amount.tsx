@@ -139,6 +139,12 @@ export default function SendAmountScreen() {
 
       const txHash = receipt?.receipt?.transactionHash;
 
+      if (txHash) {
+        await updateTransaction(activeWalletAddress, pendingDocId, {
+          txHash,
+        }).catch(() => null);
+      }
+
       router.replace({
         pathname: "/transaction/complete",
         params: {

@@ -3,7 +3,6 @@ import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-nativ
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
-import auth from "@react-native-firebase/auth";
 import { useEmbeddedEthereumWallet } from "@privy-io/expo";
 import { parseUnits } from "viem";
 import IconButton from "@/components/ui/IconButton";
@@ -37,12 +36,11 @@ export default function TradeScreen() {
   const side = sideParam === "sell" ? "sell" : "buy";
   const normalized = normalizeStockAddress(address);
   const { stock } = useStock(normalized);
-  const uid = auth().currentUser?.uid;
-  const { profile, saveEligibility } = useUserProfile(uid);
   const walletStore = useWallet();
   const activeWalletAddress = getActiveWalletAddress(walletStore);
-  const { balanceMap } = useWalletBalances(activeWalletAddress);
-  const { holdings } = useHoldings(activeWalletAddress);
+  const { profile, saveEligibility } = useUserProfile(activeWalletAddress);
+  const { balances, balanceMap } = useWalletBalances(activeWalletAddress);
+  const { holdings } = useHoldings(activeWalletAddress, balances);
   const { wallets } = useEmbeddedEthereumWallet();
   const { kernelClient } = useKernelClient(wallets?.[0]);
   const [amount, setAmount] = useState("");

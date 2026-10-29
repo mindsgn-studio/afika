@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { getWalletSettings } from "@/lib/firebase";
+import { getWalletSettings } from "@/lib/wallet-service";
 import { useCurrencyStore } from "@/store/currency";
 
 /**

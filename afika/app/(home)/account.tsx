@@ -27,7 +27,7 @@ import {
   PreferredCurrency,
   savePushNotificationDetails,
   setWalletCurrencyPreference,
-} from "@/lib/firebase";
+} from "@/lib/wallet-service";
 
 export default function Settings() {
   const [progress, setProgress] = useState<boolean>(false);

@@ -1,40 +1,63 @@
-import { useEffect, useState } from "react";
-import { doc, onSnapshot, updateDoc, serverTimestamp } from "@react-native-firebase/firestore";
-import { getFirestore } from "@/lib/firestore";
+import { useCallback, useEffect, useState } from "react";
+import { readLocal, writeLocal } from "@/lib/local-store";
 import type { EligibilityProfile } from "@/lib/eligibility";
 
-export function useUserProfile(uid?: string | null) {
+function profileKey(accountId: string) {
+  return `eligibility.${accountId.trim().toLowerCase()}`;
+}
+
+/**
+ * Trading eligibility is stored on the device now that `users/{uid}` is gone.
+ * The attestation is only as trustworthy as the device until the API exposes a
+ * server-side eligibility record.
+ */
+export function useUserProfile(accountId?: string | null) {
   const [profile, setProfile] = useState<EligibilityProfile | null>(null);
-  const [loading, setLoading] = useState(Boolean(uid));
+  const [loading, setLoading] = useState(Boolean(accountId));
 
   useEffect(() => {
-    if (!uid) {
+    let active = true;
+
+    if (!accountId) {
       setProfile(null);
       setLoading(false);
       return;
     }
-    const db = getFirestore();
-    const unsubscribe = onSnapshot(
-      doc(db, "users", uid),
-        (doc) => {
-          setProfile((doc.data() as EligibilityProfile) || null);
-          setLoading(false);
-        },
-        () => setLoading(false)
-      );
-    return unsubscribe;
-  }, [uid]);
 
-  const saveEligibility = async (country: string) => {
-    if (!uid) throw new Error("Not signed in");
-    const db = getFirestore();
-    await updateDoc(doc(db, "users", uid), {
-      country: country.toUpperCase(),
-      residencyAttestedAt: serverTimestamp(),
-      termsAcceptedAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-  };
+    setLoading(true);
+    readLocal<EligibilityProfile | null>(profileKey(accountId), null)
+      .then((stored) => {
+        if (active) setProfile(stored ?? null);
+      })
+      .catch((error) => {
+        console.log("useUserProfile error:", error);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [accountId]);
+
+  const saveEligibility = useCallback(
+    async (country: string) => {
+      if (!accountId) throw new Error("Wallet not ready");
+
+      const now = Date.now();
+      const next: EligibilityProfile = {
+        country: country.trim().toUpperCase(),
+        residencyAttestedAt: now,
+        termsAcceptedAt: now,
+        updatedAt: now,
+      };
+
+      await writeLocal(profileKey(accountId), next);
+      setProfile(next);
+    },
+    [accountId],
+  );
 
   return { profile, loading, saveEligibility };
 }

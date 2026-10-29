@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
-import { collection, doc, onSnapshot } from "@react-native-firebase/firestore";
-import { getFirestore } from "@/lib/firestore";
-import { getAllowlistedStock, normalizeStockAddress } from "@/constants/stocks";
+import { useMemo } from "react";
+import {
+  STOCK_ALLOWLIST,
+  normalizeStockAddress,
+} from "@/constants/stocks";
 
 export type StockRecord = {
   address: string;
@@ -27,79 +28,45 @@ export type StockRecord = {
   updatedAt?: number;
 };
 
-function mapStock(id: string, data: Record<string, unknown>): StockRecord {
-  const allow = getAllowlistedStock(id);
-  return {
-    address: normalizeStockAddress(id),
-    symbol: String(data.symbol || allow?.ticker || ""),
-    name: String(data.name || allow?.name || ""),
-    decimals: Number(data.decimals || allow?.decimals || 8),
-    iconUrl: data.iconUrl ? String(data.iconUrl) : undefined,
-    isin: data.isin ? String(data.isin) : undefined,
-    multiplier: Number(data.multiplier || 1),
-    pausedFeatures: Array.isArray(data.pausedFeatures) ? (data.pausedFeatures as number[]) : [],
-    paused: Boolean(data.paused),
-    navPrice: Number(data.navPrice || 0),
-    navUpdatedAt: data.navUpdatedAt ? String(data.navUpdatedAt) : undefined,
-    navStale: Boolean(data.navStale),
-    price: Number(data.price || data.navPrice || 0),
-    changePct24h: Number(data.changePct24h || 0),
-    open: Number(data.open || 0),
-    dayLow: Number(data.dayLow || 0),
-    dayHigh: Number(data.dayHigh || 0),
-    marketCap: Number((data as any).marketCap || (data as any).marketcap || 0) || undefined,
-    volume24h: Number((data as any).volume24h || (data as any).volume || 0) || undefined,
-    tradable: data.tradable !== false && !data.paused,
-    updatedAt: Number(data.updatedAt || 0) || undefined,
-  };
-}
+/**
+ * The markets/stocks REST endpoint does not exist yet, so stocks are exposed
+ * from the static allowlist with no live pricing. Trading stays disabled until
+ * a market data endpoint is available.
+ */
+const STUB_STOCKS: StockRecord[] = STOCK_ALLOWLIST.map((stock) => ({
+  address: stock.address.toLowerCase(),
+  symbol: stock.ticker,
+  name: stock.name,
+  decimals: stock.decimals,
+  iconUrl: stock.logoUrl || undefined,
+  multiplier: 1,
+  pausedFeatures: [],
+  paused: false,
+  navPrice: 0,
+  navStale: true,
+  price: 0,
+  changePct24h: 0,
+  open: 0,
+  dayLow: 0,
+  dayHigh: 0,
+  tradable: false,
+}));
+
+const STUB_BY_ADDRESS = Object.fromEntries(
+  STUB_STOCKS.map((stock) => [stock.address, stock]),
+) as Record<string, StockRecord>;
 
 export function useStocks() {
-  const [stocks, setStocks] = useState<StockRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const db = getFirestore();
-    const unsubscribe = onSnapshot(
-      collection(db, "stocks"),
-        (snapshot) => {
-          setStocks(snapshot.docs.map((doc) => mapStock(doc.id, doc.data())));
-          setLoading(false);
-        },
-        () => setLoading(false)
-      );
-    return unsubscribe;
-  }, []);
-
-  const byAddress = useMemo(() => {
-    return Object.fromEntries(stocks.map((stock) => [stock.address, stock]));
-  }, [stocks]);
-
-  return { stocks, byAddress, loading };
+  return useMemo(
+    () => ({ stocks: STUB_STOCKS, byAddress: STUB_BY_ADDRESS, loading: false }),
+    [],
+  );
 }
 
 export function useStock(address?: string | null) {
-  const [stock, setStock] = useState<StockRecord | null>(null);
-  const [loading, setLoading] = useState(true);
   const normalized = normalizeStockAddress(address);
-
-  useEffect(() => {
-    if (!normalized) {
-      setStock(null);
-      setLoading(false);
-      return;
-    }
-    const db = getFirestore();
-    const unsubscribe = onSnapshot(
-      doc(db, "stocks", normalized),
-        (doc) => {
-          setStock(doc.exists() ? mapStock(doc.id, doc.data() || {}) : null);
-          setLoading(false);
-        },
-        () => setLoading(false)
-      );
-    return unsubscribe;
-  }, [normalized]);
-
-  return { stock, loading };
+  return {
+    stock: normalized ? STUB_BY_ADDRESS[normalized] ?? null : null,
+    loading: false,
+  };
 }

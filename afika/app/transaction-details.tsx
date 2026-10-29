@@ -1,24 +1,24 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { router, useLocalSearchParams } from "expo-router";
 import {
   ActivityIndicator,
   Alert,
   Linking,
+  ScrollView,
   StyleSheet,
   Text,
   View,
   useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { doc, onSnapshot } from "@react-native-firebase/firestore";
 
 import { Button } from "@/components/shared/button";
 import { colors } from "@/theme";
-import { getFirestore } from "@/lib/firestore";
 import { useWallet } from "@/store/wallet";
 import { getActiveWalletAddress, shortenAddress } from "@/lib/wallet";
 import { formatTransactionAmount } from "@/lib/money";
 import { useCurrency } from "@/hooks/use-currency";
+import { useTransactions } from "@/hooks/use-transactions";
 import type { AppTransactionRecord } from "@/lib/transactions";
 import ReceiptCard from "@/shared/ui/pieces/receipt-card";
 
@@ -85,38 +85,24 @@ export default function TransactionDetailsScreen() {
   const activeWalletAddress = getActiveWalletAddress(wallet);
   const { effectiveCurrency: currency, rate } = useCurrency();
   const { width: screenWidth } = useWindowDimensions();
-  const [transaction, setTransaction] =
-    useState<TransactionDetailsRecord | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { transactions, loading } = useTransactions(activeWalletAddress);
 
-  useEffect(() => {
-    if (!activeWalletAddress || !id) {
-      setLoading(false);
-      return;
-    }
+  const transaction = useMemo<TransactionDetailsRecord | null>(() => {
+    const wantedId = typeof id === "string" ? id : undefined;
+    const wantedHash =
+      typeof txHash === "string" ? txHash.toLowerCase() : undefined;
 
-    const db = getFirestore();
-    const unsubscribe = onSnapshot(
-      doc(db, "wallets", activeWalletAddress, "transactions", id as string),
-      (snapshot) => {
-        if (snapshot.exists()) {
-          setTransaction({
-            id: snapshot.id,
-            ...(snapshot.data() as AppTransactionRecord),
-          });
-        } else {
-          setTransaction(null);
-        }
-        setLoading(false);
-      },
-      (error) => {
-        console.log(error);
-        setLoading(false);
-      },
+    return (
+      transactions.find((tx) => {
+        if (wantedId && tx.id === wantedId) return true;
+        if (!wantedHash) return false;
+        return (
+          tx.txHash?.toLowerCase() === wantedHash ||
+          tx.userOperationHash?.toLowerCase() === wantedHash
+        );
+      }) ?? null
     );
-
-    return unsubscribe;
-  }, [activeWalletAddress, id]);
+  }, [transactions, id, txHash]);
 
   const resolvedTxHash =
     transaction?.txHash || transaction?.userOperationHash || txHash;
@@ -183,7 +169,10 @@ export default function TransactionDetailsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <ReceiptCard width={receiptWidth} palette={RECEIPT_PALETTE}>
           <ReceiptCard.TornEdge key="edge-top" side="top" />
 
@@ -313,7 +302,7 @@ export default function TransactionDetailsScreen() {
         }
 
 
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

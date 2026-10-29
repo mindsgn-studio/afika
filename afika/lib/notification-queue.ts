@@ -1,13 +1,10 @@
 /**
- * Pure helpers for the Firestore push-notification queue.
+ * Pure helpers for the device-local push-notification queue.
  *
- * The app only *enqueues* `pending` documents in the top-level `pushNotifications`
- * collection; the backend `notifications` worker owns delivery status. Kept
+ * The app only *enqueues* `pending` notifications; a REST delivery endpoint
+ * does not exist yet, so the queue is persisted with `lib/local-store`. Kept
  * dependency-free so it can run in the node test runner.
  */
-
-/** Top-level Firestore collection the notifications worker drains. */
-export const NOTIFICATION_QUEUE_COLLECTION = "pushNotifications";
 
 export type PushNotificationPayload = {
   title: string;
@@ -29,9 +26,8 @@ export type QueuedPushNotification = {
 };
 
 /**
- * Builds the Firestore document for a queued push notification. The wallet
- * address is lowercased to match the `firestore.rules` `pushNotifications`
- * create rule.
+ * Builds a queued push notification. The wallet address is lowercased so queue
+ * entries match the wallet identity used everywhere else.
  */
 export function buildQueuedPushNotification(
   walletAddress: string,

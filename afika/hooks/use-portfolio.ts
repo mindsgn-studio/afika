@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
-import { doc, onSnapshot } from "@react-native-firebase/firestore";
-import { getFirestore } from "@/lib/firestore";
+import { useMemo } from "react";
+import { getAllowlistedStock } from "@/constants/stocks";
+import { parseNumber } from "@/lib/money";
+import type { WalletBalance } from "@/hooks/use-wallet-balances";
 
 export type PortfolioSummary = {
   totalValue: number;
@@ -22,7 +23,7 @@ export type PortfolioSummary = {
   yearAbs: number;
 };
 
-const EMPTY_SUMMARY: PortfolioSummary = {
+export const EMPTY_SUMMARY: PortfolioSummary = {
   totalValue: 0,
   netWorth: 0,
   dayPnl: 0,
@@ -42,57 +43,69 @@ const EMPTY_SUMMARY: PortfolioSummary = {
   yearAbs: 0,
 };
 
-function num(value: unknown) {
-  const n = Number(value ?? 0);
-  return Number.isFinite(n) ? n : 0;
+function usdValue(balance: WalletBalance) {
+  return parseNumber(balance.usdAmount || balance.amount);
 }
 
 /**
- * Subscribes to `wallets/{address}/portfolio/summary`, which is written by the
- * orders worker (value + PnL) and the balance worker (net worth breakdown and
- * performance over 1D/7D/1M/1Y).
+ * Builds the portfolio summary from the API balance feed.
+ *
+ * Performance (PnL) has no REST endpoint yet, so the percentage/absolute change
+ * fields are zero. The value breakdown and net worth are accurate.
  */
-export function usePortfolio(walletAddress?: string | null) {
-  const [summary, setSummary] = useState<PortfolioSummary>(EMPTY_SUMMARY);
-  const [loading, setLoading] = useState(Boolean(walletAddress));
+export function summarizePortfolio(balances: WalletBalance[]): PortfolioSummary {
+  if (!balances.length) {
+    return EMPTY_SUMMARY;
+  }
 
-  useEffect(() => {
-    if (!walletAddress) {
-      setSummary(EMPTY_SUMMARY);
-      setLoading(false);
-      return;
+  let totalValue = 0;
+  let usdc = 0;
+  let eurc = 0;
+  let zarp = 0;
+  let stocks = 0;
+
+  for (const balance of balances) {
+    const value = usdValue(balance);
+    totalValue += value;
+
+    const symbol = (balance.tokenSymbol || "").toUpperCase();
+    if (symbol === "USDC") {
+      usdc += value;
+    } else if (symbol === "EURC") {
+      eurc += value;
+    } else if (symbol === "ZARP") {
+      zarp += value;
+    } else if (getAllowlistedStock(balance.tokenAddress)) {
+      stocks += value;
     }
-    const db = getFirestore();
-    const unsubscribe = onSnapshot(
-      doc(db, "wallets", walletAddress.toLowerCase(), "portfolio", "summary"),
-      (doc) => {
-        const data = doc.data() || {};
-        const totalValue = num(data.totalValue);
-        setSummary({
-          totalValue,
-          netWorth: num(data.netWorth) || totalValue,
-          dayPnl: num(data.dayPnl),
-          allTimePnl: num(data.allTimePnl),
-          usdc: num(data.usdcValue),
-          eurc: num(data.eurcValue),
-          zarp: num(data.zarpValue),
-          stocks: num(data.stocksValue),
-          other: num(data.otherValue),
-          dayPct: num(data.dayPct),
-          weekPct: num(data.weekPct),
-          monthPct: num(data.monthPct),
-          yearPct: num(data.yearPct),
-          dayAbs: num(data.dayAbs),
-          weekAbs: num(data.weekAbs),
-          monthAbs: num(data.monthAbs),
-          yearAbs: num(data.yearAbs),
-        });
-        setLoading(false);
-      },
-      () => setLoading(false),
-    );
-    return unsubscribe;
-  }, [walletAddress]);
+  }
 
-  return { summary, loading };
+  const other = Math.max(totalValue - (usdc + eurc + zarp + stocks), 0);
+
+  return {
+    ...EMPTY_SUMMARY,
+    totalValue,
+    netWorth: totalValue,
+    usdc,
+    eurc,
+    zarp,
+    stocks,
+    other,
+  };
+}
+
+/**
+ * Net worth and asset breakdown derived from the API balances. PnL is zero
+ * until the API exposes performance history.
+ */
+export function usePortfolio(
+  walletAddress?: string | null,
+  balances: WalletBalance[] = [],
+) {
+  const summary = useMemo(() => {
+    if (!walletAddress) return EMPTY_SUMMARY;
+    return summarizePortfolio(balances);
+  }, [walletAddress, balances]);
+
+  return { summary, loading: false };
 }

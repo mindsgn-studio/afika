@@ -2,6 +2,7 @@ export type EligibilityProfile = {
   country?: string | null;
   residencyAttestedAt?: unknown;
   termsAcceptedAt?: unknown;
+  updatedAt?: unknown;
 };
 
 export function isEligibleToTrade(profile?: EligibilityProfile | null) {

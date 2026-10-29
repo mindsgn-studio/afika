@@ -2,64 +2,26 @@ import { useEffect, useRef } from "react";
 import { useWallet } from "@/store/wallet";
 import { getActiveWalletAddress } from "@/lib/wallet";
 import { useTransactions } from "@/hooks/use-transactions";
+import { readLocal, writeLocal } from "@/lib/local-store";
 import {
   enqueuePushNotification,
   getPushNotificationDetails,
   hasPushNotificationDetails,
-} from "@/lib/firebase";
+} from "@/lib/wallet-service";
 
-const SEEN_KEY_PREFIX = "afika.incoming.seen";
+const SEEN_KEY_PREFIX = "incoming-seen";
 
 function getSeenKey(walletAddress: string) {
-  return `${SEEN_KEY_PREFIX}:${walletAddress.toLowerCase()}`;
+  return `${SEEN_KEY_PREFIX}.${walletAddress.trim().toLowerCase()}`;
 }
 
 async function getSeenSet(walletAddress: string): Promise<Set<string>> {
-  try {
-    if (typeof window !== "undefined" && window.localStorage) {
-      const raw = window.localStorage.getItem(getSeenKey(walletAddress));
-      if (raw) {
-        return new Set(JSON.parse(raw) as string[]);
-      }
-      return new Set();
-    }
-  } catch {
-    // ignore
-  }
-  try {
-    // @ts-ignore
-    const AsyncStorage: any = require("@react-native-async-storage/async-storage");
-    const inst = AsyncStorage?.default ?? AsyncStorage;
-    if (inst && typeof inst.getItem === "function") {
-      const raw = await inst.getItem(getSeenKey(walletAddress));
-      if (raw) return new Set(JSON.parse(raw) as string[]);
-    }
-  } catch (e) {
-    // ignore
-  }
-  return new Set();
+  const stored = await readLocal<string[]>(getSeenKey(walletAddress), []);
+  return new Set(Array.isArray(stored) ? stored : []);
 }
 
 async function saveSeenSet(walletAddress: string, set: Set<string>) {
-  const data = JSON.stringify(Array.from(set));
-  try {
-    if (typeof window !== "undefined" && window.localStorage) {
-      window.localStorage.setItem(getSeenKey(walletAddress), data);
-      return;
-    }
-  } catch {
-    // ignore
-  }
-  try {
-    // @ts-ignore
-    const AsyncStorage: any = require("@react-native-async-storage/async-storage");
-    const inst = AsyncStorage?.default ?? AsyncStorage;
-    if (inst && typeof inst.setItem === "function") {
-      await inst.setItem(getSeenKey(walletAddress), data);
-    }
-  } catch (e) {
-    // ignore
-  }
+  await writeLocal(getSeenKey(walletAddress), Array.from(set));
 }
 
 /**
@@ -94,7 +56,7 @@ export async function shouldSendIncomingPaymentNotification(
     id: string;
     direction?: string;
     state?: string;
-  }
+  },
 ): Promise<boolean> {
   if (!walletAddress || !tx?.id) return false;
   if (tx.direction !== "credit") return false;
@@ -123,7 +85,7 @@ export async function sendIncomingPaymentNotification(
     usdAmount?: string;
     direction?: string;
     state?: string;
-  }
+  },
 ) {
   if (!(await shouldSendIncomingPaymentNotification(walletAddress, tx))) {
     return false;
@@ -136,7 +98,7 @@ export async function sendIncomingPaymentNotification(
       data: { ...payload.data },
     });
     if (!queueId) return false;
-    await markIncomingPaymentSeen(walletAddress, txIdKey(tx));
+    await markIncomingPaymentSeen(walletAddress, tx.id);
     return true;
   } catch (error) {
     console.log("sendIncomingPaymentNotification error:", error);
@@ -144,14 +106,10 @@ export async function sendIncomingPaymentNotification(
   }
 }
 
-function txIdKey(tx: { id: string }) {
-  return tx.id;
-}
-
 /**
- * Watches transactions and queues a push notification when a new incoming
- * (credit) payment is detected, if push notifications are enabled. The backend
- * `notifications` worker delivers the queued message.
+ * Watches transactions and queues a local notification when a new incoming
+ * (credit) payment is detected, if push notifications are enabled. Delivery
+ * needs a REST endpoint, so messages stay in the device queue for now.
  */
 export function useIncomingPaymentNotifications(limit?: number) {
   const walletStore = useWallet();
@@ -163,8 +121,8 @@ export function useIncomingPaymentNotifications(limit?: number) {
     let mounted = true;
     if (!walletAddress) return;
 
-    getSeenSet(walletAddress).then((s) => {
-      if (mounted) seenRef.current = s;
+    getSeenSet(walletAddress).then((seen) => {
+      if (mounted) seenRef.current = seen;
     });
 
     const process = async () => {
@@ -184,8 +142,8 @@ export function useIncomingPaymentNotifications(limit?: number) {
             data: { ...payload.data },
           });
           queued = Boolean(queueId);
-        } catch (e) {
-          console.log("incoming notif error", e);
+        } catch (error) {
+          console.log("incoming notif error", error);
         }
         if (!queued) continue;
         seenRef.current.add(tx.id);

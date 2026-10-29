@@ -7,7 +7,6 @@ import * as Haptics from "expo-haptics";
 import { createPublicClient, http } from "viem";
 import { base } from "viem/chains";
 import { useKernelClient } from "@/hooks/use-Kernal";
-import { useFirebaseSession } from "@/hooks/use-firebase-session";
 import { useWallet } from "@/store/wallet";
 import { useWalletBalances } from "@/hooks/use-wallet-balances";
 import { useHoldings } from "@/hooks/use-holdings";
@@ -16,7 +15,7 @@ import { useStocks } from "@/hooks/use-stocks";
 import { useTransactions } from "@/hooks/use-transactions";
 import { useSyncCurrencyPreference } from "@/hooks/use-currency-preference";
 import { getActiveWalletAddress } from "@/lib/wallet";
-import { DEFAULT_WALLET_NETWORK, upsertWallet } from "@/lib/firebase";
+import { DEFAULT_WALLET_NETWORK, upsertWallet } from "@/lib/wallet-service";
 import { parseNumber } from "@/lib/money";
 import HeroHeader from "@/components/ui/HeroHeader";
 import Sheet from "@/components/ui/Sheet";
@@ -41,13 +40,12 @@ export default function Portfolio() {
   const wallet = wallets?.[0];
   const { kernelAddress } = useKernelClient(wallet);
   const router = useRouter();
-  useFirebaseSession();
 
   const activeWalletAddress = getActiveWalletAddress(walletStore);
   useSyncCurrencyPreference(activeWalletAddress);
-  const { balanceMap } = useWalletBalances(activeWalletAddress);
-  const { holdings } = useHoldings(activeWalletAddress);
-  const { summary } = usePortfolio(activeWalletAddress);
+  const { balances, balanceMap } = useWalletBalances(activeWalletAddress);
+  const { holdings } = useHoldings(activeWalletAddress, balances);
+  const { summary } = usePortfolio(activeWalletAddress, balances);
   const { byAddress } = useStocks();
   const { transactions } = useTransactions(
     activeWalletAddress,

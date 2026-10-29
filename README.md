@@ -22,4 +22,40 @@ yarn test
 
 Maestro flows: `afika/.maestro/`.
 
+## API configuration
+
+The app no longer uses Firestore. Wallet registration, balances, and
+transactions come from the Afika REST API
+(`backend/api`, deployed at `https://afika-api.seni-tembe.workers.dev`).
+
+Create `afika/.env` and never commit it:
+
+```bash
+EXPO_PUBLIC_API_URL=https://afika-api.seni-tembe.workers.dev
+EXPO_PUBLIC_API_TOKEN=<shared API token>
+
+# Optional USD → ZAR / EUR fallback rates. Without them the app shows USD.
+EXPO_PUBLIC_USD_ZAR_RATE=18.5
+EXPO_PUBLIC_USD_EUR_RATE=0.92
+```
+
+`EXPO_PUBLIC_API_URL` defaults to the production worker, but the token has no
+default: requests without `EXPO_PUBLIC_API_TOKEN` return `401`.
+
+### What is device-local or disabled
+
+The API only exposes `/v1/wallet`, `/v1/balances`, and `/v1/transactions`.
+Features that used Firestore directly are now device-local or disabled:
+
+- Wallet settings, watchlist, eligibility attestation, pending orders and
+  pending sends are stored on the device with `expo-sqlite/kv-store`.
+- Market prices, price history, portfolio PnL, and push delivery have no REST
+  endpoint yet, so they are stubbed or disabled.
+
+## Tests
+
+`yarn test` runs the unit suite plus `lib/api.e2e.test.ts`, which starts a local
+HTTP server and exercises wallet upsert, balances, transactions, pagination, and
+auth errors.
+
 See `afika/AGENTS.md` and the root `README.md`.

@@ -1,7 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
-  NOTIFICATION_QUEUE_COLLECTION,
   buildQueuedPushNotification,
   isDeliverablePushNotification,
 } from "./notification-queue.ts";
@@ -16,7 +15,6 @@ describe("buildQueuedPushNotification", () => {
       1730000000000,
     );
 
-    assert.equal(NOTIFICATION_QUEUE_COLLECTION, "pushNotifications");
     assert.equal(doc.walletAddress, WALLET.toLowerCase());
     assert.equal(doc.title, "Money received");
     assert.equal(doc.body, "You received 10 USDC.");

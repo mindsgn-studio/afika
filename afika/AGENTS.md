@@ -21,7 +21,7 @@ Stacks: `onboarding`, `sign-in`, `stock/[address]`, `trade/[address]`, `send/*`,
 
 Stock identity is the Base contract address, not the ticker.
 
-Wallet documents are created in Firestore by `upsertWallet` when the kernel address is ready. Create only `address`, `network`, and timestamps. Never overwrite an existing wallet. Do not register wallets through `auth-session`.
+Wallets are registered with `PUT /v1/wallet` by `upsertWallet` in `lib/wallet-service.ts` once the kernel address is ready. The address is the wallet key, so re-registering updates it in place. Do not register wallets through `auth-session`. The app no longer uses Firestore: balances and transactions are read from the REST API, and device-local data uses `lib/local-store.ts`.
 
 ## Trade invariants
 

@@ -9,7 +9,7 @@
  * runner.
  */
 
-export const DEFAULT_API_BASE_URL = "https://afika-api.seni-tembe.workers.dev";
+export const DEFAULT_API_BASE_URL = "https://afika.phumzile.studio";
 export const DEFAULT_WALLET_NETWORK = "base-mainnet";
 export const DEFAULT_CURRENCY = "USD";
 export const MAX_PAGE_SIZE = 100;
@@ -94,6 +94,8 @@ export type ApiPage<T> = {
   pagination: ApiPagination;
   currency?: ApiCurrency;
 };
+
+export type ApiFxRates = { USD: string; ZAR: string; EUR: string; updatedAt: number };
 
 export type PageOptions = {
   limit?: number;
@@ -322,6 +324,12 @@ export async function fetchTransactions(
     currency: page.currency,
   });
   return request<ApiPage<ApiTransaction>>(path, { method: "GET" }, options);
+}
+
+/** Fetches current conversion rates from the forex worker's shared D1 data. */
+export async function fetchFxRates(options?: ApiClientOptions) {
+  const result = await request<{ data: ApiFxRates }>("/v1/fx-rates", { method: "GET" }, options);
+  return result.data;
 }
 
 /** Fetches every transaction page, up to `maxPages`. */

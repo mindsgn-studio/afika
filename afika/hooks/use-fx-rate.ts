@@ -1,27 +1,36 @@
-/**
- * Currency conversion rates.
- *
- * The forex worker's Firestore `fxRates` documents are gone. The API stamps
- * historical ZAR/EUR values on balances and transactions, and optional
- * `EXPO_PUBLIC_USD_ZAR_RATE` / `EXPO_PUBLIC_USD_EUR_RATE` values provide a
- * fallback for converting live USD figures. With no rate configured the app
- * displays USD.
- */
+import { useEffect, useState } from "react";
+import { fetchFxRates } from "@/lib/api";
+import { useCurrencyStore } from "@/store/currency";
 
-function envRate(value: string | undefined) {
+type Rates = { ZAR: number; EUR: number };
+const EMPTY_RATES: Rates = { ZAR: 0, EUR: 0 };
+let cachedRates = EMPTY_RATES;
+
+function validRate(value: string | undefined) {
   const rate = Number(value);
   return Number.isFinite(rate) && rate > 0 ? rate : 0;
 }
 
-const USD_ZAR_RATE = envRate(process.env.EXPO_PUBLIC_USD_ZAR_RATE);
-const USD_EUR_RATE = envRate(process.env.EXPO_PUBLIC_USD_EUR_RATE);
-
+/** Loads current conversion rates from Afika's API when currency is selected. */
 export function useFxRate() {
-  return {
-    /** Live USD → ZAR rate, or 0 when not configured. */
-    rate: USD_ZAR_RATE,
-    /** Live USD → EUR rate, or 0 when not configured. */
-    eurRate: USD_EUR_RATE,
-    loading: false,
-  };
+  const currency = useCurrencyStore((state) => state.currency);
+  const [rates, setRates] = useState<Rates>(cachedRates);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (currency === "USD") return;
+    let active = true;
+    setLoading(true);
+    fetchFxRates()
+      .then((result) => {
+        const next = { ZAR: validRate(result.ZAR), EUR: validRate(result.EUR) };
+        cachedRates = next;
+        if (active) setRates(next);
+      })
+      .catch((error) => console.log("useFxRate error:", error))
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [currency]);
+
+  return { rate: rates.ZAR, eurRate: rates.EUR, loading };
 }

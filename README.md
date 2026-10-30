@@ -26,7 +26,7 @@ Maestro flows: `afika/.maestro/`.
 
 The app no longer uses Firestore. Wallet registration, balances, and
 transactions come from the Afika REST API
-(`backend/api`, deployed at `https://afika-api.seni-tembe.workers.dev`).
+(`backend/api`, deployed at `https://afika.phumzile.studio`).
 
 Copy `afika/.env.example` to `afika/.env` and never commit `.env`. Expo only
 loads env files from the Expo project directory (`app/afika`), not from the
@@ -38,12 +38,8 @@ cp .env.example .env
 ```
 
 ```bash
-EXPO_PUBLIC_API_URL=https://afika-api.seni-tembe.workers.dev
+EXPO_PUBLIC_API_URL=https://afika.phumzile.studio
 EXPO_PUBLIC_API_TOKEN=<shared API token>
-
-# Optional USD → ZAR / EUR fallback rates. Without them the app shows USD.
-EXPO_PUBLIC_USD_ZAR_RATE=18.5
-EXPO_PUBLIC_USD_EUR_RATE=0.92
 ```
 
 `EXPO_PUBLIC_API_URL` defaults to the production worker. `EXPO_PUBLIC_API_TOKEN`
@@ -53,7 +49,8 @@ Without the token the client does not call the API and throws
 
 ### What is device-local or disabled
 
-The API only exposes `/v1/wallet`, `/v1/balances`, and `/v1/transactions`.
+The API exposes `/v1/wallet`, `/v1/balances`, `/v1/transactions`, and
+`/v1/fx-rates` for current USD conversion rates.
 Features that used Firestore directly are now device-local or disabled:
 
 - Wallet settings, watchlist, eligibility attestation, pending orders and

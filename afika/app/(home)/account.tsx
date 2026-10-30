@@ -22,10 +22,8 @@ import { useCurrencyStore } from "@/store/currency";
 import { SUPPORTED_CURRENCIES } from "@/lib/money";
 import {
   deletePushNotificationDetails,
-  getWalletSettings,
   hasPushNotificationDetails,
-  PreferredCurrency,
-  savePushNotificationDetails,
+  fetchWalletSettings,
   setWalletCurrencyPreference,
 } from "@/lib/wallet-service";
 
@@ -69,13 +67,15 @@ export default function Settings() {
       setSettingsLoading(true);
 
       try {
-        const [settings, pushEnabled] = await Promise.all([
-          getWalletSettings(walletAddress),
-          hasPushNotificationDetails(walletAddress),
-        ]);
-
+        const settings = await fetchWalletSettings(walletAddress);
+        const preferredCurrency = settings.preferredCurrency;
         if (!cancelled) {
-          setCurrency(settings.preferredCurrency);
+          setCurrency(preferredCurrency);
+          setNotificationsEnabled(false); // will be updated below after hasPushNotificationDetails
+        }
+
+        const pushEnabled = await hasPushNotificationDetails(walletAddress);
+        if (!cancelled) {
           setNotificationsEnabled(pushEnabled);
         }
       } catch (error) {

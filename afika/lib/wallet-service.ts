@@ -1,14 +1,17 @@
 /**
- * Wallet registration and device-local wallet settings.
+ * Wallet registration and wallet settings.
  *
- * Wallet rows are registered with `PUT /v1/wallet`. Preferences, push details,
- * and the outgoing notification queue have no REST endpoint yet, so they are
- * stored on the device instead of Firestore.
+ * Wallet rows are registered with `PUT /v1/wallet`. The display-currency
+ * preference is persisted with `PUT /v1/settings` and cached on the device so
+ * the app can still read it before the first request completes. Push details
+ * and the outgoing notification queue are still device-local.
  */
 import {
   ApiError,
   DEFAULT_WALLET_NETWORK,
+  fetchWalletSettings,
   normalizeAddress,
+  updateWalletSettings,
   upsertWallet as upsertWalletRequest,
 } from "@/lib/api";
 import { readLocal, removeLocal, writeLocal } from "@/lib/local-store";
@@ -127,13 +130,9 @@ function normalizePreferredCurrency(value: unknown): PreferredCurrency {
     : DEFAULT_WALLET_SETTINGS.preferredCurrency;
 }
 
-export async function getWalletSettings(
+async function readCachedWalletSettings(
   walletAddress: string,
 ): Promise<WalletSettings> {
-  if (!walletAddress) {
-    return DEFAULT_WALLET_SETTINGS;
-  }
-
   const stored = await readLocal<Partial<WalletSettings>>(
     settingsKey(walletAddress),
     {},
@@ -143,15 +142,52 @@ export async function getWalletSettings(
   };
 }
 
+/**
+ * Reads the wallet's display currency from the API and refreshes the device
+ * cache. Falls back to the cached value when the API is unreachable so the
+ * account screen still renders offline.
+ */
+export async function getWalletSettings(
+  walletAddress: string,
+): Promise<WalletSettings> {
+  if (!walletAddress) {
+    return DEFAULT_WALLET_SETTINGS;
+  }
+
+  try {
+    const settings = await fetchWalletSettings(walletAddress);
+    const preferredCurrency = normalizePreferredCurrency(
+      settings.preferredCurrency,
+    );
+    await writeLocal(settingsKey(walletAddress), {
+      preferredCurrency,
+      updatedAt: Date.now(),
+    });
+    return { preferredCurrency };
+  } catch (error) {
+    console.log("getWalletSettings error:", error);
+    return readCachedWalletSettings(walletAddress);
+  }
+}
+
+/**
+ * Persists the wallet's display currency with `PUT /v1/settings`, then updates
+ * the device cache. Throws when the API rejects the change so the account
+ * screen can tell the user the preference was not saved.
+ */
 export async function setWalletCurrencyPreference(
   walletAddress: string,
   preferredCurrency: PreferredCurrency,
 ) {
   if (!walletAddress) return;
+
+  const saved = await updateWalletSettings(walletAddress, preferredCurrency);
+  const savedCurrency = normalizePreferredCurrency(saved.preferredCurrency);
   await writeLocal(settingsKey(walletAddress), {
-    preferredCurrency,
+    preferredCurrency: savedCurrency,
     updatedAt: Date.now(),
   });
+  return { preferredCurrency: savedCurrency };
 }
 
 export async function hasPushNotificationDetails(walletAddress: string) {

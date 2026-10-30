@@ -9,6 +9,8 @@ import {
   fetchAllTransactions,
   fetchBalances,
   fetchTransactions,
+  fetchWalletSettings,
+  updateWalletSettings,
   normalizeAddress,
   transactionId,
   upsertWallet,
@@ -300,6 +302,63 @@ describe("transactionId", () => {
     assert.equal(
       transactionId({ txHash: "0xABC", direction: "debit" }),
       "0xabc_debit",
+    );
+  });
+});
+
+
+describe("wallet settings", () => {
+  it("fetches wallet settings with USD default", async () => {
+    process.env.EXPO_PUBLIC_API_TOKEN = "test-token";
+    const { impl, calls } = fakeFetch(() =>
+      json({ data: { address: LOWER, preferredCurrency: 'USD', createdAt: 1, updatedAt: 1 } }),
+    );
+
+    const settings = await fetchWalletSettings(ADDRESS, { baseUrl: BASE, token: "test-token", fetch: impl });
+    if (settings.preferredCurrency !== "USD") {
+      throw new Error(`preferredCurrency = ${settings.preferredCurrency}, want USD`);
+    }
+    if (calls.length !== 1 || calls[0].url !== `${BASE}/v1/settings?address=${LOWER}`) {
+      throw new Error(`url = ${calls[0].url}, want /v1/settings?address=${LOWER}`);
+    }
+  });
+
+  it("updates wallet currency preference", async () => {
+    process.env.EXPO_PUBLIC_API_TOKEN = "test-token";
+    const { impl, calls } = fakeFetch(() =>
+      json({ data: { address: LOWER, preferredCurrency: 'EUR', createdAt: 1, updatedAt: 2 } }),
+    );
+
+    const settings = await updateWalletSettings(ADDRESS, 'EUR', { baseUrl: BASE, token: "test-token", fetch: impl });
+    if (settings.preferredCurrency !== 'EUR') {
+      throw new Error(`preferredCurrency = ${settings.preferredCurrency}, want EUR`);
+    }
+    if (calls.length !== 1 || calls[0].url !== `${BASE}/v1/settings?address=${LOWER}`) {
+      throw new Error(`url = ${calls[0].url}, want /v1/settings?address=${LOWER}`);
+    }
+    if (calls[0].init.method !== 'PUT') {
+      throw new Error(`method = ${calls[0].init.method}, want PUT`);
+    }
+    if (calls[0].init.body === undefined) {
+      throw new Error('body is undefined');
+    }
+    const body = JSON.parse(String(calls[0].init.body));
+    if (body.address !== LOWER || body.preferredCurrency !== 'EUR') {
+      throw new Error(`body = ${JSON.stringify(body)}, want address=${LOWER}, preferredCurrency=EUR`);
+    }
+  });
+
+  it("rejects invalid currency when updating settings", async () => {
+    process.env.EXPO_PUBLIC_API_TOKEN = "test-token";
+    const { impl, calls } = fakeFetch(() =>
+      json({ error: { code: 'VALIDATION_ERROR', message: 'currency must be one of USD, ZAR, or EUR' } }, 400),
+    );
+
+    await assert.rejects(
+      updateWalletSettings(ADDRESS, 'GBP', { baseUrl: BASE, token: "test-token", fetch: impl }),
+      (error: unknown) =>
+        error instanceof ApiError &&
+        error.code === "VALIDATION_ERROR",
     );
   });
 });

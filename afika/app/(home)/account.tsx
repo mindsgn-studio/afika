@@ -19,6 +19,7 @@ import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
 import { useWallet } from "@/store/wallet";
 import { useCurrencyStore } from "@/store/currency";
+import { fetchFxRates } from "@/lib/api";
 import { SUPPORTED_CURRENCIES } from "@/lib/money";
 import {
   deletePushNotificationDetails,
@@ -104,6 +105,11 @@ export default function Settings() {
 
     setCurrencySaving(currency);
     try {
+      if (currency !== "USD") {
+        await fetchFxRates().catch((error) => {
+          console.log("fetchFxRates error:", error);
+        });
+      }
       await setWalletCurrencyPreference(walletAddress, currency);
       setCurrency(currency);
     } catch (error) {

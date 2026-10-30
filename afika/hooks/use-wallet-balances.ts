@@ -93,7 +93,9 @@ export function useWalletBalances(walletAddress?: string | null) {
         setError(null);
       } catch (cause) {
         if (!active) return;
-        console.log("useWalletBalances error:", cause);
+        console.log("useWalletBalances error:", cause instanceof ApiError
+          ? { status: cause.status, code: cause.code, requestId: cause.requestId, message: cause.message }
+          : cause);
         setError(
           cause instanceof ApiError
             ? cause.message

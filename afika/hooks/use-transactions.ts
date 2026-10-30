@@ -110,7 +110,9 @@ export function useTransactions(
         );
       } catch (cause) {
         if (!active) return;
-        console.log("useTransactions error:", cause);
+        console.log("useTransactions error:", cause instanceof ApiError
+          ? { status: cause.status, code: cause.code, requestId: cause.requestId, message: cause.message }
+          : cause);
         if (cause instanceof ApiError && cause.code === "NOT_FOUND") {
           setChainTransactions([]);
         }

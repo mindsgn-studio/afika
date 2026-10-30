@@ -3,7 +3,9 @@ import {
   ApiError,
   fetchTransactions,
   type ApiTransaction,
+  type ApiCurrency,
 } from "@/lib/api";
+import { useCurrencyStore } from "@/store/currency";
 import {
   getLocalTransactions,
   hydrateLocalTransactions,
@@ -47,6 +49,11 @@ export function apiTransactionToRecord(tx: ApiTransaction): AppTransactionRecord
     usdAmount: tx.usdAmount,
     zarAmount: tx.zarAmount,
     eurAmount: tx.eurAmount,
+    // Amount in the selected display currency (populated when the API sends
+    // displayAmount/displayFee). Falls back to usdAmount when unavailable.
+    displayAmount: tx.displayAmount,
+    displayFee: tx.displayFee,
+    displayCurrency: tx.displayCurrency,
     fromAddress: tx.fromAddress,
     toAddress: tx.toAddress,
     txHash: tx.txHash,
@@ -70,6 +77,9 @@ export function useTransactions(
   walletAddress?: string | null,
   limit?: number,
 ) {
+  const currency = useCurrencyStore((state) => state.currency);
+  const { setCurrency: setCurrencyFromStore } = useCurrencyStore();
+
   const [chainTransactions, setChainTransactions] = useState<TransactionListItem[]>([]);
   const [localTransactions, setLocalTransactions] = useState<TransactionListItem[]>([]);
   const [loading, setLoading] = useState(Boolean(walletAddress));
@@ -82,7 +92,6 @@ export function useTransactions(
       return;
     }
 
-    const normalized = walletAddress.trim().toLowerCase();
     const controller = new AbortController();
     let active = true;
     let firstLoad = true;
@@ -98,7 +107,7 @@ export function useTransactions(
       try {
         const result = await fetchTransactions(
           normalized,
-          { limit: PAGE_LIMIT },
+          { limit: PAGE_LIMIT, currency },
           { signal: controller.signal },
         );
         if (!active) return;
@@ -133,13 +142,18 @@ export function useTransactions(
     loadChain();
     timer = setInterval(loadChain, POLL_INTERVAL_MS);
 
+    // Sync the currency store when it changes (user picks a new currency)
+    useEffect(() => {
+      setCurrencyFromStore(currency);
+    }, [currency]);
+
     return () => {
       active = false;
       controller.abort();
       if (timer) clearInterval(timer);
       unsubscribe();
     };
-  }, [walletAddress]);
+  }, [walletAddress, currency]);
 
   const transactions = useMemo(() => {
     const merged = new Map<string, TransactionListItem>();

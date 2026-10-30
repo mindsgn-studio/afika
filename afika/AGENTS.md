@@ -37,7 +37,10 @@ Wallets are registered with `PUT /v1/wallet` by `upsertWallet` in `lib/wallet-se
 yarn test
 ```
 
-Unit tests cover `lib/trade.ts` and `lib/eligibility.ts`.
+Unit tests cover `lib/trade.ts`, `lib/eligibility.ts`, and `lib/api.ts`.
+`lib/api.e2e.test.ts` exercises wallet upsert, balances, and transactions
+against a local mock server. Set `EXPO_PUBLIC_API_TOKEN` in `afika/.env` to
+the Worker `API_TOKEN` or authenticated routes fail with `UNAUTHENTICATED`.
 
 Maestro:
 

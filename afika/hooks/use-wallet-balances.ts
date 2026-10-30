@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { ApiError, fetchBalances, type ApiBalance } from "@/lib/api";
+import {
+  ApiError,
+  fetchBalances,
+  type ApiBalance,
+  type ApiCurrency,
+} from "@/lib/api";
+import { useCurrencyStore } from "@/store/currency";
 
 export type WalletBalance = {
   walletAddress?: string;
@@ -67,6 +73,9 @@ async function loadBalances(walletAddress: string, signal: AbortSignal) {
  * 30 seconds while the screen is mounted.
  */
 export function useWalletBalances(walletAddress?: string | null) {
+  const currency = useCurrencyStore((state) => state.currency);
+  const { setCurrency: setCurrencyFromStore } = useCurrencyStore();
+
   const [balances, setBalances] = useState<WalletBalance[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +96,11 @@ export function useWalletBalances(walletAddress?: string | null) {
     const load = async () => {
       if (firstLoad) setLoading(true);
       try {
-        const items = await loadBalances(walletAddress, controller.signal);
+        const items = await fetchBalances(
+          walletAddress,
+          { limit: PAGE_LIMIT, cursor: undefined, currency },
+          { signal },
+        );
         if (!active) return;
         setBalances(items.map(toWalletBalance));
         setError(null);
@@ -112,12 +125,17 @@ export function useWalletBalances(walletAddress?: string | null) {
     load();
     timer = setInterval(load, POLL_INTERVAL_MS);
 
+    // Sync the currency store when it changes (user picks a new currency)
+    useEffect(() => {
+      setCurrencyFromStore(currency);
+    }, [currency]);
+
     return () => {
       active = false;
       controller.abort();
       if (timer) clearInterval(timer);
     };
-  }, [walletAddress]);
+  }, [walletAddress, currency]);
 
   const balanceMap = useMemo(() => {
     return balances.reduce<Record<string, WalletBalance>>((acc, balance) => {

@@ -227,6 +227,36 @@ describe("afika API end-to-end", () => {
     );
   });
 
+  it("sends the token from EXPO_PUBLIC_API_TOKEN", async () => {
+    const previous = process.env.EXPO_PUBLIC_API_TOKEN;
+    process.env.EXPO_PUBLIC_API_TOKEN = TOKEN;
+    try {
+      const page = await fetchBalances(ADDRESS, {}, { baseUrl });
+      assert.equal(page.data[0].tokenSymbol, "USDC");
+    } finally {
+      if (previous === undefined) delete process.env.EXPO_PUBLIC_API_TOKEN;
+      else process.env.EXPO_PUBLIC_API_TOKEN = previous;
+    }
+  });
+
+  it("refuses to call list endpoints when the env token is missing", async () => {
+    const previous = process.env.EXPO_PUBLIC_API_TOKEN;
+    delete process.env.EXPO_PUBLIC_API_TOKEN;
+    try {
+      await assert.rejects(
+        fetchTransactions(ADDRESS, {}, { baseUrl }),
+        (error: unknown) =>
+          error instanceof ApiError &&
+          error.status === 401 &&
+          error.code === "UNAUTHENTICATED" &&
+          /EXPO_PUBLIC_API_TOKEN/.test(error.message),
+      );
+    } finally {
+      if (previous === undefined) delete process.env.EXPO_PUBLIC_API_TOKEN;
+      else process.env.EXPO_PUBLIC_API_TOKEN = previous;
+    }
+  });
+
   it("requires an address on list endpoints", async () => {
     const response = await fetch(`${baseUrl}/v1/balances`, {
       headers: { Authorization: `Bearer ${TOKEN}` },

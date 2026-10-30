@@ -28,7 +28,14 @@ The app no longer uses Firestore. Wallet registration, balances, and
 transactions come from the Afika REST API
 (`backend/api`, deployed at `https://afika-api.seni-tembe.workers.dev`).
 
-Create `afika/.env` and never commit it:
+Copy `afika/.env.example` to `afika/.env` and never commit `.env`. Expo only
+loads env files from the Expo project directory (`app/afika`), not from the
+parent `app/` folder.
+
+```bash
+cd afika
+cp .env.example .env
+```
 
 ```bash
 EXPO_PUBLIC_API_URL=https://afika-api.seni-tembe.workers.dev
@@ -39,8 +46,10 @@ EXPO_PUBLIC_USD_ZAR_RATE=18.5
 EXPO_PUBLIC_USD_EUR_RATE=0.92
 ```
 
-`EXPO_PUBLIC_API_URL` defaults to the production worker, but the token has no
-default: requests without `EXPO_PUBLIC_API_TOKEN` return `401`.
+`EXPO_PUBLIC_API_URL` defaults to the production worker. `EXPO_PUBLIC_API_TOKEN`
+must match the Worker `API_TOKEN` secret. Restart Expo after changing `.env`.
+Without the token the client does not call the API and throws
+`UNAUTHENTICATED`.
 
 ### What is device-local or disabled
 
@@ -57,5 +66,11 @@ Features that used Firestore directly are now device-local or disabled:
 `yarn test` runs the unit suite plus `lib/api.e2e.test.ts`, which starts a local
 HTTP server and exercises wallet upsert, balances, transactions, pagination, and
 auth errors.
+
+To hit the deployed API:
+
+```bash
+AFIKA_LIVE_API=1 EXPO_PUBLIC_API_TOKEN=<shared API token> yarn test lib/api.live.test.ts
+```
 
 See `afika/AGENTS.md` and the root `README.md`.

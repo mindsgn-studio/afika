@@ -11,12 +11,24 @@
 
 export const DEFAULT_API_BASE_URL = "https://afika-api.seni-tembe.workers.dev";
 export const DEFAULT_WALLET_NETWORK = "base-mainnet";
+export const DEFAULT_CURRENCY = "USD";
 export const MAX_PAGE_SIZE = 100;
+
+export const CURRENCIES = ["USD", "ZAR", "EUR"] as const;
+
+export type ApiCurrency = (typeof CURRENCIES)[number];
 
 export type ApiWallet = {
   address: string;
   network: string;
   testnet: boolean;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export type ApiWalletSettings = {
+  address: string;
+  preferredCurrency: ApiCurrency;
   createdAt: number;
   updatedAt: number;
 };
@@ -34,6 +46,10 @@ export type ApiBalance = {
   usdAmount: string;
   zarAmount: string;
   eurAmount: string;
+  // Amount in the currency selected for the request (query param or saved
+  // preference). The backend always resolves these; older responses omit them.
+  displayCurrency?: ApiCurrency;
+  displayAmount?: string;
   fetchedAt: number;
 };
 
@@ -53,6 +69,10 @@ export type ApiTransaction = {
   usdAmount: string;
   zarAmount: string;
   eurAmount: string;
+  // Amount and fee in the currency selected for the request.
+  displayCurrency?: ApiCurrency;
+  displayAmount?: string;
+  displayFee?: string;
   network: string;
   direction: "credit" | "debit";
   state: string;
@@ -72,11 +92,17 @@ export type ApiPagination = {
 export type ApiPage<T> = {
   data: T[];
   pagination: ApiPagination;
+  currency?: ApiCurrency;
 };
 
 export type PageOptions = {
   limit?: number;
   cursor?: string;
+  /**
+   * Display currency for the response. When omitted the API uses the wallet's
+   * saved preference, falling back to USD.
+   */
+  currency?: ApiCurrency;
 };
 
 export type ApiClientOptions = {
@@ -121,6 +147,18 @@ export function apiBaseUrl() {
 
 export function apiToken() {
   return process.env.EXPO_PUBLIC_API_TOKEN?.trim() ?? "";
+}
+
+function resolveToken(options: ApiClientOptions) {
+  const token = options.token ?? apiToken();
+  if (!token) {
+    throw new ApiError(
+      "A valid API token is required. Set EXPO_PUBLIC_API_TOKEN in afika/.env.",
+      401,
+      "UNAUTHENTICATED",
+    );
+  }
+  return token;
 }
 
 function requestUrl(
@@ -169,13 +207,13 @@ async function request<T>(
   options: ApiClientOptions = {},
 ): Promise<T> {
   const baseUrl = (options.baseUrl ?? apiBaseUrl()).replace(/\/+$/, "");
-  const token = options.token ?? apiToken();
+  const token = resolveToken(options);
   const fetchImpl = options.fetch ?? fetch;
 
   const headers: Record<string, string> = {
     Accept: "application/json",
     ...(init.body ? { "Content-Type": "application/json" } : {}),
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    Authorization: `Bearer ${token}`,
     ...((init.headers as Record<string, string> | undefined) ?? {}),
   };
 
@@ -219,6 +257,43 @@ export async function upsertWallet(
   return result.data;
 }
 
+/** Reads the saved display-currency preference for an address. */
+export async function fetchWalletSettings(
+  address: string,
+  options?: ApiClientOptions,
+) {
+  const path = requestUrl("", "/v1/settings", {
+    address: normalizeAddress(address),
+  });
+  const result = await request<{ data: ApiWalletSettings }>(
+    path,
+    { method: "GET" },
+    options,
+  );
+  return result.data;
+}
+
+/** Saves the display-currency preference for an address. */
+export async function updateWalletSettings(
+  address: string,
+  preferredCurrency: ApiCurrency,
+  options?: ApiClientOptions,
+) {
+  const body = {
+    address: normalizeAddress(address),
+    preferredCurrency,
+  };
+  const path = requestUrl("", "/v1/settings", {
+    address: normalizeAddress(address),
+  });
+  const result = await request<{ data: ApiWalletSettings }>(
+    path,
+    { method: "PUT", body: JSON.stringify(body) },
+    options,
+  );
+  return result.data;
+}
+
 /** Reads one page of token balances for an address. */
 export async function fetchBalances(
   address: string,
@@ -229,6 +304,7 @@ export async function fetchBalances(
     address: normalizeAddress(address),
     limit: page.limit,
     cursor: page.cursor,
+    currency: page.currency,
   });
   return request<ApiPage<ApiBalance>>(path, { method: "GET" }, options);
 }
@@ -243,6 +319,7 @@ export async function fetchTransactions(
     address: normalizeAddress(address),
     limit: page.limit,
     cursor: page.cursor,
+    currency: page.currency,
   });
   return request<ApiPage<ApiTransaction>>(path, { method: "GET" }, options);
 }
@@ -250,7 +327,11 @@ export async function fetchTransactions(
 /** Fetches every transaction page, up to `maxPages`. */
 export async function fetchAllTransactions(
   address: string,
-  options?: ApiClientOptions & { pageLimit?: number; maxPages?: number },
+  options?: ApiClientOptions & {
+    pageLimit?: number;
+    maxPages?: number;
+    currency?: ApiCurrency;
+  },
 ) {
   const pageLimit = Math.min(Math.max(options?.pageLimit ?? MAX_PAGE_SIZE, 1), MAX_PAGE_SIZE);
   const maxPages = Math.max(options?.maxPages ?? 10, 1);
@@ -258,7 +339,11 @@ export async function fetchAllTransactions(
   let cursor: string | undefined;
 
   for (let page = 0; page < maxPages; page++) {
-    const result = await fetchTransactions(address, { limit: pageLimit, cursor }, options);
+    const result = await fetchTransactions(
+      address,
+      { limit: pageLimit, cursor, currency: options?.currency },
+      options,
+    );
     items.push(...result.data);
     cursor = result.pagination.nextCursor;
     if (!result.pagination.hasMore || !cursor) {

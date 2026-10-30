@@ -3,7 +3,6 @@ import {
   ApiError,
   fetchTransactions,
   type ApiTransaction,
-  type ApiCurrency,
 } from "@/lib/api";
 import { useCurrencyStore } from "@/store/currency";
 import {
@@ -78,7 +77,6 @@ export function useTransactions(
   limit?: number,
 ) {
   const currency = useCurrencyStore((state) => state.currency);
-  const { setCurrency: setCurrencyFromStore } = useCurrencyStore();
 
   const [chainTransactions, setChainTransactions] = useState<TransactionListItem[]>([]);
   const [localTransactions, setLocalTransactions] = useState<TransactionListItem[]>([]);
@@ -92,6 +90,7 @@ export function useTransactions(
       return;
     }
 
+    const normalized = walletAddress.trim().toLowerCase();
     const controller = new AbortController();
     let active = true;
     let firstLoad = true;
@@ -141,11 +140,6 @@ export function useTransactions(
 
     loadChain();
     timer = setInterval(loadChain, POLL_INTERVAL_MS);
-
-    // Sync the currency store when it changes (user picks a new currency)
-    useEffect(() => {
-      setCurrencyFromStore(currency);
-    }, [currency]);
 
     return () => {
       active = false;

@@ -50,14 +50,18 @@ function toWalletBalance(balance: ApiBalance): WalletBalance {
   };
 }
 
-async function loadBalances(walletAddress: string, signal: AbortSignal) {
+async function loadBalances(
+  walletAddress: string,
+  currency: ApiCurrency,
+  signal: AbortSignal,
+) {
   const items: ApiBalance[] = [];
   let cursor: string | undefined;
 
   for (let page = 0; page < MAX_PAGES; page++) {
     const result = await fetchBalances(
       walletAddress,
-      { limit: PAGE_LIMIT, cursor },
+      { limit: PAGE_LIMIT, cursor, currency },
       { signal },
     );
     items.push(...result.data);
@@ -74,7 +78,6 @@ async function loadBalances(walletAddress: string, signal: AbortSignal) {
  */
 export function useWalletBalances(walletAddress?: string | null) {
   const currency = useCurrencyStore((state) => state.currency);
-  const { setCurrency: setCurrencyFromStore } = useCurrencyStore();
 
   const [balances, setBalances] = useState<WalletBalance[]>([]);
   const [loading, setLoading] = useState(false);
@@ -96,11 +99,7 @@ export function useWalletBalances(walletAddress?: string | null) {
     const load = async () => {
       if (firstLoad) setLoading(true);
       try {
-        const items = await fetchBalances(
-          walletAddress,
-          { limit: PAGE_LIMIT, cursor: undefined, currency },
-          { signal },
-        );
+        const items = await loadBalances(walletAddress, currency, controller.signal);
         if (!active) return;
         setBalances(items.map(toWalletBalance));
         setError(null);
@@ -124,11 +123,6 @@ export function useWalletBalances(walletAddress?: string | null) {
 
     load();
     timer = setInterval(load, POLL_INTERVAL_MS);
-
-    // Sync the currency store when it changes (user picks a new currency)
-    useEffect(() => {
-      setCurrencyFromStore(currency);
-    }, [currency]);
 
     return () => {
       active = false;
